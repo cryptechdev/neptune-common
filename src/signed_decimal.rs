@@ -1,6 +1,7 @@
-use std::{str::FromStr};
+use std::{str::FromStr, ops::{Neg, Rem}};
 
 use cosmwasm_std::{Decimal256, Uint256};
+use num_traits::{Num, One, Zero};
 use schemars::{JsonSchema};
 use serde::{Deserialize, Serialize};
 
@@ -35,6 +36,82 @@ impl SignedDecimal {
             value: Decimal256::from_atomics(val, 0u32).map_err(|e| CommonError::Decimal256RangeExceeded(e))?,
             sign: true
         })
+    }
+}
+
+impl Neg for SignedDecimal {
+    type Output = Self;
+
+    fn neg(self) -> Self::Output {
+        Self {
+            value: self.value,
+            sign: !self.sign,
+        }
+    }
+}
+
+impl Rem for SignedDecimal {
+    type Output = Self;
+
+    fn rem(self, _rhs: Self) -> Self::Output {
+        todo!()
+    }
+}
+
+impl One for SignedDecimal {
+    fn one() -> Self {
+        Self {
+            value: Decimal256::one(),
+            sign: true
+        }
+    }
+}
+
+impl Zero for SignedDecimal {
+    
+    fn zero() -> Self {
+        Self {
+            value: Decimal256::zero(),
+            sign: true
+        }
+    }
+
+    fn is_zero(&self) -> bool {
+        self.value.is_zero()
+    }
+}
+
+impl Num for SignedDecimal {
+    type FromStrRadixErr = Self;
+
+    fn from_str_radix(_str: &str, _radix: u32) -> Result<Self, Self::FromStrRadixErr> {
+        todo!()
+    }
+}
+
+impl num_traits::sign::Signed for SignedDecimal {
+    fn abs(&self) -> Self {
+        Self {
+            value: self.value,
+            sign: true
+        }
+    }
+
+    fn abs_sub(&self, other: &Self) -> Self {
+        let new = *self - *other;
+        new.abs()
+    }
+
+    fn signum(&self) -> Self {
+        todo!()
+    }
+
+    fn is_positive(&self) -> bool {
+        todo!()
+    }
+
+    fn is_negative(&self) -> bool {
+        todo!()
     }
 }
 
