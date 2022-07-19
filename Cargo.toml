@@ -1,6 +1,3 @@
-# [workspace]
-# members = ["packages/*"]
-
 [package]
 name = "neptune"
 version = "0.1.0"
