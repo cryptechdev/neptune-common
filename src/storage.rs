@@ -5,7 +5,7 @@ use cosmwasm_std::{
 
 // Neptune Package crate imports
 use crate::{
-    error::{NeptuneError},
+    error::{CommonError},
 };
 
 /// ================ ///
@@ -22,19 +22,19 @@ pub fn get_contract_addr(
     deps: Deps,
     contract_name: &str,
     contract_address: &Option<CanonicalAddr>
-) -> Result<Addr, NeptuneError> {
+) -> Result<Addr, CommonError> {
 
     Ok(deps.api.addr_humanize(&contract_address.clone().ok_or(
-        NeptuneError::MissingAddress(contract_name.to_string())
+        CommonError::MissingAddress(contract_name.to_string())
     )?)?)
 }
 
 pub fn get_config_string(
     var: Option<String>
-) -> Result<String, NeptuneError> {
+) -> Result<String, CommonError> {
 
     Ok(var.ok_or(
-        NeptuneError::MissingConfigVariable {}
+        CommonError::MissingConfigVariable {}
     )?)
 }
 

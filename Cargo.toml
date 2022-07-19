@@ -1,5 +1,5 @@
 [package]
-name = "neptune"
+name = "contracts-common"
 version = "0.1.0"
 authors = ["Cryptech Developments Ltd."]
 edition = "2018"
@@ -25,7 +25,6 @@ serde = { version = "1.0.137", default-features = false, features = ["derive"] }
 thiserror = "1.0.31"
 moneymarket = { path = "./packages/moneymarket", default-features = false, version = "0.2.0" }
 terraswap = { path = "./packages/terraswap", default-features = false, version = "2.4.1" }
-
 
 [dev-dependencies]
 cosmwasm-schema = "1.0.0"

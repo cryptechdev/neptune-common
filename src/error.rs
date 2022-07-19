@@ -1,12 +1,12 @@
 use cosmwasm_std::{OverflowError, StdError, ConversionOverflowError, Decimal256RangeExceeded};
 use thiserror::Error;
 
-pub type NeptuneResult<T> = core::result::Result<T, NeptuneError>;
+pub type NeptuneResult<T> = core::result::Result<T, CommonError>;
 
 const NEPT_ERR: &str = "🔱 Neptune Error -";
 
 #[derive(Error, Debug, PartialEq)]
-pub enum NeptuneError {
+pub enum CommonError {
     #[error("{} {0}", NEPT_ERR)]
     Error(String),
 

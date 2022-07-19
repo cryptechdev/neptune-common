@@ -4,7 +4,7 @@ use cosmwasm_std::{Decimal256, Uint256};
 use schemars::{JsonSchema};
 use serde::{Deserialize, Serialize};
 
-use crate::error::NeptuneError;
+use crate::error::CommonError;
 
 /// Decimal256 with a sign
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, JsonSchema)]
@@ -30,9 +30,9 @@ impl SignedDecimal {
         self.value
     }
 
-    pub fn from_uint256(val: Uint256) -> Result<SignedDecimal, NeptuneError> {
+    pub fn from_uint256(val: Uint256) -> Result<SignedDecimal, CommonError> {
         Ok(SignedDecimal {
-            value: Decimal256::from_atomics(val, 0u32).map_err(|e| NeptuneError::Decimal256RangeExceeded(e))?,
+            value: Decimal256::from_atomics(val, 0u32).map_err(|e| CommonError::Decimal256RangeExceeded(e))?,
             sign: true
         })
     }
@@ -137,7 +137,7 @@ impl From<Decimal256> for SignedDecimal {
 }
 
 impl FromStr for SignedDecimal {
-    type Err = NeptuneError;
+    type Err = CommonError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let sign;
