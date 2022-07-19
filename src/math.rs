@@ -41,8 +41,10 @@ pub fn to_uint128(other: Uint256) -> NeptuneResult<Uint128> {
     Uint128::try_from(other).map_err(|e| NeptuneError::ConversionOverflowError(e))
 }
 
-pub fn from_decimal(other: Decimal) -> NeptuneResult<Decimal256> {
-    Decimal256::from_str(&other.to_string()).map_err(|e| NeptuneError::Std(e))
+pub fn from_decimal(other: Decimal) -> Decimal256 {
+    // Unwrap is safe because Decimal256 and Decimal have the same decimal places.
+    // Every Decimal value can be stored in Decimal256.
+    Decimal256::from_atomics(other.atomics(), other.decimal_places()).unwrap()
 }
 
 /// TODO Figure out a way to do this better, for testing only
