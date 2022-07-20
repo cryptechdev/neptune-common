@@ -1,4 +1,4 @@
-use std::{str::FromStr, ops::{Neg, Rem}};
+use std::{str::FromStr, ops::{Neg, Rem}, convert::TryFrom};
 
 use cosmwasm_std::{Decimal256, Uint256};
 use num_traits::{Num, One, Zero};
@@ -231,6 +231,14 @@ impl FromStr for SignedDecimal {
             value: Decimal256::from_str(val_str)?,
             sign: sign
         })
+    }
+}
+
+impl TryFrom<&str> for SignedDecimal {
+    type Error = CommonError;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        Self::from_str(value)
     }
 }
 
