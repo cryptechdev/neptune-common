@@ -249,11 +249,14 @@ fn signed_decimal_test() {
     let big_neg   = SignedDecimal::from_str("-100").unwrap();
     let small_pos = SignedDecimal::from_str("50").unwrap();
     let small_neg = SignedDecimal::from_str("-50").unwrap();
+    let dec_neg   = SignedDecimal::from_str("-50.50").unwrap();
 
     let big_pos_f64   = f64::from_str("100").unwrap();
     let big_neg_f64   = f64::from_str("-100").unwrap();
     let small_pos_f64 = f64::from_str("50").unwrap();
     let small_neg_f64 = f64::from_str("-50").unwrap();
+    let dec_neg_f64       = f64::from_str("-50.50").unwrap();
+
 
     // Test partial_cmp
     assert!(big_pos   > big_neg);
@@ -300,4 +303,11 @@ fn signed_decimal_test() {
     assert!(small_pos - small_neg == f64_to_signed_decimal( small_pos_f64 - small_neg_f64 ));
     assert!(small_pos - big_neg   == f64_to_signed_decimal( small_pos_f64 - big_neg_f64   ));
     assert!(small_neg - big_neg   == f64_to_signed_decimal( small_neg_f64 - big_neg_f64   ));
+
+    // Test cconversion
+    assert!(big_pos   == f64_to_signed_decimal(big_pos_f64   ));
+    assert!(big_neg   == f64_to_signed_decimal(big_neg_f64   ));
+    assert!(small_pos == f64_to_signed_decimal(small_pos_f64 ));
+    assert!(small_neg == f64_to_signed_decimal(small_neg_f64 ));
+    assert!(dec_neg   == f64_to_signed_decimal(dec_neg_f64   ));
 }
