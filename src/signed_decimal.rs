@@ -1,4 +1,4 @@
-use std::{str::FromStr, ops::{Neg, Rem}, convert::TryFrom};
+use std::{str::FromStr, ops::{Neg, Rem}, convert::{TryFrom, TryInto}, error::Error};
 
 use cosmwasm_std::{Decimal256, Uint256};
 use num_traits::{Num, One, Zero};
@@ -239,6 +239,17 @@ impl TryFrom<&str> for SignedDecimal {
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         Self::from_str(value)
+    }
+}
+
+impl TryInto<Decimal256> for SignedDecimal {
+    type Error = Box<dyn Error>;
+
+    fn try_into(self) -> Result<Decimal256, Self::Error> {
+        if !self.sign && !self.value.is_zero() {
+            return Err("Cannot convert negative SignedDecimal to Decimal256".into());
+        }
+        Ok(self.value)
     }
 }
 
