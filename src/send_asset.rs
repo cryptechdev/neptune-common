@@ -1,6 +1,7 @@
 use std::fmt::Debug;
 use cw20::Cw20ExecuteMsg;
 use schemars::JsonSchema;
+use serde::de::DeserializeOwned;
 use serde::{
     Deserialize,
     Serialize, 
@@ -16,7 +17,7 @@ use cosmwasm_std::Uint256;
 
 use terraswap::asset::AssetInfo;
 
-use crate::error::CommonError;
+use crate::error::{CommonError, CommonResult};
 use crate::querier::{query_balance, query_token_balance};
 use crate::{
     math::to_uint128,
@@ -151,4 +152,17 @@ pub fn send_tokens(
             }
         )?
     }))
+}
+
+pub fn msg_to_self<ExecuteMsg: Serialize+DeserializeOwned>(
+    env: &Env,
+    msg: &ExecuteMsg
+) -> CommonResult<CosmosMsg> {
+    Ok(CosmosMsg::Wasm(
+        WasmMsg::Execute {
+            contract_addr: env.contract.address.to_string(),
+            funds: vec![],
+            msg: to_binary(&msg)?,
+        }
+    ))
 }
