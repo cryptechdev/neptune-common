@@ -1,6 +1,6 @@
 use std::{str::FromStr, convert::TryFrom};
 use cosmwasm_std::{Decimal256, Uint256, Uint128, Decimal};
-use crate::{error::{CommonError, NeptuneResult},};
+use crate::{error::{CommonError, CommonResult},};
 
 
 pub const UINT256_ONE : Uint256 = Uint256::from_u128(1u128);
@@ -20,7 +20,7 @@ Default
 pub fn get_difference_or_error < T:
 std::ops::Sub<Output = T> +
 std::cmp::PartialOrd
-> (first_term: T, second_term: T, error_msg: String) -> NeptuneResult<T> {
+> (first_term: T, second_term: T, error_msg: String) -> CommonResult<T> {
     if first_term < second_term {
         Err(CommonError::Generic(error_msg))
     } else {
@@ -37,7 +37,7 @@ pub fn get_division_or_zero(nom: Uint256, denom: Uint256) -> Decimal256 {
     }
 }
 
-pub fn to_uint128(other: Uint256) -> NeptuneResult<Uint128> {
+pub fn to_uint128(other: Uint256) -> CommonResult<Uint128> {
     Uint128::try_from(other).map_err(|e| CommonError::ConversionOverflowError(e))
 }
 

@@ -1,7 +1,8 @@
 use cosmwasm_std::{OverflowError, StdError, ConversionOverflowError, Decimal256RangeExceeded};
+use neptune_authorization::error::NeptuneAuthorizationError;
 use thiserror::Error;
 
-pub type NeptuneResult<T> = core::result::Result<T, CommonError>;
+pub type CommonResult<T> = core::result::Result<T, CommonError>;
 
 const NEPT_ERR: &str = "🔱 Neptune Error -";
 
@@ -15,6 +16,9 @@ pub enum CommonError {
 
     #[error("{} StdError: {0}", NEPT_ERR)]
     Std(#[from] StdError),
+
+    #[error("{} AuthError: {0}", NEPT_ERR)]
+    Auth(#[from] NeptuneAuthorizationError),
 
     #[error("{} OverflowError: {0}", NEPT_ERR)]
     OverflowError(#[from] OverflowError),
@@ -57,4 +61,16 @@ pub enum CommonError {
 
     #[error("{} This function has not yet been implemented", NEPT_ERR)]
     Unimplemented {},
+}
+
+impl Into<NeptuneAuthorizationError> for CommonError {
+    fn into(self) -> NeptuneAuthorizationError {
+        NeptuneAuthorizationError::Error(self.to_string())
+    }
+}
+
+impl From<Box<dyn std::error::Error>>for CommonError {
+    fn from(error: Box<dyn std::error::Error>) -> Self {
+        Self::Error(error.to_string())
+    }
 }

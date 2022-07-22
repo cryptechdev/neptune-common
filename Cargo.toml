@@ -27,6 +27,7 @@ backtrace = "0.3"
 base64 = "0.13.0"
 serde = { version = "1.0.137", default-features = false, features = ["derive"] }
 thiserror = "1.0.31"
+neptune-authorization = { path = "../neptune-auth", default-features = false, version = "0.1.0" }
 moneymarket = { path = "./packages/moneymarket", default-features = false, version = "0.2.0" }
 terraswap = { path = "./packages/terraswap", default-features = false, version = "2.4.1" }
 
