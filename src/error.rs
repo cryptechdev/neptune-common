@@ -61,6 +61,9 @@ pub enum CommonError {
 
     #[error("{} This function has not yet been implemented", NEPT_ERR)]
     Unimplemented {},
+
+    #[error("{} Missing Cw20HookMg", NEPT_ERR)]
+    MissingHookMsg {},
 }
 
 impl Into<NeptuneAuthorizationError> for CommonError {
