@@ -1,4 +1,4 @@
-use cosmwasm_std::{OverflowError, StdError, ConversionOverflowError, Decimal256RangeExceeded};
+use cosmwasm_std::{ConversionOverflowError, Decimal256RangeExceeded, OverflowError, StdError};
 use neptune_authorization::error::NeptuneAuthorizationError;
 use thiserror::Error;
 
@@ -30,7 +30,7 @@ pub enum CommonError {
     Decimal256RangeExceeded(#[from] Decimal256RangeExceeded),
 
     #[error("{} Unauthorized: {0}", NEPT_ERR)]
-    Unauthorized (String),
+    Unauthorized(String),
 
     #[error("{} Insufficient liquidity to send funds", NEPT_ERR)]
     InsufficientLiquidity {},
@@ -39,7 +39,7 @@ pub enum CommonError {
     NoFundsReceived {},
 
     #[error("{} Missing address for {0}", NEPT_ERR)]
-    MissingAddress ( String ),
+    MissingAddress(String),
 
     #[error("{} Missing config variable", NEPT_ERR)]
     MissingConfigVariable {},
@@ -52,7 +52,7 @@ pub enum CommonError {
 
     #[error("{} Denominator was zero", NEPT_ERR)]
     ZeroDenominator {},
-    
+
     #[error("{} Basset price was returned as zero", NEPT_ERR)]
     BassetPriceIsZero {},
 
@@ -72,8 +72,6 @@ impl Into<NeptuneAuthorizationError> for CommonError {
     }
 }
 
-impl From<Box<dyn std::error::Error>>for CommonError {
-    fn from(error: Box<dyn std::error::Error>) -> Self {
-        Self::Error(error.to_string())
-    }
+impl From<Box<dyn std::error::Error>> for CommonError {
+    fn from(error: Box<dyn std::error::Error>) -> Self { Self::Error(error.to_string()) }
 }

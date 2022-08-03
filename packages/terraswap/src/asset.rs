@@ -11,7 +11,7 @@ use cw20::Cw20ExecuteMsg;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Asset {
-    pub info: AssetInfo,
+    pub info:   AssetInfo,
     pub amount: Uint128,
 }
 
@@ -22,9 +22,7 @@ impl fmt::Display for Asset {
 }
 
 impl Asset {
-    pub fn is_native_token(&self) -> bool {
-        self.info.is_native_token()
-    }
+    pub fn is_native_token(&self) -> bool { self.info.is_native_token() }
 
     pub fn into_msg(self, recipient: Addr) -> StdResult<CosmosMsg> {
         let amount = self.amount;
@@ -32,17 +30,17 @@ impl Asset {
         match &self.info {
             AssetInfo::Token { contract_addr } => Ok(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: contract_addr.to_string(),
-                msg: to_binary(&Cw20ExecuteMsg::Transfer {
+                msg:           to_binary(&Cw20ExecuteMsg::Transfer {
                     recipient: recipient.to_string(),
                     amount,
                 })?,
-                funds: vec![],
+                funds:         vec![],
             })),
             AssetInfo::NativeToken { denom } => Ok(CosmosMsg::Bank(BankMsg::Send {
                 to_address: recipient.to_string(),
-                amount: vec![Coin {
+                amount:     vec![Coin {
                     amount: self.amount,
-                    denom: denom.to_string(),
+                    denom:  denom.to_string(),
                 }],
             })),
         }
@@ -77,7 +75,7 @@ impl Asset {
 
     pub fn to_raw(&self, api: &dyn Api) -> StdResult<AssetRaw> {
         Ok(AssetRaw {
-            info: match &self.info {
+            info:   match &self.info {
                 AssetInfo::NativeToken { denom } => AssetInfoRaw::NativeToken {
                     denom: denom.to_string(),
                 },
@@ -126,6 +124,7 @@ impl AssetInfo {
             AssetInfo::Token { .. } => false,
         }
     }
+
     pub fn query_pool(
         &self,
         querier: &QuerierWrapper<Empty>,
@@ -190,14 +189,14 @@ impl AssetInfo {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct AssetRaw {
-    pub info: AssetInfoRaw,
+    pub info:   AssetInfoRaw,
     pub amount: Uint128,
 }
 
 impl AssetRaw {
     pub fn to_normal(&self, api: &dyn Api) -> StdResult<Asset> {
         Ok(Asset {
-            info: match &self.info {
+            info:   match &self.info {
                 AssetInfoRaw::NativeToken { denom } => AssetInfo::NativeToken {
                     denom: denom.to_string(),
                 },
@@ -260,30 +259,30 @@ impl AssetInfoRaw {
 // We define a custom struct for each query response
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct PairInfo {
-    pub asset_infos: [AssetInfo; 2],
-    pub contract_addr: String,
+    pub asset_infos:     [AssetInfo; 2],
+    pub contract_addr:   String,
     pub liquidity_token: String,
-    pub asset_decimals: [u8; 2],
+    pub asset_decimals:  [u8; 2],
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct PairInfoRaw {
-    pub asset_infos: [AssetInfoRaw; 2],
-    pub contract_addr: CanonicalAddr,
+    pub asset_infos:     [AssetInfoRaw; 2],
+    pub contract_addr:   CanonicalAddr,
     pub liquidity_token: CanonicalAddr,
-    pub asset_decimals: [u8; 2],
+    pub asset_decimals:  [u8; 2],
 }
 
 impl PairInfoRaw {
     pub fn to_normal(&self, api: &dyn Api) -> StdResult<PairInfo> {
         Ok(PairInfo {
             liquidity_token: api.addr_humanize(&self.liquidity_token)?.to_string(),
-            contract_addr: api.addr_humanize(&self.contract_addr)?.to_string(),
-            asset_infos: [
+            contract_addr:   api.addr_humanize(&self.contract_addr)?.to_string(),
+            asset_infos:     [
                 self.asset_infos[0].to_normal(api)?,
                 self.asset_infos[1].to_normal(api)?,
             ],
-            asset_decimals: self.asset_decimals,
+            asset_decimals:  self.asset_decimals,
         })
     }
 
@@ -298,11 +297,11 @@ impl PairInfoRaw {
         Ok([
             Asset {
                 amount: info_0.query_pool(querier, api, contract_addr.clone())?,
-                info: info_0,
+                info:   info_0,
             },
             Asset {
                 amount: info_1.query_pool(querier, api, contract_addr)?,
-                info: info_1,
+                info:   info_1,
             },
         ])
     }

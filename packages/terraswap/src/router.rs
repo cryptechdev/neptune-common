@@ -16,7 +16,7 @@ pub struct InstantiateMsg {
 pub enum SwapOperation {
     TerraSwap {
         offer_asset_info: AssetInfo,
-        ask_asset_info: AssetInfo,
+        ask_asset_info:   AssetInfo,
     },
 }
 
@@ -34,24 +34,24 @@ pub enum ExecuteMsg {
     Receive(Cw20ReceiveMsg),
     /// Execute multiple BuyOperation
     ExecuteSwapOperations {
-        operations: Vec<SwapOperation>,
+        operations:      Vec<SwapOperation>,
         minimum_receive: Option<Uint128>,
-        to: Option<String>,
+        to:              Option<String>,
     },
 
     /// Internal use
     /// Swap all offer tokens to ask token
     ExecuteSwapOperation {
         operation: SwapOperation,
-        to: Option<String>,
+        to:        Option<String>,
     },
     /// Internal use
     /// Check the swap amount is exceed minimum_receive
     AssertMinimumReceive {
-        asset_info: AssetInfo,
-        prev_balance: Uint128,
+        asset_info:      AssetInfo,
+        prev_balance:    Uint128,
         minimum_receive: Uint128,
-        receiver: String,
+        receiver:        String,
     },
 }
 
@@ -59,9 +59,9 @@ pub enum ExecuteMsg {
 #[serde(rename_all = "snake_case")]
 pub enum Cw20HookMsg {
     ExecuteSwapOperations {
-        operations: Vec<SwapOperation>,
+        operations:      Vec<SwapOperation>,
         minimum_receive: Option<Uint128>,
-        to: Option<String>,
+        to:              Option<String>,
     },
 }
 
@@ -71,7 +71,7 @@ pub enum QueryMsg {
     Config {},
     SimulateSwapOperations {
         offer_amount: Uint128,
-        operations: Vec<SwapOperation>,
+        operations:   Vec<SwapOperation>,
     },
     ReverseSimulateSwapOperations {
         ask_amount: Uint128,

@@ -6,7 +6,7 @@ use crate::asset::{AssetInfo, PairInfo};
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
     /// Pair contract code ID, which is used to
-    pub pair_code_id: u64,
+    pub pair_code_id:  u64,
     pub token_code_id: u64,
 }
 
@@ -15,9 +15,9 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     /// UpdateConfig update relevant code IDs
     UpdateConfig {
-        owner: Option<String>,
+        owner:         Option<String>,
         token_code_id: Option<u64>,
-        pair_code_id: Option<u64>,
+        pair_code_id:  Option<u64>,
     },
     /// CreatePair instantiates pair contract
     CreatePair {
@@ -35,15 +35,15 @@ pub enum QueryMsg {
     },
     Pairs {
         start_after: Option<[AssetInfo; 2]>,
-        limit: Option<u32>,
+        limit:       Option<u32>,
     },
 }
 
 // We define a custom struct for each query response
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct ConfigResponse {
-    pub owner: String,
-    pub pair_code_id: u64,
+    pub owner:         String,
+    pub pair_code_id:  u64,
     pub token_code_id: u64,
 }
 

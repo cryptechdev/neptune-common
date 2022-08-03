@@ -8,21 +8,21 @@ use cw20::Cw20ReceiveMsg;
 #[serde(rename_all = "snake_case")]
 pub struct InstantiateMsg {
     /// owner address
-    pub owner: String,
+    pub owner:                String,
     /// bAsset token address
-    pub collateral_token: String,
+    pub collateral_token:     String,
     /// overseer contract address
-    pub overseer_contract: String,
+    pub overseer_contract:    String,
     /// market contract address
-    pub market_contract: String,
+    pub market_contract:      String,
     /// bAsset rewrad contract
-    pub reward_contract: String,
+    pub reward_contract:      String,
     /// liquidation contract address
     pub liquidation_contract: String,
     /// Expected reward denom. If bAsset reward is not same with
     /// it, we try to convert the reward to the `stable_denom`.
-    pub stable_denom: String,
-    pub basset_info: BAssetInfo,
+    pub stable_denom:         String,
+    pub basset_info:          BAssetInfo,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -37,7 +37,7 @@ pub enum ExecuteMsg {
 
     /// Update config
     UpdateConfig {
-        owner: Option<String>,
+        owner:                Option<String>,
         liquidation_contract: Option<String>,
     },
     /// Make specified amount of tokens unspendable
@@ -51,8 +51,8 @@ pub enum ExecuteMsg {
     /// Liquidate collateral and send liquidated collateral to `to` address
     LiquidateCollateral {
         liquidator: String,
-        borrower: String,
-        amount: Uint256,
+        borrower:   String,
+        amount:     Uint256,
     },
 
     ////////////////////
@@ -81,28 +81,28 @@ pub enum QueryMsg {
     },
     Borrowers {
         start_after: Option<String>,
-        limit: Option<u32>,
+        limit:       Option<u32>,
     },
 }
 
 // We define a custom struct for each query response
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct ConfigResponse {
-    pub owner: String,
-    pub collateral_token: String,
-    pub overseer_contract: String,
-    pub market_contract: String,
-    pub reward_contract: String,
+    pub owner:                String,
+    pub collateral_token:     String,
+    pub overseer_contract:    String,
+    pub market_contract:      String,
+    pub reward_contract:      String,
     pub liquidation_contract: String,
-    pub stable_denom: String,
-    pub basset_info: BAssetInfo,
+    pub stable_denom:         String,
+    pub basset_info:          BAssetInfo,
 }
 
 // We define a custom struct for each query response
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct BorrowerResponse {
-    pub borrower: String,
-    pub balance: Uint256,
+    pub borrower:  String,
+    pub balance:   Uint256,
     pub spendable: Uint256,
 }
 
@@ -114,7 +114,7 @@ pub struct BorrowersResponse {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct BAssetInfo {
-    pub name: String,
-    pub symbol: String,
+    pub name:     String,
+    pub symbol:   String,
     pub decimals: u8,
 }

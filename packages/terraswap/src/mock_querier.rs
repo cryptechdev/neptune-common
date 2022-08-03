@@ -1,16 +1,16 @@
-use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
-    from_binary, from_slice, to_binary, Api, Binary, Coin, ContractResult, Empty, OwnedDeps,
-    Querier, QuerierResult, QueryRequest, SystemError, SystemResult, Uint128, WasmQuery,
+    from_binary, from_slice,
+    testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR},
+    to_binary, Api, Binary, Coin, ContractResult, Empty, OwnedDeps, Querier, QuerierResult,
+    QueryRequest, SystemError, SystemResult, Uint128, WasmQuery,
 };
-use std::collections::HashMap;
-use std::marker::PhantomData;
-use std::panic;
+use std::{collections::HashMap, marker::PhantomData, panic};
 
-use crate::asset::{AssetInfo, AssetInfoRaw, PairInfo, PairInfoRaw};
-use crate::factory::QueryMsg as FactoryQueryMsg;
-use crate::pair::QueryMsg as PairQueryMsg;
-use crate::pair::{ReverseSimulationResponse, SimulationResponse};
+use crate::{
+    asset::{AssetInfo, AssetInfoRaw, PairInfo, PairInfoRaw},
+    factory::QueryMsg as FactoryQueryMsg,
+    pair::{QueryMsg as PairQueryMsg, ReverseSimulationResponse, SimulationResponse},
+};
 use cw20::{BalanceResponse as Cw20BalanceResponse, Cw20QueryMsg, TokenInfoResponse};
 
 use std::iter::FromIterator;
@@ -24,9 +24,9 @@ pub fn mock_dependencies(
         WasmMockQuerier::new(MockQuerier::new(&[(MOCK_CONTRACT_ADDR, contract_balance)]));
 
     OwnedDeps {
-        storage: MockStorage::default(),
-        api: MockApi::default(),
-        querier: custom_querier,
+        storage:           MockStorage::default(),
+        api:               MockApi::default(),
+        querier:           custom_querier,
         custom_query_type: PhantomData,
     }
 }
@@ -96,7 +96,7 @@ impl Querier for WasmMockQuerier {
             Ok(v) => v,
             Err(e) => {
                 return SystemResult::Err(SystemError::InvalidRequest {
-                    error: format!("Parsing query request: {}", e),
+                    error:   format!("Parsing query request: {}", e),
                     request: bin_request.into(),
                 })
             }
@@ -120,7 +120,7 @@ impl WasmMockQuerier {
                     {
                         Some(v) => SystemResult::Ok(ContractResult::Ok(to_binary(v).unwrap())),
                         None => SystemResult::Err(SystemError::InvalidRequest {
-                            error: "No pair info exists".to_string(),
+                            error:   "No pair info exists".to_string(),
                             request: msg.as_slice().into(),
                         }),
                     }
@@ -128,7 +128,7 @@ impl WasmMockQuerier {
                 _ => match from_binary(msg) {
                     Ok(PairQueryMsg::Pair {}) => {
                         SystemResult::Ok(ContractResult::from(to_binary(&PairInfo {
-                            asset_infos: [
+                            asset_infos:     [
                                 AssetInfo::NativeToken {
                                     denom: "uluna".to_string(),
                                 },
@@ -136,23 +136,23 @@ impl WasmMockQuerier {
                                     denom: "uluna".to_string(),
                                 },
                             ],
-                            asset_decimals: [6u8, 6u8],
-                            contract_addr: "pair0000".to_string(),
+                            asset_decimals:  [6u8, 6u8],
+                            contract_addr:   "pair0000".to_string(),
                             liquidity_token: "liquidity0000".to_string(),
                         })))
                     }
                     Ok(PairQueryMsg::Simulation { offer_asset }) => {
                         SystemResult::Ok(ContractResult::from(to_binary(&SimulationResponse {
-                            return_amount: offer_asset.amount,
+                            return_amount:     offer_asset.amount,
                             commission_amount: Uint128::zero(),
-                            spread_amount: Uint128::zero(),
+                            spread_amount:     Uint128::zero(),
                         })))
                     }
                     Ok(PairQueryMsg::ReverseSimulation { ask_asset }) => SystemResult::Ok(
                         ContractResult::from(to_binary(&ReverseSimulationResponse {
-                            offer_amount: ask_asset.amount,
+                            offer_amount:      ask_asset.amount,
                             commission_amount: Uint128::zero(),
-                            spread_amount: Uint128::zero(),
+                            spread_amount:     Uint128::zero(),
                         })),
                     ),
                     _ => match from_binary(msg).unwrap() {
@@ -162,7 +162,7 @@ impl WasmMockQuerier {
                                     Some(balances) => balances,
                                     None => {
                                         return SystemResult::Err(SystemError::InvalidRequest {
-                                            error: format!(
+                                            error:   format!(
                                                 "No balance info exists for the contract {}",
                                                 contract_addr
                                             ),
@@ -193,7 +193,7 @@ impl WasmMockQuerier {
                                     Some(balances) => balances,
                                     None => {
                                         return SystemResult::Err(SystemError::InvalidRequest {
-                                            error: format!(
+                                            error:   format!(
                                                 "No balance info exists for the contract {}",
                                                 contract_addr
                                             ),
@@ -233,7 +233,7 @@ impl WasmMockQuerier {
                             Some(v) => v.clone(),
                             None => {
                                 return SystemResult::Err(SystemError::InvalidRequest {
-                                    error: format!("PairInfo is not found for {}", contract_addr),
+                                    error:   format!("PairInfo is not found for {}", contract_addr),
                                     request: key.into(),
                                 })
                             }
@@ -241,13 +241,13 @@ impl WasmMockQuerier {
 
                     let api: MockApi = MockApi::default();
                     SystemResult::Ok(ContractResult::from(to_binary(&PairInfoRaw {
-                        contract_addr: api
+                        contract_addr:   api
                             .addr_canonicalize(pair_info.contract_addr.as_str())
                             .unwrap(),
                         liquidity_token: api
                             .addr_canonicalize(pair_info.liquidity_token.as_str())
                             .unwrap(),
-                        asset_infos: [
+                        asset_infos:     [
                             AssetInfoRaw::NativeToken {
                                 denom: "uusd".to_string(),
                             },
@@ -255,7 +255,7 @@ impl WasmMockQuerier {
                                 denom: "uusd".to_string(),
                             },
                         ],
-                        asset_decimals: [6u8, 6u8],
+                        asset_decimals:  [6u8, 6u8],
                     })))
                 } else {
                     panic!("DO NOT ENTER HERE")

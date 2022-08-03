@@ -7,17 +7,15 @@ use cw20::{Cw20Coin, MinterResponse};
 /// TokenContract InstantiateMsg
 #[derive(Serialize, Deserialize, JsonSchema)]
 pub struct InstantiateMsg {
-    pub name: String,
-    pub symbol: String,
-    pub decimals: u8,
+    pub name:             String,
+    pub symbol:           String,
+    pub decimals:         u8,
     pub initial_balances: Vec<Cw20Coin>,
-    pub mint: Option<MinterResponse>,
+    pub mint:             Option<MinterResponse>,
 }
 
 impl InstantiateMsg {
-    pub fn get_cap(&self) -> Option<Uint128> {
-        self.mint.as_ref().and_then(|v| v.cap)
-    }
+    pub fn get_cap(&self) -> Option<Uint128> { self.mint.as_ref().and_then(|v| v.cap) }
 
     pub fn validate(&self) -> StdResult<()> {
         // Check name, symbol, decimals

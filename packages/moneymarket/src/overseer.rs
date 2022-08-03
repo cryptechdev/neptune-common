@@ -8,33 +8,33 @@ use cosmwasm_std::{Decimal256, Uint256};
 #[serde(rename_all = "snake_case")]
 pub struct InstantiateMsg {
     /// Initial owner address
-    pub owner_addr: String,
+    pub owner_addr:                 String,
     /// Oracle contract address for collateral tokens
-    pub oracle_contract: String,
+    pub oracle_contract:            String,
     /// Market contract address to receive missing interest buffer
-    pub market_contract: String,
+    pub market_contract:            String,
     /// Liquidation model contract address to compute liquidation amount
-    pub liquidation_contract: String,
+    pub liquidation_contract:       String,
     /// Collector contract address which is purchasing ANC token
-    pub collector_contract: String,
+    pub collector_contract:         String,
     /// The base denomination used when fetching oracle price,
     /// reward distribution, and borrow
-    pub stable_denom: String,
+    pub stable_denom:               String,
     /// # of blocks per epoch period
-    pub epoch_period: u64,
+    pub epoch_period:               u64,
     /// Distribute interest buffer to market contract,
     /// when deposit_rate < threshold_deposit_rate
-    pub threshold_deposit_rate: Decimal256,
+    pub threshold_deposit_rate:     Decimal256,
     /// Target deposit rate.
     /// When current deposit rate is bigger than this,
     /// Custody contracts send rewards to interest buffer
-    pub target_deposit_rate: Decimal256,
+    pub target_deposit_rate:        Decimal256,
     /// Ratio to be distributed from the interest buffer
     pub buffer_distribution_factor: Decimal256,
     /// Ratio to be used for purchasing ANC token from the interest buffer
-    pub anc_purchase_factor: Decimal256,
+    pub anc_purchase_factor:        Decimal256,
     /// Valid oracle price timeframe
-    pub price_timeframe: u64,
+    pub price_timeframe:            u64,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -46,30 +46,30 @@ pub enum ExecuteMsg {
 
     /// Update Configs
     UpdateConfig {
-        owner_addr: Option<String>,
-        oracle_contract: Option<String>,
-        liquidation_contract: Option<String>,
-        threshold_deposit_rate: Option<Decimal256>,
-        target_deposit_rate: Option<Decimal256>,
+        owner_addr:                 Option<String>,
+        oracle_contract:            Option<String>,
+        liquidation_contract:       Option<String>,
+        threshold_deposit_rate:     Option<Decimal256>,
+        target_deposit_rate:        Option<Decimal256>,
         buffer_distribution_factor: Option<Decimal256>,
-        anc_purchase_factor: Option<Decimal256>,
-        epoch_period: Option<u64>,
-        price_timeframe: Option<u64>,
+        anc_purchase_factor:        Option<Decimal256>,
+        epoch_period:               Option<u64>,
+        price_timeframe:            Option<u64>,
     },
 
     /// Create new custody contract for the given collateral token
     Whitelist {
-        name: String,             // bAsset name
-        symbol: String,           // bAsset symbol
-        collateral_token: String, // bAsset token contract
-        custody_contract: String, // bAsset custody contract
-        max_ltv: Decimal256,      // Loan To Value ratio
+        name:             String,     // bAsset name
+        symbol:           String,     // bAsset symbol
+        collateral_token: String,     // bAsset token contract
+        custody_contract: String,     // bAsset custody contract
+        max_ltv:          Decimal256, // Loan To Value ratio
     },
     /// Update registered whitelist info
     UpdateWhitelist {
-        collateral_token: String,         // bAsset token contract
-        custody_contract: Option<String>, // bAsset custody contract
-        max_ltv: Option<Decimal256>,      // Loan To Value ratio
+        collateral_token: String,             // bAsset token contract
+        custody_contract: Option<String>,     // bAsset custody contract
+        max_ltv:          Option<Decimal256>, // Loan To Value ratio
     },
 
     /// Claims all staking rewards from the bAsset contracts
@@ -79,7 +79,7 @@ pub enum ExecuteMsg {
     /// 3. Update epoch state
     ExecuteEpochOperations {},
     UpdateEpochState {
-        interest_buffer: Uint256,
+        interest_buffer:      Uint256,
         distributed_interest: Uint256,
     },
 
@@ -106,18 +106,18 @@ pub enum QueryMsg {
     EpochState {},
     Whitelist {
         collateral_token: Option<String>,
-        start_after: Option<String>,
-        limit: Option<u32>,
+        start_after:      Option<String>,
+        limit:            Option<u32>,
     },
     Collaterals {
         borrower: String,
     },
     AllCollaterals {
         start_after: Option<String>,
-        limit: Option<u32>,
+        limit:       Option<u32>,
     },
     BorrowLimit {
-        borrower: String,
+        borrower:   String,
         block_time: Option<u64>,
     },
 }
@@ -125,26 +125,26 @@ pub enum QueryMsg {
 // We define a custom struct for each query response
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct ConfigResponse {
-    pub owner_addr: String,
-    pub oracle_contract: String,
-    pub market_contract: String,
-    pub liquidation_contract: String,
-    pub collector_contract: String,
-    pub threshold_deposit_rate: Decimal256,
-    pub target_deposit_rate: Decimal256,
+    pub owner_addr:                 String,
+    pub oracle_contract:            String,
+    pub market_contract:            String,
+    pub liquidation_contract:       String,
+    pub collector_contract:         String,
+    pub threshold_deposit_rate:     Decimal256,
+    pub target_deposit_rate:        Decimal256,
     pub buffer_distribution_factor: Decimal256,
-    pub anc_purchase_factor: Decimal256,
-    pub stable_denom: String,
-    pub epoch_period: u64,
-    pub price_timeframe: u64,
+    pub anc_purchase_factor:        Decimal256,
+    pub stable_denom:               String,
+    pub epoch_period:               u64,
+    pub price_timeframe:            u64,
 }
 
 // We define a custom struct for each query response
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct WhitelistResponseElem {
-    pub name: String,
-    pub symbol: String,
-    pub max_ltv: Decimal256,
+    pub name:             String,
+    pub symbol:           String,
+    pub max_ltv:          Decimal256,
     pub custody_contract: String,
     pub collateral_token: String,
 }
@@ -158,7 +158,7 @@ pub struct WhitelistResponse {
 // We define a custom struct for each query response
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct CollateralsResponse {
-    pub borrower: String,
+    pub borrower:    String,
     pub collaterals: TokensHuman, // <(Collateral Token, Amount)>
 }
 
@@ -170,13 +170,13 @@ pub struct AllCollateralsResponse {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct BorrowLimitResponse {
-    pub borrower: String,
+    pub borrower:     String,
     pub borrow_limit: Uint256,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct MigrateMsg {
-    pub target_deposit_rate: Decimal256,
+    pub target_deposit_rate:    Decimal256,
     pub threshold_deposit_rate: Decimal256,
 }
