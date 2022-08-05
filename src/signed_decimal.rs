@@ -1,16 +1,16 @@
 use std::{
     convert::{TryFrom, TryInto},
     error::Error,
-    ops::{Neg, Rem},
+    ops::{Neg, Rem, Mul},
     str::FromStr,
 };
 
 use cosmwasm_std::{Decimal256, Uint256};
-use num_traits::{Num, One, Zero};
+use num_traits::{Num, One, Zero, Signed};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::error::CommonError;
+use crate::{error::CommonError, signed_int::SignedInt};
 
 /// Decimal256 with a sign
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, JsonSchema)]
@@ -40,6 +40,17 @@ impl SignedDecimal {
                 .map_err(|e| CommonError::Decimal256RangeExceeded(e))?,
             sign:  true,
         })
+    }
+}
+
+impl Mul<SignedDecimal> for Uint256 {
+    type Output = SignedInt;
+
+    fn mul(self, rhs: SignedDecimal) -> Self::Output {
+        SignedInt {
+            value: rhs.value * self,
+            sign: rhs.sign,
+        }
     }
 }
 
