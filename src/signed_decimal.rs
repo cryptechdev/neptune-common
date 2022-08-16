@@ -6,7 +6,7 @@ use std::{
 };
 
 use cosmwasm_std::{Decimal256, Uint256};
-use num_traits::{Num, One, Zero, Signed};
+use num_traits::{Num, One, Zero};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 

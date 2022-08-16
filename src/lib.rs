@@ -9,3 +9,4 @@ pub mod signed_decimal;
 pub mod signed_int;
 pub mod storage;
 pub mod warning;
+pub mod multi_map;

@@ -1,5 +1,4 @@
-use cosmwasm_std::{Addr, CanonicalAddr, Deps, StdResult, StdError, Order, Storage};
-use cosmwasm_storage::Singleton;
+use cosmwasm_std::{Addr, CanonicalAddr, Deps, StdResult, StdError, Order};
 use cw_storage_plus::{Bound, PrimaryKey, KeyDeserialize, Map};
 use serde::{de::DeserializeOwned, Serialize};
 

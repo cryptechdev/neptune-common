@@ -1,5 +1,5 @@
 use cosmwasm_std::{Addr, StdError, StdResult, Uint256};
-use cw_storage_plus::{Bound, Key, KeyDeserialize, PrimaryKey};
+use cw_storage_plus::{Bound, Key, KeyDeserialize, PrimaryKey, Prefixer};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Clone, Debug, Hash, PartialEq, Eq, JsonSchema)]
@@ -45,18 +45,19 @@ impl<'a> PrimaryKey<'a> for &'a Asset {
     }
 }
 
-// impl<'a> Prefixer<'a> for Asset {
-//     fn prefix(&self) -> Vec<Key> {
-//         match self {
-//             Asset::Token { addr } => {
-//                 vec![Key::Ref(addr.as_bytes()), Key::Val8([0])]
-//             }
-//             Asset::NativeToken { denom } => {
-//                 vec![Key::Ref(denom.as_bytes()), Key::Val8([1])]
-//             }
-//         }
-//     }
-// }
+/// Might not be correct, Untested
+impl<'a> Prefixer<'a> for Asset {
+    fn prefix(&self) -> Vec<Key> {
+        match self {
+            Asset::Token { addr } => {
+                vec![Key::Ref(addr.as_bytes()), Key::Val8([0])]
+            }
+            Asset::NativeToken { denom } => {
+                vec![Key::Ref(denom.as_bytes()), Key::Val8([1])]
+            }
+        }
+    }
+}
 
 impl<'a> Into<Bound<'a, Asset>> for Asset {
     fn into(self) -> Bound<'a, Asset> { Bound::exclusive(self) }

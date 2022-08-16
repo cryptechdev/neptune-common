@@ -46,14 +46,14 @@ impl Into<Asset> for SendFundsMsg {
     }
 }
 
-pub fn send_funds<A: NeptuneContractAuthorization<SendFundsMsg>>(
+pub fn send_funds_tuple<A: NeptuneContractAuthorization<SendFundsMsg>>(
     deps: Deps,
     env: &Env,
     recipient: &Addr,
     mut amount: Uint256,
     send_msg: SendFundsMsg,
     exec_msg: Option<Binary>,
-) -> Result<Response, CommonError> {
+) -> Result<(CosmosMsg, Vec<Attribute>), CommonError> {
     neptune_execute_authorize::<SendFundsMsg, A>(deps, &env, &recipient, &send_msg)?;
 
     let mut attrs: Vec<Attribute> = vec![];
@@ -67,7 +67,7 @@ pub fn send_funds<A: NeptuneContractAuthorization<SendFundsMsg>>(
                 amount = coin_balance;
             }
             if amount.is_zero() {
-                return warn!(NeptuneWarning::AmountWasZero);
+                warn!(attrs, NeptuneWarning::AmountWasZero);
             }
 
             // Create the Coin array and either send coins or attach to a message
@@ -88,16 +88,29 @@ pub fn send_funds<A: NeptuneContractAuthorization<SendFundsMsg>>(
                 amount = token_balance;
             }
             if amount.is_zero() {
-                return warn!(NeptuneWarning::AmountWasZero);
+                warn!(attrs, NeptuneWarning::AmountWasZero);
             }
 
             send_tokens(&token_addr, amount, exec_msg, recipient)?
         }
     };
 
+    Ok((cosmos_msg, attrs))
+}
+
+pub fn send_funds<A: NeptuneContractAuthorization<SendFundsMsg>>(
+    deps: Deps,
+    env: &Env,
+    recipient: &Addr,
+    amount: Uint256,
+    send_msg: SendFundsMsg,
+    exec_msg: Option<Binary>,
+) -> Result<Response, CommonError> {
+    let tuple = send_funds_tuple::<A>(deps, env, recipient, amount, send_msg, exec_msg)?;
+
     Ok(Response::new()
-        .add_message(cosmos_msg)
-        .add_attributes(attrs))
+        .add_message(tuple.0)
+        .add_attributes(tuple.1))
 }
 
 pub fn attach_coins(coins: Vec<Coin>, recipient_addr: &Addr, exec_msg: Binary) -> CosmosMsg {
