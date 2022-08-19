@@ -1,4 +1,4 @@
-use cosmwasm_std::{Addr, StdError, StdResult, Uint256};
+use cosmwasm_std::{Addr, StdError, StdResult, Uint256, Coin};
 use cw_storage_plus::{Bound, Key, KeyDeserialize, PrimaryKey, Prefixer};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -137,6 +137,24 @@ impl<'a> KeyDeserialize for &'a Asset {
 pub struct AssetAmount {
     pub asset_info: Asset,
     pub amount:     Uint256,
+}
+
+impl From<Coin> for AssetAmount {
+    fn from(coin: Coin) -> Self {
+        AssetAmount {
+            asset_info: Asset::NativeToken { denom: coin.denom },
+            amount: coin.amount.into()
+        }
+    }
+}
+
+impl From<&Coin> for AssetAmount {
+    fn from(coin: &Coin) -> Self {
+        AssetAmount {
+            asset_info: Asset::NativeToken { denom: coin.denom.clone() },
+            amount: coin.amount.into()
+        }
+    }
 }
 
 // #[test]
