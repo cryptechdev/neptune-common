@@ -1,8 +1,10 @@
+use std::convert::TryInto;
+
 use cosmwasm_std::{Addr, StdError, StdResult, Uint256, Coin};
 use cw_storage_plus::{Bound, Key, KeyDeserialize, PrimaryKey, Prefixer};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-#[derive(Serialize, Deserialize, Clone, Debug, Hash, PartialEq, Eq, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, Hash, PartialEq, Eq, JsonSchema, PartialOrd, Ord)]
 #[repr(u8)]
 pub enum Asset {
     Token { addr: Addr },
@@ -47,6 +49,20 @@ impl<'a> PrimaryKey<'a> for &'a Asset {
 
 /// Might not be correct, Untested
 impl<'a> Prefixer<'a> for Asset {
+    fn prefix(&self) -> Vec<Key> {
+        match self {
+            Asset::Token { addr } => {
+                vec![Key::Ref(addr.as_bytes()), Key::Val8([0])]
+            }
+            Asset::NativeToken { denom } => {
+                vec![Key::Ref(denom.as_bytes()), Key::Val8([1])]
+            }
+        }
+    }
+}
+
+/// Might not be correct, Untested
+impl<'a> Prefixer<'a> for &'a Asset {
     fn prefix(&self) -> Vec<Key> {
         match self {
             Asset::Token { addr } => {
@@ -144,6 +160,24 @@ impl From<Coin> for AssetAmount {
         AssetAmount {
             asset_info: Asset::NativeToken { denom: coin.denom },
             amount: coin.amount.into()
+        }
+    }
+}
+
+impl TryInto<Coin> for AssetAmount {
+    type Error = StdError;
+
+    fn try_into(self) -> Result<Coin, Self::Error> {
+        match self.asset_info {
+            Asset::Token { .. } => {
+                return Err(StdError::GenericErr { msg: "Cannot convert to AssetAmount".into() })
+            },
+            Asset::NativeToken { denom } => {
+                Ok(Coin {
+                    denom,
+                    amount: self.amount.try_into().unwrap(),
+                })
+            },
         }
     }
 }
