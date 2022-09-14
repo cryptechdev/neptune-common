@@ -8,7 +8,7 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::fmt::Debug;
 
 use crate::{
-    asset::Asset,
+    asset::AssetInfo,
     error::{CommonError, CommonResult},
     math::to_uint128,
     querier::{query_balance, query_token_balance},
@@ -28,20 +28,20 @@ pub enum SendFundsMsg {
     SendTokens(Addr),
 }
 
-impl From<Asset> for SendFundsMsg {
-    fn from(asset: Asset) -> Self {
+impl From<AssetInfo> for SendFundsMsg {
+    fn from(asset: AssetInfo) -> Self {
         match asset {
-            Asset::NativeToken { denom } => SendFundsMsg::SendCoins(denom),
-            Asset::Token { addr } => SendFundsMsg::SendTokens(Addr::unchecked(addr)),
+            AssetInfo::NativeToken { denom } => SendFundsMsg::SendCoins(denom),
+            AssetInfo::Token { contract_addr: addr } => SendFundsMsg::SendTokens(Addr::unchecked(addr)),
         }
     }
 }
 
-impl Into<Asset> for SendFundsMsg {
-    fn into(self) -> Asset {
+impl Into<AssetInfo> for SendFundsMsg {
+    fn into(self) -> AssetInfo {
         match self {
-            SendFundsMsg::SendCoins(denom) => Asset::NativeToken { denom },
-            SendFundsMsg::SendTokens(addr) => Asset::Token { addr: addr.into() },
+            SendFundsMsg::SendCoins(denom) => AssetInfo::NativeToken { denom },
+            SendFundsMsg::SendTokens(addr) => AssetInfo::Token { contract_addr: addr.into() },
         }
     }
 }

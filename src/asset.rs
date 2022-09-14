@@ -6,12 +6,12 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Clone, Debug, Hash, PartialEq, Eq, JsonSchema, PartialOrd, Ord)]
 #[repr(u8)]
-pub enum Asset {
-    Token { addr: Addr },
+pub enum AssetInfo {
+    Token { contract_addr: Addr },
     NativeToken { denom: String },
 }
 
-impl<'a> PrimaryKey<'a> for Asset {
+impl<'a> PrimaryKey<'a> for AssetInfo {
     type Prefix = String;
     type SubPrefix = ();
     type Suffix = u8;
@@ -19,17 +19,17 @@ impl<'a> PrimaryKey<'a> for Asset {
 
     fn key(&self) -> Vec<Key> {
         match self {
-            Asset::Token { addr } => {
+            AssetInfo::Token { contract_addr: addr } => {
                 vec![Key::Ref(addr.as_bytes()), Key::Val8([0])]
             }
-            Asset::NativeToken { denom } => {
+            AssetInfo::NativeToken { denom } => {
                 vec![Key::Ref(denom.as_bytes()), Key::Val8([1])]
             }
         }
     }
 }
 
-impl<'a> PrimaryKey<'a> for &'a Asset {
+impl<'a> PrimaryKey<'a> for &'a AssetInfo {
     type Prefix = String;
     type SubPrefix = ();
     type Suffix = u8;
@@ -37,10 +37,10 @@ impl<'a> PrimaryKey<'a> for &'a Asset {
 
     fn key(&self) -> Vec<Key> {
         match self {
-            Asset::Token { addr } => {
+            AssetInfo::Token { contract_addr: addr } => {
                 vec![Key::Ref(addr.as_bytes()), Key::Val8([0])]
             }
-            Asset::NativeToken { denom } => {
+            AssetInfo::NativeToken { denom } => {
                 vec![Key::Ref(denom.as_bytes()), Key::Val8([1])]
             }
         }
@@ -48,13 +48,13 @@ impl<'a> PrimaryKey<'a> for &'a Asset {
 }
 
 /// Might not be correct, Untested
-impl<'a> Prefixer<'a> for Asset {
+impl<'a> Prefixer<'a> for AssetInfo {
     fn prefix(&self) -> Vec<Key> {
         match self {
-            Asset::Token { addr } => {
+            AssetInfo::Token { contract_addr: addr } => {
                 vec![Key::Ref(addr.as_bytes()), Key::Val8([0])]
             }
-            Asset::NativeToken { denom } => {
+            AssetInfo::NativeToken { denom } => {
                 vec![Key::Ref(denom.as_bytes()), Key::Val8([1])]
             }
         }
@@ -62,29 +62,29 @@ impl<'a> Prefixer<'a> for Asset {
 }
 
 /// Might not be correct, Untested
-impl<'a> Prefixer<'a> for &'a Asset {
+impl<'a> Prefixer<'a> for &'a AssetInfo {
     fn prefix(&self) -> Vec<Key> {
         match self {
-            Asset::Token { addr } => {
+            AssetInfo::Token { contract_addr: addr } => {
                 vec![Key::Ref(addr.as_bytes()), Key::Val8([0])]
             }
-            Asset::NativeToken { denom } => {
+            AssetInfo::NativeToken { denom } => {
                 vec![Key::Ref(denom.as_bytes()), Key::Val8([1])]
             }
         }
     }
 }
 
-impl<'a> Into<Bound<'a, Asset>> for Asset {
-    fn into(self) -> Bound<'a, Asset> { Bound::exclusive(self) }
+impl<'a> Into<Bound<'a, AssetInfo>> for AssetInfo {
+    fn into(self) -> Bound<'a, AssetInfo> { Bound::exclusive(self) }
 }
 
-impl<'a> Into<Bound<'a, &'a Asset>> for &'a Asset {
-    fn into(self) -> Bound<'a, &'a Asset> { Bound::exclusive(self) }
+impl<'a> Into<Bound<'a, &'a AssetInfo>> for &'a AssetInfo {
+    fn into(self) -> Bound<'a, &'a AssetInfo> { Bound::exclusive(self) }
 }
 
-impl KeyDeserialize for Asset {
-    type Output = Asset;
+impl KeyDeserialize for AssetInfo {
+    type Output = AssetInfo;
 
     #[inline(always)]
     fn from_vec(mut value: Vec<u8>) -> StdResult<Self::Output> {
@@ -92,10 +92,10 @@ impl KeyDeserialize for Asset {
         let mut split = value.split_off(2);
 
         match split.pop().unwrap() {
-            0 => Ok(Asset::Token {
-                addr: Addr::from_vec(split)?,
+            0 => Ok(AssetInfo::Token {
+                contract_addr: Addr::from_vec(split)?,
             }),
-            1 => Ok(Asset::NativeToken {
+            1 => Ok(AssetInfo::NativeToken {
                 denom: String::from_vec(split)?,
             }),
             _ => Err(StdError::GenericErr {
@@ -105,8 +105,8 @@ impl KeyDeserialize for Asset {
     }
 }
 
-impl<'a> KeyDeserialize for &'a Asset {
-    type Output = Asset;
+impl<'a> KeyDeserialize for &'a AssetInfo {
+    type Output = AssetInfo;
 
     #[inline(always)]
     fn from_vec(mut value: Vec<u8>) -> StdResult<Self::Output> {
@@ -114,10 +114,10 @@ impl<'a> KeyDeserialize for &'a Asset {
         let mut split = value.split_off(2);
 
         match split.pop().unwrap() {
-            0 => Ok(Asset::Token {
-                addr: Addr::from_vec(split)?,
+            0 => Ok(AssetInfo::Token {
+                contract_addr: Addr::from_vec(split)?,
             }),
-            1 => Ok(Asset::NativeToken {
+            1 => Ok(AssetInfo::NativeToken {
                 denom: String::from_vec(split)?,
             }),
             _ => Err(StdError::GenericErr {
@@ -150,29 +150,29 @@ impl<'a> KeyDeserialize for &'a Asset {
 // }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
-pub struct AssetAmount {
-    pub asset_info: Asset,
+pub struct Asset {
+    pub info:       AssetInfo,
     pub amount:     Uint256,
 }
 
-impl From<Coin> for AssetAmount {
+impl From<Coin> for Asset {
     fn from(coin: Coin) -> Self {
-        AssetAmount {
-            asset_info: Asset::NativeToken { denom: coin.denom },
+        Asset {
+            info: AssetInfo::NativeToken { denom: coin.denom },
             amount: coin.amount.into()
         }
     }
 }
 
-impl TryInto<Coin> for AssetAmount {
+impl TryInto<Coin> for Asset {
     type Error = StdError;
 
     fn try_into(self) -> Result<Coin, Self::Error> {
-        match self.asset_info {
-            Asset::Token { .. } => {
+        match self.info {
+            AssetInfo::Token { .. } => {
                 return Err(StdError::GenericErr { msg: "Cannot convert to AssetAmount".into() })
             },
-            Asset::NativeToken { denom } => {
+            AssetInfo::NativeToken { denom } => {
                 Ok(Coin {
                     denom,
                     amount: self.amount.try_into().unwrap(),
@@ -182,10 +182,10 @@ impl TryInto<Coin> for AssetAmount {
     }
 }
 
-impl From<&Coin> for AssetAmount {
+impl From<&Coin> for Asset {
     fn from(coin: &Coin) -> Self {
-        AssetAmount {
-            asset_info: Asset::NativeToken { denom: coin.denom.clone() },
+        Asset {
+            info: AssetInfo::NativeToken { denom: coin.denom.clone() },
             amount: coin.amount.into()
         }
     }
