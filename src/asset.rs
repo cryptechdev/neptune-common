@@ -5,6 +5,7 @@ use cw_storage_plus::{Bound, Key, KeyDeserialize, PrimaryKey, Prefixer};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Clone, Debug, Hash, PartialEq, Eq, JsonSchema, PartialOrd, Ord)]
+#[serde(rename_all = "snake_case")]
 #[repr(u8)]
 pub enum AssetInfo {
     Token { contract_addr: Addr },
