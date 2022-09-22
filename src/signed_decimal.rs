@@ -2,18 +2,18 @@ use std::{
     convert::{TryFrom, TryInto},
     error::Error,
     ops::{Neg, Rem, Mul},
-    str::FromStr,
+    str::FromStr, fmt,
 };
 
 use cosmwasm_std::{Decimal256, Uint256};
 use num_traits::{Num, One, Zero};
 use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, ser, Deserializer, de};
 
 use crate::{error::CommonError, signed_int::SignedInt};
 
 /// Decimal256 with a sign
-#[derive(Serialize, Deserialize, Clone, Copy, Debug, JsonSchema)]
+#[derive(Clone, Copy, Debug)]
 pub struct SignedDecimal {
     value: Decimal256,
     sign:  bool,
@@ -236,6 +236,60 @@ impl FromStr for SignedDecimal {
             value: Decimal256::from_str(val_str)?,
             sign:  sign,
         })
+    }
+}
+
+/// Serializes as a decimal string
+impl Serialize for SignedDecimal {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: ser::Serializer,
+    {
+        serializer.serialize_str(&self.to_string())
+    }
+}
+
+/// Deserializes as a base64 string
+impl<'de> Deserialize<'de> for SignedDecimal {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        deserializer.deserialize_str(SignedDecimalVisitor)
+    }
+}
+
+struct SignedDecimalVisitor;
+
+impl<'de> de::Visitor<'de> for SignedDecimalVisitor {
+    type Value = SignedDecimal;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("string-encoded signed_decimal")
+    }
+
+    fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+    where
+        E: de::Error,
+    {
+        match Self::Value::from_str(v) {
+            Ok(d) => Ok(d),
+            Err(e) => Err(E::custom(format!("Error parsing signed_decimal '{}': {}", v, e))),
+        }
+    }
+}
+
+impl JsonSchema for SignedDecimal {
+    fn schema_name() -> String {
+        "signed_decimal".to_string()
+    }
+
+    fn json_schema(gen: &mut schemars::gen::SchemaGenerator) -> schemars::schema::Schema {
+        String::json_schema(gen)
+    }
+
+    fn is_referenceable() -> bool {
+        true
     }
 }
 
