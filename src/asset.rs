@@ -1,11 +1,11 @@
-use std::{convert::TryInto, error::Error};
+use std::{convert::TryInto};
 
 use cosmwasm_std::{Addr, StdError, StdResult, Uint256, Coin, Decimal256};
 use cw_storage_plus::{Bound, Key, KeyDeserialize, PrimaryKey, Prefixer};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::{error::{CommonResult, CommonError}, math::{get_difference_or_zero, get_difference_or_error}};
+use crate::{error::{CommonResult, CommonError}, math::{get_difference_or_zero}};
 #[derive(Serialize, Deserialize, Clone, Debug, Hash, PartialEq, Eq, JsonSchema, PartialOrd, Ord)]
 #[serde(rename_all = "snake_case")]
 #[repr(u8)]
