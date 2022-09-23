@@ -241,6 +241,11 @@ pub enum Quantity {
     Amount(Uint256)
 }
 
+pub struct AddToPoolResponse {
+    pub shares_added: Uint256,
+    pub amount_added: Uint256
+}
+
 pub fn add_to_pool(
     quantity: Quantity,
     info: &AssetInfo,
@@ -248,7 +253,7 @@ pub fn add_to_pool(
     pool_shares:        &mut Vec<AssetAmount>,
     account_principles: &mut Vec<AssetAmount>,
     account_shares:     &mut Vec<AssetAmount>, 
-) {
+) -> AddToPoolResponse {
     let pool_principle = get_or_zero_mut(pool_principles, info);
     let pool_shares = get_or_zero_mut(pool_shares, info);
     let account_shares = get_or_zero_mut(account_shares, info);
@@ -278,6 +283,11 @@ pub fn add_to_pool(
 
     *pool_shares = *pool_shares + shares_to_issue;
     *pool_principle = *pool_principle + amount_to_issue;
+
+    AddToPoolResponse {
+        shares_added: shares_to_issue,
+        amount_added: amount_to_issue,
+    }
 
 }
 
