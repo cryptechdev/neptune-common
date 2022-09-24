@@ -30,6 +30,7 @@ thiserror = "1.0.31"
 neptune-authorization = { path = "../neptune-auth", default-features = false, version = "0.1.0" }
 moneymarket = { path = "./packages/moneymarket", default-features = false, version = "0.2.0" }
 terraswap = { path = "./packages/terraswap", default-features = false, version = "2.4.1" }
+pid = { path = "../../packages/pid", version = "3.0.0", features = ["serde"] }
 
 [dev-dependencies]
 cosmwasm-schema = "1.0.0"

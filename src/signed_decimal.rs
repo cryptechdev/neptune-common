@@ -5,7 +5,7 @@ use std::{
     str::FromStr, fmt,
 };
 
-use cosmwasm_std::{Decimal256, Uint256};
+use cosmwasm_std::{Decimal256, Uint256, StdError};
 use num_traits::{Num, One, Zero};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize, ser, Deserializer, de};
@@ -68,7 +68,9 @@ impl Neg for SignedDecimal {
 impl Rem for SignedDecimal {
     type Output = Self;
 
-    fn rem(self, _rhs: Self) -> Self::Output { todo!() }
+    fn rem(self, rhs: Self) -> Self::Output { 
+        Decimal256::new(self.value.atomics().rem(rhs.value.atomics())).into()
+    }
 }
 
 impl One for SignedDecimal {
@@ -92,9 +94,12 @@ impl Zero for SignedDecimal {
 }
 
 impl Num for SignedDecimal {
-    type FromStrRadixErr = Self;
+    type FromStrRadixErr = StdError;
 
-    fn from_str_radix(_str: &str, _radix: u32) -> Result<Self, Self::FromStrRadixErr> { todo!() }
+    /// TODO: Should probably impl this for completion sake
+    fn from_str_radix(_str: &str, _radix: u32) -> Result<Self, Self::FromStrRadixErr> { 
+        Err(StdError::GenericErr { msg: "from_str_radix not implemented for SignedDecimal".into() })
+    }
 }
 
 impl num_traits::sign::Signed for SignedDecimal {
@@ -110,11 +115,23 @@ impl num_traits::sign::Signed for SignedDecimal {
         new.abs()
     }
 
-    fn signum(&self) -> Self { todo!() }
+    fn signum(&self) -> Self {
+        match self.sign {
+            true => Self::one(),
+            false => SignedDecimal {
+                value: Decimal256::one(),
+                sign: false,
+            },
+        }
+    }
 
-    fn is_positive(&self) -> bool { todo!() }
+    fn is_positive(&self) -> bool {
+        self.sign
+    }
 
-    fn is_negative(&self) -> bool { todo!() }
+    fn is_negative(&self) -> bool {
+        !self.sign
+    }
 }
 
 impl ToString for SignedDecimal {
@@ -318,6 +335,30 @@ impl Default for SignedDecimal {
         }
     }
 }
+
+// #[test]
+// fn decimal256_pid_test() {
+//     let mut pid = pid::Pid {
+//         kp: SignedDecimal::from_str("").unwrap(),
+//         ki: SignedDecimal::from_str("1.0").unwrap(),
+//         kd: SignedDecimal::from_str("1.0").unwrap(),
+//         p_limit: SignedDecimal::from_str("1.0").unwrap(),
+//         i_limit: SignedDecimal::from_str("1.0").unwrap(),
+//         d_limit: SignedDecimal::from_str("1.0").unwrap(),
+//         output_limit: SignedDecimal::from_str("1.0").unwrap(),
+//         setpoint: SignedDecimal::from_str("1.0").unwrap(),
+//         prev_measurement: SignedDecimal::from_str("1.0").unwrap(),
+//         integral_term: SignedDecimal::from_str("1.0").unwrap(),
+//     };
+
+//     let out = pid.next_control_output(0.0);
+//     assert_eq!(out.p, 10.0); // 1.0 * 10.0
+//     assert_eq!(out.output, 1.0);
+
+//     let out = pid.next_control_output(20.0);
+//     assert_eq!(out.p, -10.0); // 1.0 * (10.0 - 20.0)
+//     assert_eq!(out.output, -1.0);
+// }
 
 #[test]
 fn signed_decimal_test() {
