@@ -1,7 +1,7 @@
 use std::{convert::TryInto, vec::IntoIter, ops::Mul};
 
 use cosmwasm_std::{Addr, StdError, StdResult, Uint256, Coin, Decimal256};
-use cw_storage_plus::{Bound, Key, KeyDeserialize, PrimaryKey, Prefixer};
+use cw_storage_plus::{Bound, Key, KeyDeserialize, PrimaryKey, Prefixer, Bounder};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -84,6 +84,24 @@ impl<'a> Into<Bound<'a, AssetInfo>> for AssetInfo {
 
 impl<'a> Into<Bound<'a, &'a AssetInfo>> for &'a AssetInfo {
     fn into(self) -> Bound<'a, &'a AssetInfo> { Bound::exclusive(self) }
+}
+
+impl<'a> Bounder<'a> for AssetInfo {
+    fn inclusive_bound(self) -> Option<Bound<'a, Self>> {
+        Some(Bound::inclusive(self))
+    }
+    fn exclusive_bound(self) -> Option<Bound<'a, Self>> {
+        Some(Bound::exclusive(self))
+    }
+}
+
+impl<'a> Bounder<'a> for &'a AssetInfo {
+    fn inclusive_bound(self) -> Option<Bound<'a, Self>> {
+        Some(Bound::inclusive(self))
+    }
+    fn exclusive_bound(self) -> Option<Bound<'a, Self>> {
+        Some(Bound::exclusive(self))
+    }
 }
 
 impl KeyDeserialize for AssetInfo {

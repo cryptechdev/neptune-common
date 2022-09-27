@@ -1,5 +1,5 @@
 use cosmwasm_std::{Addr, CanonicalAddr, Deps, StdResult, StdError, Order};
-use cw_storage_plus::{Bound, PrimaryKey, KeyDeserialize, Map};
+use cw_storage_plus::{PrimaryKey, KeyDeserialize, Map, Bounder};
 use serde::{de::DeserializeOwned, Serialize};
 
 // Neptune Package crate imports
@@ -19,7 +19,7 @@ const MAX_LIMIT: u32 = 30;
 const DEFAULT_LIMIT: u32 = 10;
 pub fn read_map<
     'a,
-    K: Into<Bound<'a, K>> + PrimaryKey<'a> + KeyDeserialize<Output = K> + 'static,
+    K: /*Into<Bound<'a, K>> + */Bounder<'a> + PrimaryKey<'a> + KeyDeserialize<Output = K> + 'static,
     V: Serialize + DeserializeOwned,
 >(
     deps: Deps,
@@ -28,7 +28,7 @@ pub fn read_map<
     map: Map<'a, K, V>,
 ) -> Result<Vec<(K, V)>, CommonError> {
     let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
-    let start = start_after.map(|key| key.into());
+    let start = start_after.map(|key| key.inclusive_bound().unwrap());
 
     Ok(map
         .range(deps.storage, start, None, Order::Ascending)
