@@ -35,6 +35,9 @@ pub enum CommonError {
     #[error("{} Insufficient liquidity to send funds", NEPT_ERR)]
     InsufficientLiquidity {},
 
+    #[error("{} Asset not found", NEPT_ERR)]
+    AssetNotFound{},
+
     #[error("{} No stable funds were attached", NEPT_ERR)]
     NoFundsReceived {},
 
