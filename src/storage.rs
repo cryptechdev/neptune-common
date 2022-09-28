@@ -15,11 +15,9 @@ pub const CONFIG_KEY: &str = "config";
 pub const PARAMS_KEY: &str = "params";
 pub const STATE_KEY: &str = "state";
 
-const MAX_LIMIT: u32 = 1000;
-const DEFAULT_LIMIT: u32 = 10;
 pub fn read_map<
     'a,
-    K: /*Into<Bound<'a, K>> + */Bounder<'a> + PrimaryKey<'a> + KeyDeserialize<Output = K> + 'static,
+    K: Bounder<'a> + PrimaryKey<'a> + KeyDeserialize<Output = K> + 'static,
     V: Serialize + DeserializeOwned,
 >(
     deps: Deps,
@@ -27,14 +25,24 @@ pub fn read_map<
     limit: Option<u32>,
     map: Map<'a, K, V>,
 ) -> Result<Vec<(K, V)>, CommonError> {
-    let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
     let start = start_after.map(|key| key.inclusive_bound().unwrap());
-
-    Ok(map
-        .range(deps.storage, start, None, Order::Ascending)
-        .take(limit)
-        .into_iter()
-        .collect::<Result<Vec<(K,V)>,StdError>>()?)
+    let vec = 
+    match limit {
+        Some(limit) => {
+            map
+                .range(deps.storage, start, None, Order::Ascending)
+                .take(limit as usize)
+                .into_iter()
+                .collect::<Result<Vec<(K,V)>,StdError>>()?
+        },
+        None => {
+            map
+                .range(deps.storage, start, None, Order::Ascending)
+                .into_iter()
+                .collect::<Result<Vec<(K,V)>,StdError>>()?
+        },
+    };
+    Ok(vec)
 }
 
 pub fn get_contract_addr(

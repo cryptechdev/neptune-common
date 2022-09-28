@@ -192,6 +192,12 @@ impl Into<AssetVec> for AssetAmount {
     }
 }
 
+impl Into<(AssetInfo, Uint256)> for AssetAmount {
+    fn into(self) -> (AssetInfo, Uint256) {
+        (self.info, self.amount)
+    }
+}
+
 impl Into<AssetVec> for Vec<AssetAmount> {
     fn into(self) -> AssetVec {
         let mut asset_vec = vec![];
@@ -557,6 +563,14 @@ where
 impl<T> From<Vec<(AssetInfo, T)>> for AssetTupleVec<T> {
     fn from(object: Vec<(AssetInfo, T)>) -> Self {
         AssetTupleVec(object)
+    }
+}
+
+impl From<Vec<AssetAmount>> for AssetTupleVec<Uint256> {
+    fn from(mut object: Vec<AssetAmount>) -> Self {
+        object.iter_mut().map(|x| {
+            (x.info.clone(), x.amount)
+        }).collect::<Vec<(AssetInfo, Uint256)>>().into()
     }
 }
 
