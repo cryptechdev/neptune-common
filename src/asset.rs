@@ -14,6 +14,15 @@ pub enum AssetInfo {
     NativeToken { denom: String },
 }
 
+impl ToString for AssetInfo {
+    fn to_string(&self) -> String {
+        match self {
+            AssetInfo::Token { contract_addr } => contract_addr.to_string(),
+            AssetInfo::NativeToken { denom } => denom.clone(),
+        }
+    }
+}
+
 impl<'a> PrimaryKey<'a> for AssetInfo {
     type Prefix = String;
     type SubPrefix = ();
@@ -285,13 +294,11 @@ pub struct AddToPoolResponse {
 pub fn add_to_pool(
     quantity: Quantity,
     info: &AssetInfo,
-    pool_principles:    &mut Vec<AssetAmount>,
-    pool_shares:        &mut Vec<AssetAmount>,
+    pool_principle:     &mut Uint256,
+    pool_shares:        &mut Uint256,
     account_principles: &mut Vec<AssetAmount>,
     account_shares:     &mut Vec<AssetAmount>, 
 ) -> AddToPoolResponse {
-    let pool_principle = get_or_zero_mut(pool_principles, info);
-    let pool_shares = get_or_zero_mut(pool_shares, info);
     let account_shares = get_or_zero_mut(account_shares, info);
     let account_principle = get_or_zero_mut(account_principles, info);
 
@@ -335,14 +342,12 @@ pub struct RemoveFromPoolResponse {
 pub fn remove_from_pool(
     quantity: Quantity,
     info: &AssetInfo,
-    pool_principles:    &mut Vec<AssetAmount>,
-    pool_shares:        &mut Vec<AssetAmount>,
+    pool_principle:     &mut Uint256,
+    pool_shares:        &mut Uint256,
     account_principles: &mut Vec<AssetAmount>,
     account_shares:     &mut Vec<AssetAmount>,
 ) -> CommonResult<RemoveFromPoolResponse> {
-    if let Some(pool_principle)    = get_amount_mut(pool_principles, info)
-    && let Some(pool_shares)       = get_amount_mut(pool_shares, info)
-    && let Some(account_principle) = get_amount_mut(account_principles, &info)
+    if let Some(account_principle) = get_amount_mut(account_principles, &info)
     && let Some(account_shares)    = get_amount_mut(account_shares, &info) {
 
         let mut shares_to_remove;
@@ -415,6 +420,21 @@ pub struct AssetTupleVec<T>(Vec<(AssetInfo, T)>);
 
 impl<T> AssetTupleVec<T>
 {
+    pub fn iter_mut(&mut self) -> impl Iterator<Item=&mut (AssetInfo, T)> {
+        self.0.iter_mut()
+    }
+
+    pub fn insert(&mut self, tuple: (AssetInfo, T)) {
+        self.0.push(tuple);
+    }
+
+    pub fn contains(&self, asset_info: &AssetInfo) -> bool {
+        match self.may_get_ref(asset_info) {
+            Some(_) => true,
+            None => false,
+        }
+    }
+
     pub fn get_asset_vec(&self) -> AssetVec {
         let mut asset_vec = vec![];
         for (asset, _) in &self.0 {
@@ -488,6 +508,32 @@ impl<T> AssetTupleVec<T>
             output.push((asset_info.clone(), function_output));
         }
         Ok(output.into())
+    }
+}
+
+impl<T> Default for AssetTupleVec<T> {
+    fn default() -> Self {
+        Self { 0: vec![] }
+    }
+}
+
+impl<T> IntoIterator for AssetTupleVec<T> {
+    type Item = (AssetInfo, T);
+
+    type IntoIter = <Vec<(AssetInfo, T)> as IntoIterator>::IntoIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
+    }
+}
+
+impl<'a, T> IntoIterator for &'a mut AssetTupleVec<T> {
+    type Item = &'a mut (AssetInfo, T);
+
+    type IntoIter = <&'a mut Vec<(AssetInfo, T)> as IntoIterator>::IntoIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.iter_mut()
     }
 }
 

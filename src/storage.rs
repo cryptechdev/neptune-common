@@ -15,7 +15,7 @@ pub const CONFIG_KEY: &str = "config";
 pub const PARAMS_KEY: &str = "params";
 pub const STATE_KEY: &str = "state";
 
-const MAX_LIMIT: u32 = 30;
+const MAX_LIMIT: u32 = 1000;
 const DEFAULT_LIMIT: u32 = 10;
 pub fn read_map<
     'a,
