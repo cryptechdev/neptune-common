@@ -1,11 +1,11 @@
 use std::{convert::TryInto};
 
-use cosmwasm_std::{Addr, StdError, StdResult, Uint256, Coin, Decimal256};
+use cosmwasm_std::{Addr, StdError, StdResult, Uint256, Coin};
 use cw_storage_plus::{Bound, Key, KeyDeserialize, PrimaryKey, Prefixer, Bounder};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::{error::{CommonResult, CommonError}, math::{get_difference_or_zero}, asset_map::{AssetVec, AssetMap}};
+use crate::{asset_map::{AssetVec, AssetMap}};
 #[derive(Serialize, Deserialize, Clone, Debug, Hash, PartialEq, Eq, JsonSchema, PartialOrd, Ord)]
 #[serde(rename_all = "snake_case")]
 #[repr(u8)]
@@ -222,155 +222,6 @@ impl From<&Coin> for AssetAmount {
             amount: coin.amount.into()
         }
     }
-}
-
-// pub fn get_or_zero_mut<'a, 'b>(asset_amounts: &'a mut AssetMap<Uint256>, info: &'b AssetInfo)
-// -> &'a mut Uint256 {
-//     match asset_amounts.iter().position(|x| &x.info == info) {
-//         Some(index) => {
-//             &mut asset_amounts.get_mut(index).unwrap().amount
-//         },
-//         None => {
-//             let asset_amount = AssetAmount {
-//                 info: info.clone(),
-//                 amount: Uint256::zero(),
-//             };
-//             asset_amounts.push(asset_amount);
-//             &mut asset_amounts.last_mut().unwrap().amount
-//         },
-//     }
-// }
-
-// pub fn get_amount<'a, 'b>(asset_amounts: &'a AssetMap<Uint256>, info: &'b AssetInfo)
-// -> Option<&'a Uint256> {
-//     match asset_amounts.iter().position(|x| &x.info == info) {
-//         Some(index) => {
-//             Some(&asset_amounts.get(index).unwrap().amount)
-//         },
-//         None => {
-//             None
-//         },
-//     }
-// }
-
-// pub fn get_amount_mut<'a, 'b>(asset_amounts: &'a mut AssetMap<Uint256>, info: &'b AssetInfo)
-// -> Option<&'a mut Uint256> {
-//     match asset_amounts.iter().position(|x| &x.info == info) {
-//         Some(index) => {
-//             Some(&mut asset_amounts.get_mut(index).unwrap().amount)
-//         },
-//         None => {
-//             None
-//         },
-//     }
-// }
-
-pub enum Quantity {
-    Shares(Uint256),
-    Amount(Uint256)
-}
-
-pub struct AddToPoolResponse {
-    pub shares_added: Uint256,
-    pub amount_added: Uint256
-}
-
-pub fn add_to_pool(
-    quantity: Quantity,
-    info: &AssetInfo,
-    pool_principle:     &mut Uint256,
-    pool_shares:        &mut Uint256,
-    account_principles: &mut AssetMap<Uint256>,
-    account_shares:     &mut AssetMap<Uint256>, 
-) -> AddToPoolResponse {
-    let account_shares = account_shares.get_mut_or(info, Uint256::zero());
-    let account_principle = account_principles.get_mut_or(info, Uint256::zero());
-
-    let shares_to_issue;
-    let amount_to_issue;
-
-    match quantity {
-        Quantity::Shares(shares) => {
-            shares_to_issue = shares;
-            amount_to_issue = shares_to_issue * *pool_principle / *pool_shares
-        },
-        Quantity::Amount(amount) => {
-            amount_to_issue = amount;
-            shares_to_issue = if *pool_principle == Uint256::zero() {
-                amount
-            } else {
-                amount / *pool_principle * *pool_shares
-            };
-        },
-    }
-
-    *account_shares = *account_shares + shares_to_issue;
-
-    *account_principle = *account_principle + amount_to_issue;
-
-    *pool_shares = *pool_shares + shares_to_issue;
-    *pool_principle = *pool_principle + amount_to_issue;
-
-    AddToPoolResponse {
-        shares_added: shares_to_issue,
-        amount_added: amount_to_issue,
-    }
-
-}
-
-pub struct RemoveFromPoolResponse {
-    pub shares_removed: Uint256,
-    pub amount_removed: Uint256
-}
-
-pub fn remove_from_pool(
-    quantity: Quantity,
-    info: &AssetInfo,
-    pool_principle:     &mut Uint256,
-    pool_shares:        &mut Uint256,
-    account_principles: &mut AssetMap<Uint256>,
-    account_shares:     &mut AssetMap<Uint256>,
-) -> CommonResult<RemoveFromPoolResponse> {
-    if let Some(account_principle) = account_principles.may_get_ref_mut(&info)
-    && let Some(account_shares)    = account_shares.may_get_ref_mut(&info) {
-
-        let mut shares_to_remove;
-        let mut amount_to_remove;
-    
-        match quantity {
-            Quantity::Shares(shares) => {
-                shares_to_remove = shares.min(*account_shares);
-                let fraction_to_withdraw = Decimal256::from_ratio(shares_to_remove, *pool_shares);
-                amount_to_remove = fraction_to_withdraw * *pool_principle;
-            },
-            Quantity::Amount(amount) => {
-                amount_to_remove = amount;
-                shares_to_remove = if *pool_principle == Uint256::zero() {
-                    Uint256::zero()
-                } else {
-                    amount / *pool_principle * *pool_shares
-                };
-                if shares_to_remove > *account_shares {
-                    shares_to_remove = *account_shares;
-                    let fraction_to_withdraw = Decimal256::from_ratio(shares_to_remove, *pool_shares);
-                    amount_to_remove = fraction_to_withdraw * *pool_principle;
-                }
-            },
-        }
-
-        *account_shares = *account_shares - shares_to_remove;
-        *account_principle = get_difference_or_zero(*account_principle, amount_to_remove);
-
-        *pool_shares = *pool_shares - shares_to_remove;
-        *pool_principle = *pool_principle - amount_to_remove;
-
-        // TODO: think about removing entry from vec if amount remaining is 0
-
-        Ok(RemoveFromPoolResponse{
-            shares_removed: shares_to_remove,
-            amount_removed: amount_to_remove,
-        })
-    } else { Err(CommonError::InsufficientLiquidity {  }) }
 }
 
 // #[test]

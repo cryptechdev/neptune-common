@@ -1,18 +1,19 @@
 use cosmwasm_std::{Decimal256, Uint256};
+use schemars::JsonSchema;
+use serde::{Serialize, Deserialize};
 
 use crate::{math::get_difference_or_zero};
 
-
-#[derive(Default, Copy, Clone)]
+#[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq, Default, JsonSchema)]
 pub struct Pool {
-    balance: Uint256,
-    shares: Uint256,
+    pub balance: Uint256,
+    pub shares: Uint256,
 }
 
-#[derive(Default, Copy, Clone)]
+#[derive(Serialize, Deserialize, Copy, Clone, Debug, Default, PartialEq, JsonSchema)]
 pub struct PoolAccount {
-    principle: Uint256,
-    shares: Uint256,
+    pub principle: Uint256,
+    pub shares: Uint256,
 }
 
 impl Pool 
@@ -137,6 +138,7 @@ impl Pool
         *pool_balance = *pool_balance - amount_to_remove;
 
         RemoveAmountResponse{
+            amount_removed: amount_to_remove,
             shares_removed: shares_to_remove,
         }
     }
@@ -169,6 +171,7 @@ pub struct RemoveSharesResponse {
 }
 
 pub struct RemoveAmountResponse {
+    pub amount_removed: Uint256,
     pub shares_removed: Uint256,
 }
 
