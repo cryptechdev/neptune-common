@@ -1,11 +1,12 @@
-use std::ops::Mul;
+use std::{ops::Mul, iter::FromIterator};
 
+use num_traits::Zero;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::error::{CommonResult, CommonError};
 
-#[derive(Clone, Debug, Deserialize, Serialize, JsonSchema)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize, JsonSchema)]
 pub struct Map<K, V>(Vec<(K, V)>);
 
 impl<K, V> Map<K, V>
@@ -14,6 +15,10 @@ where
 {
     pub fn iter_mut(&mut self) -> impl Iterator<Item=&mut (K, V)> {
         self.0.iter_mut()
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item=&(K, V)> {
+        self.0.iter()
     }
 
     pub fn insert(&mut self, tuple: (K, V)) {
@@ -93,11 +98,52 @@ where
         }
         Ok(output.into())
     }
+
+    pub fn get_or_zero_mut<'a, 'b>(&'a mut self, key: &'b K) -> &'a mut V 
+    where V: Zero
+    {
+        match self.0.iter().position(|x| &x.0 == key) {
+            Some(index) => &mut self.0[index].1,
+            None => {
+                self.insert((key.clone(), V::zero()));
+                &mut self.0.last_mut().unwrap().1
+            },
+        }
+    }
+
+    pub fn get_mut_or<'a, 'b>(&'a mut self, key: &'b K, val: V) -> &'a mut V 
+    {
+        match self.0.iter().position(|x| &x.0 == key) {
+            Some(index) => &mut self.0[index].1,
+            None => {
+                self.insert((key.clone(), val));
+                &mut self.0.last_mut().unwrap().1
+            },
+        }
+    }
+
+    pub fn mul_all<U>(self, rhs: Map<K, U>) -> CommonResult<Map<K, <V as Mul<U>>::Output>>
+    where
+        V: Mul<U>, U: Clone
+    {
+        let mut output = vec![];
+        for (key, lhs_val) in self {
+            let rhs_val = rhs.get_ref(&key)?.clone();
+            output.push((key, lhs_val * rhs_val ))
+        }
+        Ok(output.into())
+    }
 }
 
 impl<K, V> Default for Map<K, V> {
     fn default() -> Self {
         Self { 0: vec![] }
+    }
+}
+
+impl<K, V> FromIterator<(K, V)> for Map<K, V> {
+    fn from_iter<T: IntoIterator<Item = (K, V)>>(iter: T) -> Self {
+        Vec::<(K, V)>::from_iter(iter).into()
     }
 }
 
@@ -108,6 +154,16 @@ impl<K, V> IntoIterator for Map<K, V> {
 
     fn into_iter(self) -> Self::IntoIter {
         self.0.into_iter()
+    }
+}
+
+impl<'a, K, V> IntoIterator for &'a Map<K, V> {
+    type Item = &'a (K, V);
+
+    type IntoIter = <&'a Vec<(K, V)> as IntoIterator>::IntoIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.iter()
     }
 }
 

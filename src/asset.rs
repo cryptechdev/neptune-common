@@ -5,7 +5,7 @@ use cw_storage_plus::{Bound, Key, KeyDeserialize, PrimaryKey, Prefixer, Bounder}
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::{error::{CommonResult, CommonError}, math::{get_difference_or_zero}, asset_map::AssetVec};
+use crate::{error::{CommonResult, CommonError}, math::{get_difference_or_zero}, asset_map::{AssetVec, AssetMap}};
 #[derive(Serialize, Deserialize, Clone, Debug, Hash, PartialEq, Eq, JsonSchema, PartialOrd, Ord)]
 #[serde(rename_all = "snake_case")]
 #[repr(u8)]
@@ -176,12 +176,12 @@ impl Into<(AssetInfo, Uint256)> for AssetAmount {
     }
 }
 
-impl Into<AssetVec> for Vec<AssetAmount> {
+impl Into<AssetVec> for AssetMap<Uint256> {
     fn into(self) -> AssetVec {
         let mut asset_vec = vec![];
         for object in self {
-            if !asset_vec.contains(&object.info) {
-                asset_vec.push(object.info.clone());
+            if !asset_vec.contains(&object.0) {
+                asset_vec.push(object.0.clone());
             }
         }
         asset_vec.into()
@@ -224,46 +224,46 @@ impl From<&Coin> for AssetAmount {
     }
 }
 
-pub fn get_or_zero_mut<'a, 'b>(asset_amounts: &'a mut Vec<AssetAmount>, info: &'b AssetInfo)
--> &'a mut Uint256 {
-    match asset_amounts.iter().position(|x| &x.info == info) {
-        Some(index) => {
-            &mut asset_amounts.get_mut(index).unwrap().amount
-        },
-        None => {
-            let asset_amount = AssetAmount {
-                info: info.clone(),
-                amount: Uint256::zero(),
-            };
-            asset_amounts.push(asset_amount);
-            &mut asset_amounts.last_mut().unwrap().amount
-        },
-    }
-}
+// pub fn get_or_zero_mut<'a, 'b>(asset_amounts: &'a mut AssetMap<Uint256>, info: &'b AssetInfo)
+// -> &'a mut Uint256 {
+//     match asset_amounts.iter().position(|x| &x.info == info) {
+//         Some(index) => {
+//             &mut asset_amounts.get_mut(index).unwrap().amount
+//         },
+//         None => {
+//             let asset_amount = AssetAmount {
+//                 info: info.clone(),
+//                 amount: Uint256::zero(),
+//             };
+//             asset_amounts.push(asset_amount);
+//             &mut asset_amounts.last_mut().unwrap().amount
+//         },
+//     }
+// }
 
-pub fn get_amount<'a, 'b>(asset_amounts: &'a Vec<AssetAmount>, info: &'b AssetInfo)
--> Option<&'a Uint256> {
-    match asset_amounts.iter().position(|x| &x.info == info) {
-        Some(index) => {
-            Some(&asset_amounts.get(index).unwrap().amount)
-        },
-        None => {
-            None
-        },
-    }
-}
+// pub fn get_amount<'a, 'b>(asset_amounts: &'a AssetMap<Uint256>, info: &'b AssetInfo)
+// -> Option<&'a Uint256> {
+//     match asset_amounts.iter().position(|x| &x.info == info) {
+//         Some(index) => {
+//             Some(&asset_amounts.get(index).unwrap().amount)
+//         },
+//         None => {
+//             None
+//         },
+//     }
+// }
 
-pub fn get_amount_mut<'a, 'b>(asset_amounts: &'a mut Vec<AssetAmount>, info: &'b AssetInfo)
--> Option<&'a mut Uint256> {
-    match asset_amounts.iter().position(|x| &x.info == info) {
-        Some(index) => {
-            Some(&mut asset_amounts.get_mut(index).unwrap().amount)
-        },
-        None => {
-            None
-        },
-    }
-}
+// pub fn get_amount_mut<'a, 'b>(asset_amounts: &'a mut AssetMap<Uint256>, info: &'b AssetInfo)
+// -> Option<&'a mut Uint256> {
+//     match asset_amounts.iter().position(|x| &x.info == info) {
+//         Some(index) => {
+//             Some(&mut asset_amounts.get_mut(index).unwrap().amount)
+//         },
+//         None => {
+//             None
+//         },
+//     }
+// }
 
 pub enum Quantity {
     Shares(Uint256),
@@ -280,11 +280,11 @@ pub fn add_to_pool(
     info: &AssetInfo,
     pool_principle:     &mut Uint256,
     pool_shares:        &mut Uint256,
-    account_principles: &mut Vec<AssetAmount>,
-    account_shares:     &mut Vec<AssetAmount>, 
+    account_principles: &mut AssetMap<Uint256>,
+    account_shares:     &mut AssetMap<Uint256>, 
 ) -> AddToPoolResponse {
-    let account_shares = get_or_zero_mut(account_shares, info);
-    let account_principle = get_or_zero_mut(account_principles, info);
+    let account_shares = account_shares.get_mut_or(info, Uint256::zero());
+    let account_principle = account_principles.get_mut_or(info, Uint256::zero());
 
     let shares_to_issue;
     let amount_to_issue;
@@ -328,11 +328,11 @@ pub fn remove_from_pool(
     info: &AssetInfo,
     pool_principle:     &mut Uint256,
     pool_shares:        &mut Uint256,
-    account_principles: &mut Vec<AssetAmount>,
-    account_shares:     &mut Vec<AssetAmount>,
+    account_principles: &mut AssetMap<Uint256>,
+    account_shares:     &mut AssetMap<Uint256>,
 ) -> CommonResult<RemoveFromPoolResponse> {
-    if let Some(account_principle) = get_amount_mut(account_principles, &info)
-    && let Some(account_shares)    = get_amount_mut(account_shares, &info) {
+    if let Some(account_principle) = account_principles.may_get_ref_mut(&info)
+    && let Some(account_shares)    = account_shares.may_get_ref_mut(&info) {
 
         let mut shares_to_remove;
         let mut amount_to_remove;
