@@ -1,4 +1,4 @@
-use std::{convert::TryInto, vec::IntoIter, ops::Mul};
+use std::{convert::TryInto, vec::IntoIter};
 
 use cosmwasm_std::{Addr, StdError, StdResult, Uint256, Coin, Decimal256};
 use cw_storage_plus::{Bound, Key, KeyDeserialize, PrimaryKey, Prefixer, Bounder};
@@ -156,28 +156,6 @@ impl<'a> KeyDeserialize for &'a AssetInfo {
         }
     }
 }
-
-// impl From<Vec<u8>> for Asset {
-//     fn from(array: Vec<u8>) -> Self { Self::from_vec(array).unwrap() }
-// }
-
-// impl Into<Vec<u8>> for Asset {
-//     fn into(self) -> Vec<u8> {
-//         match self {
-//             Asset::Token { addr } => {
-//                 //let prefix = Into::<Vec<u8>>::into(0u8);
-//                 let mut vec = addr.as_bytes().to_vec();
-//                 vec.push(0u8);
-//                 vec
-//             }
-//             Asset::NativeToken { denom } => {
-//                 let mut vec = denom.as_bytes().to_vec();
-//                 vec.push(1u8);
-//                 vec
-//             }
-//         }
-//     }
-// }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 #[serde(rename ="Asset")]
@@ -421,164 +399,7 @@ impl From<Vec<AssetInfo>> for AssetVec {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize, JsonSchema)]
-pub struct AssetTupleVec<T>(Vec<(AssetInfo, T)>);
 
-impl<T> AssetTupleVec<T>
-{
-    pub fn iter_mut(&mut self) -> impl Iterator<Item=&mut (AssetInfo, T)> {
-        self.0.iter_mut()
-    }
-
-    pub fn insert(&mut self, tuple: (AssetInfo, T)) {
-        self.0.push(tuple);
-    }
-
-    pub fn contains(&self, asset_info: &AssetInfo) -> bool {
-        match self.may_get_ref(asset_info) {
-            Some(_) => true,
-            None => false,
-        }
-    }
-
-    pub fn get_asset_vec(&self) -> AssetVec {
-        let mut asset_vec = vec![];
-        for (asset, _) in &self.0 {
-            if !asset_vec.contains(asset) {
-                asset_vec.push(asset.clone());
-            }
-        }
-        asset_vec.into()
-    }
-
-    pub fn get(self, asset_info: &AssetInfo) -> CommonResult<T> {
-        for val in self.0 {
-            if &val.0 == asset_info {
-                return Ok(val.1)
-            }
-        }
-        return Err(CommonError::AssetNotFound{});
-    }
-
-    pub fn may_get(self, asset_info: &AssetInfo) -> Option<T> {
-        for val in self.0 {
-            if &val.0 == asset_info {
-                return Some(val.1)
-            }
-        }
-        return None;
-    }
-
-    pub fn get_ref(&self, asset_info: &AssetInfo) -> CommonResult<&T> {
-        match self.0.iter().position(|x| &x.0 == asset_info) {
-            Some(index) => Ok(&self.0[index].1),
-            None => Err(CommonError::AssetNotFound{}),
-        }
-    }
-
-    pub fn may_get_ref(&self, asset_info: &AssetInfo) -> Option<&T> {
-        match self.0.iter().position(|x| &x.0 == asset_info) {
-            Some(index) => Some(&self.0[index].1),
-            None => None,
-        }
-    }
-
-    pub fn get_ref_mut(&mut self, asset_info: &AssetInfo) -> CommonResult<&mut T> {
-        match self.0.iter().position(|x| &x.0 == asset_info) {
-            Some(index) => Ok(&mut self.0[index].1),
-            None => Err(CommonError::AssetNotFound{}),
-        }
-    }
-
-    pub fn may_get_ref_mut(&mut self, asset_info: &AssetInfo) -> Option<&mut T> {
-        match self.0.iter().position(|x| &x.0 == asset_info) {
-            Some(index) => Some(&mut self.0[index].1),
-            None => None,
-        }
-    }
-
-    pub fn map_val<F: Fn(&T) -> O, O>(&mut self, f:F) -> AssetTupleVec<O> {
-        let mut output = vec![];
-        for (asset_info, val) in &self.0 {
-            let function_output  = f(&val);
-            output.push((asset_info.clone(), function_output));
-        }
-        output.into()
-    }
-
-    pub fn map_result_val<F: Fn(&T) -> Result<O, E>, O, E>(&mut self, f:F) -> Result<AssetTupleVec<O>, E>
-    {
-        let mut output = vec![];
-        for (asset_info, val) in &self.0 {
-            let function_output  = f(&val)?;
-            output.push((asset_info.clone(), function_output));
-        }
-        Ok(output.into())
-    }
-}
-
-impl<T> Default for AssetTupleVec<T> {
-    fn default() -> Self {
-        Self { 0: vec![] }
-    }
-}
-
-impl<T> IntoIterator for AssetTupleVec<T> {
-    type Item = (AssetInfo, T);
-
-    type IntoIter = <Vec<(AssetInfo, T)> as IntoIterator>::IntoIter;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.0.into_iter()
-    }
-}
-
-impl<'a, T> IntoIterator for &'a mut AssetTupleVec<T> {
-    type Item = &'a mut (AssetInfo, T);
-
-    type IntoIter = <&'a mut Vec<(AssetInfo, T)> as IntoIterator>::IntoIter;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.0.iter_mut()
-    }
-}
-
-impl<T, U> Mul<AssetTupleVec<U>> for AssetTupleVec<T>
-where
-    T: Mul<U> + Clone
-{
-    type Output = AssetTupleVec<<T as Mul<U>>::Output>;
-
-    fn mul(self, rhs: AssetTupleVec<U>) -> Self::Output {
-        let mut output = vec![];
-        for rhs_val in rhs.0 {
-            if let Some(val) = self.may_get_ref(&rhs_val.0) {
-                output.push((rhs_val.0, val.clone() * rhs_val.1 ))
-            }
-        }
-        output.into()
-    }
-}
-
-impl<T> From<Vec<(AssetInfo, T)>> for AssetTupleVec<T> {
-    fn from(object: Vec<(AssetInfo, T)>) -> Self {
-        AssetTupleVec(object)
-    }
-}
-
-impl From<Vec<AssetAmount>> for AssetTupleVec<Uint256> {
-    fn from(mut object: Vec<AssetAmount>) -> Self {
-        object.iter_mut().map(|x| {
-            (x.info.clone(), x.amount)
-        }).collect::<Vec<(AssetInfo, Uint256)>>().into()
-    }
-}
-
-impl<T> Into<AssetVec> for AssetTupleVec<T> {
-    fn into(self) -> AssetVec {
-        todo!()
-    }
-}
 
 pub trait IntoAssetVec {
     fn into_asset_vec(&self) -> AssetVec;

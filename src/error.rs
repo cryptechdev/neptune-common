@@ -38,6 +38,9 @@ pub enum CommonError {
     #[error("{} Asset not found", NEPT_ERR)]
     AssetNotFound{},
 
+    #[error("{} Key not found", NEPT_ERR)]
+    KeyNotFound{},
+
     #[error("{} No stable funds were attached", NEPT_ERR)]
     NoFundsReceived {},
 
