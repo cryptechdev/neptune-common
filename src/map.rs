@@ -4,7 +4,7 @@ use num_traits::Zero;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::error::{CommonResult, CommonError};
+use crate::{error::{CommonResult, CommonError}, asset::AssetInfo};
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize, JsonSchema)]
 pub struct Map<K, V>(Vec<(K, V)>);
@@ -220,9 +220,16 @@ where
     }
 }
 
-pub fn extract_keys<'a, K: 'a + PartialEq + Clone, I: IntoIterator<Item = &'a dyn GetKeyVec<K>>>(iter: I) -> Vec<K> {
+impl GetKeyVec<AssetInfo> for AssetInfo 
+{
+    fn get_key_vec(&self) -> Vec<AssetInfo> {
+        vec![self.clone()]
+    }
+}
+
+pub fn extract_keys<'a, K: 'a + PartialEq + Clone>(vec: Vec<&'a dyn GetKeyVec<K>>) -> Vec<K> {
     let mut asset_vec = vec![];
-    for object in iter.into_iter() {
+    for object in vec {
         for asset in object.get_key_vec() {
             if !asset_vec.contains(&asset) {
                 asset_vec.push(asset.clone());
@@ -231,3 +238,15 @@ pub fn extract_keys<'a, K: 'a + PartialEq + Clone, I: IntoIterator<Item = &'a dy
     }
     asset_vec.into()
 }
+
+// pub fn extract_keys<'a, K: 'a + PartialEq + Clone, I: IntoIterator<Item = &'a dyn GetKeyVec<K>>>(iter: I) -> Vec<K> {
+//     let mut asset_vec = vec![];
+//     for object in iter.into_iter() {
+//         for asset in object.get_key_vec() {
+//             if !asset_vec.contains(&asset) {
+//                 asset_vec.push(asset.clone());
+//             }
+//         }
+//     }
+//     asset_vec.into()
+// }
