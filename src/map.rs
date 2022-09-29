@@ -133,6 +133,16 @@ where
         }
         Ok(output.into())
     }
+
+    pub fn map<F, U>(&self, f: F) -> Map<K, U> 
+    where F: Fn(&V) -> U
+    {
+        let mut vec = vec![];
+        for (key, val) in &self.0 {
+            vec.push((key.clone(), f(val)));
+        }
+        vec.into()
+    }
 }
 
 impl<K, V> Default for Map<K, V> {
