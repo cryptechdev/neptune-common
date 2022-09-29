@@ -1,5 +1,6 @@
 use cosmwasm_std::Uint256;
-use crate::{asset::{AssetInfo, AssetVec, AssetAmount}, map::Map};
+use crate::{asset::{AssetInfo, AssetAmount}, map::Map};
+
 pub type AssetMap<T> = Map<AssetInfo, T>;
 
 impl<T> AssetMap<T>
@@ -18,5 +19,24 @@ impl From<Vec<AssetAmount>> for AssetMap<Uint256> {
 impl<T> Into<AssetVec> for AssetMap<T> {
     fn into(self) -> AssetVec {
         todo!()
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct AssetVec(Vec<AssetInfo>);
+
+impl IntoIterator for AssetVec {
+    type Item = AssetInfo;
+
+    type IntoIter = std::vec::IntoIter<AssetInfo>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
+    }
+}
+
+impl From<Vec<AssetInfo>> for AssetVec {
+    fn from(object: Vec<AssetInfo>) -> Self {
+        AssetVec(object)
     }
 }

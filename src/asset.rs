@@ -1,11 +1,11 @@
-use std::{convert::TryInto, vec::IntoIter};
+use std::{convert::TryInto};
 
 use cosmwasm_std::{Addr, StdError, StdResult, Uint256, Coin, Decimal256};
 use cw_storage_plus::{Bound, Key, KeyDeserialize, PrimaryKey, Prefixer, Bounder};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::{error::{CommonResult, CommonError}, math::{get_difference_or_zero}};
+use crate::{error::{CommonResult, CommonError}, math::{get_difference_or_zero}, asset_map::AssetVec};
 #[derive(Serialize, Deserialize, Clone, Debug, Hash, PartialEq, Eq, JsonSchema, PartialOrd, Ord)]
 #[serde(rename_all = "snake_case")]
 #[repr(u8)]
@@ -371,50 +371,6 @@ pub fn remove_from_pool(
             amount_removed: amount_to_remove,
         })
     } else { Err(CommonError::InsufficientLiquidity {  }) }
-}
-
-/// TODO: these types could potentially help to clean up the code
-#[derive(Clone, Debug)]
-pub struct AssetVec(Vec<AssetInfo>);
-
-impl IntoIterator for AssetVec {
-    type Item = AssetInfo;
-
-    type IntoIter = IntoIter<AssetInfo>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.0.into_iter()
-    }
-}
-
-impl IntoAssetVec for AssetVec {
-    fn into_asset_vec(&self) -> AssetVec {
-        self.clone()
-    }
-}
-
-impl From<Vec<AssetInfo>> for AssetVec {
-    fn from(object: Vec<AssetInfo>) -> Self {
-        AssetVec(object)
-    }
-}
-
-
-
-pub trait IntoAssetVec {
-    fn into_asset_vec(&self) -> AssetVec;
-}
-
-pub fn extract_assets<'a, I: IntoIterator<Item = &'a dyn IntoAssetVec>>(iter: I) -> AssetVec {
-    let mut asset_vec = vec![];
-    for object in iter.into_iter() {
-        for asset in object.into_asset_vec() {
-            if !asset_vec.contains(&asset) {
-                asset_vec.push(asset.clone());
-            }
-        }
-    }
-    asset_vec.into()
 }
 
 // #[test]
