@@ -295,7 +295,7 @@ impl Pool
         *pool_balance = get_difference_or_zero(*pool_balance, amount);
     }
 
-    pub fn get_account_balance(self, account: PoolAccount) -> Uint256 {
+    pub fn get_account_balance(&self, account: PoolAccount) -> Uint256 {
         account.shares * Decimal256::from_ratio(self.balance, self.shares)
     }
 }
