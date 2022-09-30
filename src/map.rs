@@ -32,6 +32,17 @@ where
         }
     }
 
+    pub fn position(&self, key: &K) -> Option<usize> {
+        self.0.iter().position(|x| &x.0 == key)
+    }
+
+    pub fn get_mut_from_index(&mut self, index: usize) -> Option<&mut V> {
+        match self.0.get_mut(index) {
+            Some((_, val)) => Some(val),
+            None => None,
+        }
+    }
+
     /// This consumes the entire map, not a great idea to use.
     pub fn get(self, key: &K) -> CommonResult<V> {
         for val in self.0 {
