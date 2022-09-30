@@ -11,7 +11,7 @@ pub struct Map<K, V>(Vec<(K, V)>);
 
 impl<K, V> Map<K, V>
 where
-    K: PartialEq + Clone
+    K: PartialEq + Clone + ToString
 {
     pub fn iter_mut(&mut self) -> impl Iterator<Item=&mut (K, V)> {
         self.0.iter_mut()
@@ -39,7 +39,7 @@ where
                 return Ok(val.1)
             }
         }
-        return Err(CommonError::KeyNotFound{});
+        return Err(CommonError::KeyNotFound(key.clone().to_string()));
     }
 
     /// This consumes the entire map, not a great idea to use.
@@ -55,7 +55,7 @@ where
     pub fn get_ref(&self, key: &K) -> CommonResult<&V> {
         match self.0.iter().position(|x| &x.0 == key) {
             Some(index) => Ok(&self.0[index].1),
-            None => Err(CommonError::KeyNotFound{}),
+            None => Err(CommonError::KeyNotFound(key.clone().to_string())),
         }
     }
 
@@ -69,7 +69,7 @@ where
     pub fn get_ref_mut(&mut self, key: &K) -> CommonResult<&mut V> {
         match self.0.iter().position(|x| &x.0 == key) {
             Some(index) => Ok(&mut self.0[index].1),
-            None => Err(CommonError::KeyNotFound{}),
+            None => Err(CommonError::KeyNotFound(key.clone().to_string())),
         }
     }
 
@@ -99,13 +99,25 @@ where
         Ok(output.into())
     }
 
-    pub fn get_or_zero_mut<'a, 'b>(&'a mut self, key: &'b K) -> &'a mut V 
+    pub fn get_mut_or_zero<'a, 'b>(&'a mut self, key: &'b K) -> &'a mut V 
     where V: Zero
     {
         match self.0.iter().position(|x| &x.0 == key) {
             Some(index) => &mut self.0[index].1,
             None => {
                 self.insert((key.clone(), V::zero()));
+                &mut self.0.last_mut().unwrap().1
+            },
+        }
+    }
+
+    pub fn get_mut_or_default<'a, 'b>(&'a mut self, key: &'b K) -> &'a mut V 
+    where V: Default
+    {
+        match self.0.iter().position(|x| &x.0 == key) {
+            Some(index) => &mut self.0[index].1,
+            None => {
+                self.insert((key.clone(), V::default()));
                 &mut self.0.last_mut().unwrap().1
             },
         }
@@ -189,7 +201,7 @@ impl<'a, K, V> IntoIterator for &'a mut Map<K, V> {
 
 impl<K, V, U> Mul<Map<K, U>> for Map<K, V>
 where
-    K: PartialEq + Clone,
+    K: PartialEq + Clone + ToString,
     V: Mul<U> + Clone
 {
     type Output = Map<K, <V as Mul<U>>::Output>;
