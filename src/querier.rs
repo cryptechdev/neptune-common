@@ -3,9 +3,7 @@ use cosmwasm_std::{
     to_binary, Addr, BalanceResponse, BankQuery, Deps, QueryRequest, Uint256, WasmQuery,
 };
 use cw20::{BalanceResponse as Cw20BalanceResponse, Cw20QueryMsg, TokenInfoResponse};
-use terraswap::asset::AssetInfo;
-
-use crate::error::CommonError;
+use crate::{error::CommonError, asset::AssetInfo};
 
 pub fn query_balance(
     deps: Deps,
