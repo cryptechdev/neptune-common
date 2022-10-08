@@ -1,4 +1,4 @@
-use std::{ops::Mul, iter::FromIterator};
+use std::{ops::Mul, iter::FromIterator, fmt::Debug};
 
 use num_traits::Zero;
 use schemars::JsonSchema;
@@ -11,8 +11,13 @@ pub struct Map<K, V>(Vec<(K, V)>);
 
 impl<K, V> Map<K, V>
 where
-    K: PartialEq + Clone + ToString
+    K: PartialEq + Clone + Debug
 {
+
+    pub fn new() -> Self {
+        vec![].into()
+    }
+
     pub fn iter_mut(&mut self) -> impl Iterator<Item=&mut (K, V)> {
         self.0.iter_mut()
     }
@@ -50,7 +55,7 @@ where
                 return Ok(val.1)
             }
         }
-        return Err(CommonError::KeyNotFound(key.clone().to_string()));
+        return Err(CommonError::KeyNotFound(format!("{:?}", key.clone())));
     }
 
     /// This consumes the entire map, not a great idea to use.
@@ -66,7 +71,7 @@ where
     pub fn get_ref(&self, key: &K) -> CommonResult<&V> {
         match self.0.iter().position(|x| &x.0 == key) {
             Some(index) => Ok(&self.0[index].1),
-            None => Err(CommonError::KeyNotFound(key.clone().to_string())),
+            None => Err(CommonError::KeyNotFound(format!("{:?}", key.clone()))),
         }
     }
 
@@ -80,7 +85,7 @@ where
     pub fn get_ref_mut(&mut self, key: &K) -> CommonResult<&mut V> {
         match self.0.iter().position(|x| &x.0 == key) {
             Some(index) => Ok(&mut self.0[index].1),
-            None => Err(CommonError::KeyNotFound(key.clone().to_string())),
+            None => Err(CommonError::KeyNotFound(format!("{:?}", key.clone()))),
         }
     }
 
@@ -212,7 +217,7 @@ impl<'a, K, V> IntoIterator for &'a mut Map<K, V> {
 
 impl<K, V, U> Mul<Map<K, U>> for Map<K, V>
 where
-    K: PartialEq + Clone + ToString,
+    K: PartialEq + Clone + Debug,
     V: Mul<U> + Clone
 {
     type Output = Map<K, <V as Mul<U>>::Output>;
