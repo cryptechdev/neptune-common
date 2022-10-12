@@ -1,5 +1,6 @@
-use std::{ops::Mul, iter::FromIterator, fmt::Debug};
+use std::{ops::{Mul, Add, AddAssign}, iter::FromIterator, fmt::Debug};
 
+use cosmwasm_std::Decimal256;
 use num_traits::Zero;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -171,6 +172,16 @@ where
         }
         vec.into()
     }
+
+    pub fn sum_values(self) -> V
+    where V: Default + Add<Output = V>
+    {
+        let mut sum = V::default();
+        for (_, val) in self.0 {
+            sum = sum + val;
+        }
+        sum
+    }
 }
 
 impl<K, V> Default for Map<K, V> {
@@ -230,6 +241,50 @@ where
             }
         }
         output.into()
+    }
+}
+
+impl<K, V> Mul<Decimal256> for Map<K, V>
+where
+    K: PartialEq + Clone + Debug,
+    V: Mul<Decimal256, Output = V> + Clone
+{
+    type Output = Map<K, V>;
+
+    fn mul(mut self, rhs: Decimal256) -> Self::Output {
+        for (_, val) in &mut self {
+            *val = val.clone() * rhs
+        }
+        self
+    }
+}
+
+impl<K, V> Add for Map<K, V>
+where
+    K: PartialEq + Clone + Debug,
+    V: Add<Output = V> + Clone + Default
+{
+    type Output = Self;
+
+    fn add(mut self, rhs: Self) -> Self::Output {
+        for rhs_key_val in rhs {
+            let lhs = self.get_mut_or_default(&rhs_key_val.0);
+            *lhs = lhs.clone() + rhs_key_val.1;
+        }
+        self
+    }
+}
+
+impl<K, V> AddAssign for Map<K, V>
+where
+    K: PartialEq + Clone + Debug,
+    V: Add<Output = V> + Clone + Default
+{
+    fn add_assign(&mut self, rhs: Self) {
+        for rhs_key_val in rhs {
+            let lhs = self.get_mut_or_default(&rhs_key_val.0);
+            *lhs = lhs.clone() + rhs_key_val.1;
+        }
     }
 }
 
