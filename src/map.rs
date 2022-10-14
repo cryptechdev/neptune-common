@@ -1,6 +1,6 @@
-use std::{ops::{Mul, Add, AddAssign}, iter::FromIterator, fmt::Debug};
+use std::{ops::{Mul, Add, AddAssign, Div}, iter::FromIterator, fmt::Debug};
 
-use cosmwasm_std::Decimal256;
+use cosmwasm_std::{Decimal256, Uint256};
 use num_traits::Zero;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -29,6 +29,10 @@ where
 
     pub fn insert(&mut self, tuple: (K, V)) {
         self.0.push(tuple);
+    }
+
+    pub fn vec(self) -> Vec<(K, V)> {
+        self.0
     }
 
     pub fn contains(&self, key: &K) -> bool {
@@ -83,14 +87,14 @@ where
         }
     }
 
-    pub fn get_ref_mut(&mut self, key: &K) -> CommonResult<&mut V> {
+    pub fn get_mut(&mut self, key: &K) -> CommonResult<&mut V> {
         match self.0.iter().position(|x| &x.0 == key) {
             Some(index) => Ok(&mut self.0[index].1),
             None => Err(CommonError::KeyNotFound(format!("{:?}", key.clone()))),
         }
     }
 
-    pub fn may_get_ref_mut(&mut self, key: &K) -> Option<&mut V> {
+    pub fn may_get_mut(&mut self, key: &K) -> Option<&mut V> {
         match self.0.iter().position(|x| &x.0 == key) {
             Some(index) => Some(&mut self.0[index].1),
             None => None,
@@ -173,14 +177,26 @@ where
         vec.into()
     }
 
-    pub fn sum_values(self) -> V
-    where V: Default + Add<Output = V>
+    pub fn sum(&self) -> V
+    where V: Default + Add<Output = V> + Clone
     {
         let mut sum = V::default();
-        for (_, val) in self.0 {
-            sum = sum + val;
+        for (_, val) in &self.0 {
+            sum = sum + val.clone();
         }
         sum
+    }
+
+    pub fn remove_defaults(&mut self)
+    where V: Default + PartialEq
+    {
+        self.0.retain(|x| x.1 != V::default());
+    }
+
+    pub fn sort_by_val(&mut self)
+    where V: Default + Ord + Clone
+    {
+        self.0.sort_by(|a, b| a.1.cmp(&b.1))
     }
 }
 
@@ -254,6 +270,56 @@ where
     fn mul(mut self, rhs: Decimal256) -> Self::Output {
         for (_, val) in &mut self {
             *val = val.clone() * rhs
+        }
+        self
+    }
+}
+
+// impl<K, V, U> Div<Map<K, U>> for Map<K, V>
+// where
+//     K: PartialEq + Clone + Debug,
+//     V: Div<U> + Clone
+// {
+//     type Output = Map<K, <V as Div<U>>::Output>;
+
+//     fn div(self, rhs: Map<K, U>) -> Self::Output {
+//         let mut output = vec![];
+//         for rhs_val in rhs.0 {
+//             if let Some(val) = self.may_get_ref(&rhs_val.0) {
+//                 output.push((rhs_val.0, val.clone() / rhs_val.1 ))
+//             }
+//         }
+//         output.into()
+//     }
+// }
+
+impl<K> Div for Map<K, Uint256>
+where
+    K: PartialEq + Clone + Debug,
+{
+    type Output = Map<K, Decimal256>;
+
+    fn div(self, rhs: Map<K, Uint256>) -> Self::Output {
+        let mut output = vec![];
+        for rhs_val in rhs.0 {
+            if let Some(val) = self.may_get_ref(&rhs_val.0) {
+                output.push((rhs_val.0, Decimal256::from_ratio(val.clone(), rhs_val.1) ))
+            }
+        }
+        output.into()
+    }
+}
+
+impl<K, V> Div<Decimal256> for Map<K, V>
+where
+    K: PartialEq + Clone + Debug,
+    V: Div<Decimal256, Output = V> + Clone
+{
+    type Output = Map<K, V>;
+
+    fn div(mut self, rhs: Decimal256) -> Self::Output {
+        for (_, val) in &mut self {
+            *val = val.clone() / rhs
         }
         self
     }
