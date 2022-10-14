@@ -4,11 +4,14 @@ use cosmwasm_std::{Decimal256, Uint256};
 use num_traits::Zero;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use shrinkwraprs::Shrinkwrap;
 
 use crate::{error::{CommonResult, CommonError}, asset::AssetInfo};
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize, JsonSchema)]
-pub struct Map<K, V>(Vec<(K, V)>);
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize, JsonSchema, Shrinkwrap)]
+#[shrinkwrap(mutable)]
+pub struct Map<K, V>(pub Vec<(K, V)>);
 
 impl<K, V> Map<K, V>
 where
@@ -19,24 +22,12 @@ where
         vec![].into()
     }
 
-    pub fn iter_mut(&mut self) -> impl Iterator<Item=&mut (K, V)> {
-        self.0.iter_mut()
-    }
-
-    pub fn iter(&self) -> impl Iterator<Item=&(K, V)> {
-        self.0.iter()
-    }
-
     pub fn insert(&mut self, tuple: (K, V)) {
         self.0.push(tuple);
     }
 
-    pub fn vec(self) -> Vec<(K, V)> {
-        self.0
-    }
-
     pub fn contains(&self, key: &K) -> bool {
-        match self.may_get_ref(key) {
+        match self.may_get(key) {
             Some(_) => true,
             None => false,
         }
@@ -53,34 +44,14 @@ where
         }
     }
 
-    /// This consumes the entire map, not a great idea to use.
-    pub fn get(self, key: &K) -> CommonResult<V> {
-        for val in self.0 {
-            if &val.0 == key {
-                return Ok(val.1)
-            }
-        }
-        return Err(CommonError::KeyNotFound(format!("{:?}", key.clone())));
-    }
-
-    /// This consumes the entire map, not a great idea to use.
-    pub fn may_get(self, key: &K) -> Option<V> {
-        for val in self.0 {
-            if &val.0 == key {
-                return Some(val.1)
-            }
-        }
-        return None;
-    }
-
-    pub fn get_ref(&self, key: &K) -> CommonResult<&V> {
+    pub fn get(&self, key: &K) -> CommonResult<&V> {
         match self.0.iter().position(|x| &x.0 == key) {
             Some(index) => Ok(&self.0[index].1),
             None => Err(CommonError::KeyNotFound(format!("{:?}", key.clone()))),
         }
     }
 
-    pub fn may_get_ref(&self, key: &K) -> Option<&V> {
+    pub fn may_get(&self, key: &K) -> Option<&V> {
         match self.0.iter().position(|x| &x.0 == key) {
             Some(index) => Some(&self.0[index].1),
             None => None,
@@ -161,7 +132,7 @@ where
     {
         let mut output = vec![];
         for (key, lhs_val) in self {
-            let rhs_val = rhs.get_ref(&key)?.clone();
+            let rhs_val = rhs.get(&key)?.clone();
             output.push((key, lhs_val * rhs_val ))
         }
         Ok(output.into())
@@ -252,7 +223,7 @@ where
     fn mul(self, rhs: Map<K, U>) -> Self::Output {
         let mut output = vec![];
         for rhs_val in rhs.0 {
-            if let Some(val) = self.may_get_ref(&rhs_val.0) {
+            if let Some(val) = self.may_get(&rhs_val.0) {
                 output.push((rhs_val.0, val.clone() * rhs_val.1 ))
             }
         }
@@ -275,24 +246,6 @@ where
     }
 }
 
-// impl<K, V, U> Div<Map<K, U>> for Map<K, V>
-// where
-//     K: PartialEq + Clone + Debug,
-//     V: Div<U> + Clone
-// {
-//     type Output = Map<K, <V as Div<U>>::Output>;
-
-//     fn div(self, rhs: Map<K, U>) -> Self::Output {
-//         let mut output = vec![];
-//         for rhs_val in rhs.0 {
-//             if let Some(val) = self.may_get_ref(&rhs_val.0) {
-//                 output.push((rhs_val.0, val.clone() / rhs_val.1 ))
-//             }
-//         }
-//         output.into()
-//     }
-// }
-
 impl<K> Div for Map<K, Uint256>
 where
     K: PartialEq + Clone + Debug,
@@ -302,7 +255,7 @@ where
     fn div(self, rhs: Map<K, Uint256>) -> Self::Output {
         let mut output = vec![];
         for rhs_val in rhs.0 {
-            if let Some(val) = self.may_get_ref(&rhs_val.0) {
+            if let Some(val) = self.may_get(&rhs_val.0) {
                 output.push((rhs_val.0, Decimal256::from_ratio(val.clone(), rhs_val.1) ))
             }
         }
