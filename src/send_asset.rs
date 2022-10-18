@@ -1,3 +1,4 @@
+use clap::Subcommand;
 use cosmwasm_std::{
     attr, to_binary, Addr, Attribute, BankMsg, Binary, Coin, CosmosMsg, Deps, Env, Response,
     Uint256, WasmMsg,
@@ -5,7 +6,7 @@ use cosmwasm_std::{
 use cw20::Cw20ExecuteMsg;
 use schemars::JsonSchema;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use std::fmt::Debug;
+use std::{fmt::Debug, str::FromStr};
 
 use crate::{
     asset::AssetInfo,
@@ -26,6 +27,19 @@ use neptune_authorization::authorization::{
 pub enum SendFundsMsg {
     SendCoins(String),
     SendTokens(Addr),
+}
+
+impl FromStr for SendFundsMsg {
+    type Err = CommonError;
+
+    /// TODO: Not rigorous, should only be used for commandline
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s.len() < 10 || s.starts_with("ibc") {
+            Ok(Self::SendCoins(s.to_string()))
+        } else {
+            Ok(Self::SendTokens(Addr::unchecked(s)))
+        }
+    }
 }
 
 impl From<AssetInfo> for SendFundsMsg {

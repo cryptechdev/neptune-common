@@ -28,6 +28,11 @@ thiserror = "1.0.31"
 shrinkwraprs = "0.3.0"
 neptune-authorization = { path = "../neptune-auth", default-features = false, version = "0.1.0" }
 terraswap = { path = "./packages/terraswap", default-features = false, version = "2.4.1" }
+clap = { version = "4.0.8", features = ["derive"] }
+enum-iterator = "1.2.0"
+strum = "0.24.1"
+strum_macros = "0.24.1"
+
 
 
 [dev-dependencies]

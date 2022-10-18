@@ -13,4 +13,5 @@ pub mod multi_map;
 pub mod utilities;
 pub mod map;
 pub mod asset_map;
+pub mod parser;
 pub mod pool;

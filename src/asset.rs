@@ -1,17 +1,29 @@
-use std::{convert::TryInto};
+use std::{convert::TryInto, str::FromStr};
 
 use cosmwasm_std::{Addr, StdError, StdResult, Uint256, Coin};
 use cw_storage_plus::{Bound, Key, KeyDeserialize, PrimaryKey, Prefixer, Bounder};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-
-use crate::{asset_map::{AssetVec, AssetMap}};
+use crate::{asset_map::{AssetVec, AssetMap}, error::{CommonError}};
 #[derive(Serialize, Deserialize, Clone, Debug, Hash, PartialEq, Eq, JsonSchema, PartialOrd, Ord)]
 #[serde(rename_all = "snake_case")]
 #[repr(u8)]
 pub enum AssetInfo {
     Token { contract_addr: Addr },
     NativeToken { denom: String },
+}
+
+impl FromStr for AssetInfo {
+    type Err = CommonError;
+
+    /// TODO: Not rigorous, should only be used for commandline
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s.len() < 10 || s.starts_with("ibc") {
+            Ok(Self::NativeToken { denom: s.to_string() })
+        } else {
+            Ok(Self::Token { contract_addr: Addr::unchecked(s) })
+        }
+    }
 }
 
 impl ToString for AssetInfo {

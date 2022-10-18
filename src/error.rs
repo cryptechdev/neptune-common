@@ -44,6 +44,9 @@ pub enum CommonError {
     #[error("{} No stable funds were attached", NEPT_ERR)]
     NoFundsReceived {},
 
+    #[error("{} Amount received is less than minimum receive", NEPT_ERR)]
+    MinimumReceive(),
+
     #[error("{} Missing address for {0}", NEPT_ERR)]
     MissingAddress(String),
 
