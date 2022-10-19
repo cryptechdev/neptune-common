@@ -59,6 +59,9 @@ pub enum CommonError {
     #[error("{} Missing admin double sig address", NEPT_ERR)]
     MissingAdminDoubleSigAddress {},
 
+    #[error("{} Only one tx is allowed per block", NEPT_ERR)]
+    MultipleTx {},
+
     #[error("{} Denominator was zero", NEPT_ERR)]
     ZeroDenominator {},
 

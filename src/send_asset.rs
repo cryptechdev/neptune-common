@@ -1,4 +1,3 @@
-use clap::Subcommand;
 use cosmwasm_std::{
     attr, to_binary, Addr, Attribute, BankMsg, Binary, Coin, CosmosMsg, Deps, Env, Response,
     Uint256, WasmMsg,
@@ -60,6 +59,7 @@ impl Into<AssetInfo> for SendFundsMsg {
     }
 }
 
+/// TODO: this should be refactored to not modify the send value, Should likely contain a fail and no_fail variant.
 pub fn send_funds_tuple<A: NeptuneContractAuthorization<SendFundsMsg>>(
     deps: Deps,
     env: &Env,
