@@ -32,11 +32,11 @@ impl<'a> PoolRef<'a> {
         let shares_to_issue = shares;
         let balance_to_issue = shares_to_issue * Decimal256::from_ratio(*pool_balance, *pool_shares);
     
-        *account_shares = *account_shares + shares_to_issue;
-        *account_principle = *account_principle + balance_to_issue;
+        *account_shares += shares_to_issue;
+        *account_principle += balance_to_issue;
     
-        *pool_shares = *pool_shares + shares_to_issue;
-        *pool_balance = *pool_balance + balance_to_issue;
+        *pool_shares += shares_to_issue;
+        *pool_balance += balance_to_issue;
     
         AddSharesResponse {
             balance_added: balance_to_issue,
@@ -61,11 +61,11 @@ impl<'a> PoolRef<'a> {
             *pool_shares * Decimal256::from_ratio(amount, *pool_balance)
         };
     
-        *account_shares = *account_shares + shares_to_issue;
-        *account_principle = *account_principle + balance_to_issue;
+        *account_shares += shares_to_issue;
+        *account_principle += balance_to_issue;
     
-        *pool_shares = *pool_shares + shares_to_issue;
-        *pool_balance = *pool_balance + balance_to_issue;
+        *pool_shares += shares_to_issue;
+        *pool_balance += balance_to_issue;
     
         AddAmountResponse {
             shares_added: shares_to_issue,
@@ -89,11 +89,11 @@ impl<'a> PoolRef<'a> {
         let fraction_to_withdraw = Decimal256::from_ratio(shares_to_remove, *pool_shares);
         let amount_to_remove = *pool_balance * fraction_to_withdraw;
 
-        *account_shares = *account_shares - shares_to_remove;
+        *account_shares -= shares_to_remove;
         *account_principle = get_difference_or_zero(*account_principle, amount_to_remove);
 
-        *pool_shares = *pool_shares - shares_to_remove;
-        *pool_balance = *pool_balance - amount_to_remove;
+        *pool_shares -= shares_to_remove;
+        *pool_balance -= amount_to_remove;
 
         RemoveSharesResponse{
             balance_removed: amount_to_remove,
@@ -124,11 +124,11 @@ impl<'a> PoolRef<'a> {
             amount_to_remove = *pool_balance * fraction_to_withdraw;
         }
 
-        *account_shares = *account_shares - shares_to_remove;
+        *account_shares -= shares_to_remove;
         *account_principle = get_difference_or_zero(*account_principle, amount_to_remove);
 
-        *pool_shares = *pool_shares - shares_to_remove;
-        *pool_balance = *pool_balance - amount_to_remove;
+        *pool_shares -= shares_to_remove;
+        *pool_balance -= amount_to_remove;
 
         RemoveAmountResponse{
             amount_removed: amount_to_remove,
@@ -138,7 +138,7 @@ impl<'a> PoolRef<'a> {
 
     pub fn increase_balance(self, amount: Uint256) {
         let pool_balance = self.balance;
-        *pool_balance = *pool_balance + amount;
+        *pool_balance += amount;
     }
 
     pub fn decrease_balance(self, amount: Uint256) {
