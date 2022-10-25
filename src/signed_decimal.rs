@@ -298,7 +298,7 @@ impl<'de> de::Visitor<'de> for SignedDecimalVisitor {
 
 impl JsonSchema for SignedDecimal {
     fn schema_name() -> String {
-        "signed_decimal".to_string()
+        "SignedDecimal".to_string()
     }
 
     fn json_schema(gen: &mut schemars::gen::SchemaGenerator) -> schemars::schema::Schema {
