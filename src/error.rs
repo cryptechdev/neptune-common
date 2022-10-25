@@ -4,77 +4,75 @@ use thiserror::Error;
 
 pub type CommonResult<T> = core::result::Result<T, CommonError>;
 
-const NEPT_ERR: &str = "🔱 Neptune Error -";
-
 #[derive(Error, Debug, PartialEq)]
 pub enum CommonError {
-    #[error("{} {0}", NEPT_ERR)]
+    #[error("{0}")]
     Error(String),
 
-    #[error("{} Generic: {0}", NEPT_ERR)]
+    #[error("{0}")]
     Generic(String),
 
-    #[error("{} StdError: {0}", NEPT_ERR)]
+    #[error("{0}")]
     Std(#[from] StdError),
 
-    #[error("{} AuthError: {0}", NEPT_ERR)]
+    #[error("{0}")]
     Auth(#[from] NeptuneAuthorizationError),
 
-    #[error("{} OverflowError: {0}", NEPT_ERR)]
+    #[error("{0}")]
     OverflowError(#[from] OverflowError),
 
-    #[error("{} ConversionOverflowError: {0}", NEPT_ERR)]
+    #[error("{0}")]
     ConversionOverflowError(#[from] ConversionOverflowError),
 
-    #[error("{} Decimal256RangeExceeded: {0}", NEPT_ERR)]
+    #[error("{0}")]
     Decimal256RangeExceeded(#[from] Decimal256RangeExceeded),
 
-    #[error("{} Unauthorized: {0}", NEPT_ERR)]
+    #[error("Unauthorized: {0}")]
     Unauthorized(String),
 
-    #[error("{} Insufficient liquidity to send funds", NEPT_ERR)]
+    #[error("Insufficient liquidity to send funds")]
     InsufficientLiquidity {},
 
-    #[error("{} Asset not found", NEPT_ERR)]
+    #[error("Asset not found")]
     AssetNotFound{},
 
-    #[error("{} Key not found: {0}", NEPT_ERR)]
+    #[error("Key not found: {0}")]
     KeyNotFound(String),
 
-    #[error("{} No stable funds were attached", NEPT_ERR)]
+    #[error("No stable funds were attached")]
     NoFundsReceived {},
 
-    #[error("{} Amount received is less than minimum receive", NEPT_ERR)]
+    #[error("Amount received is less than minimum receive")]
     MinimumReceive(),
 
-    #[error("{} Missing address for {0}", NEPT_ERR)]
+    #[error("Missing address for {0}")]
     MissingAddress(String),
 
-    #[error("{} Missing config variable", NEPT_ERR)]
+    #[error("Missing config variable")]
     MissingConfigVariable {},
 
-    #[error("{} Missing admin addresses", NEPT_ERR)]
+    #[error("Missing admin addresses")]
     MissingAdminAddresses {},
 
-    #[error("{} Missing admin double sig address", NEPT_ERR)]
+    #[error("Missing admin double sig address")]
     MissingAdminDoubleSigAddress {},
 
-    #[error("{} Only one tx is allowed per block", NEPT_ERR)]
+    #[error("Only one tx is allowed per block")]
     MultipleTx {},
 
-    #[error("{} Denominator was zero", NEPT_ERR)]
+    #[error("Denominator was zero")]
     ZeroDenominator {},
 
-    #[error("{} Basset price was returned as zero", NEPT_ERR)]
+    #[error("Basset price was returned as zero")]
     BassetPriceIsZero {},
 
-    #[error("{} Argument is out of range", NEPT_ERR)]
+    #[error("Argument is out of range")]
     ArgOutOfRange,
 
-    #[error("{} This function has not yet been implemented", NEPT_ERR)]
+    #[error("This function has not yet been implemented")]
     Unimplemented {},
 
-    #[error("{} Missing Cw20HookMg", NEPT_ERR)]
+    #[error("Missing Cw20HookMg")]
     MissingHookMsg {},
 }
 
