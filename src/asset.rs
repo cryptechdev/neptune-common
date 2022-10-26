@@ -8,16 +8,16 @@ use crate::{asset_map::{AssetVec, AssetMap}, error::{CommonError}, parser::addr_
 
 #[derive(Serialize, Deserialize, Clone, Debug, Hash, PartialEq, Eq, JsonSchema, PartialOrd, Ord, Subcommand)]
 #[serde(rename_all = "snake_case")]
+#[clap(rename_all = "snake_case")]
 #[repr(u8)]
 pub enum AssetInfo {
     Token {
-        /// <string>, "atom3h6lk23h6lk2j3has09d8fg"
+        /// "atom3h6lk23h6lk2j3has09d8fg"
         #[arg(value_parser=addr_parser)]
         contract_addr: Addr
     },
     NativeToken {
-        /// <string>, "uatom"
-        #[arg(value_parser=addr_parser)]
+        /// "uatom"
         denom: String
     },
 }
