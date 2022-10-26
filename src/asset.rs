@@ -1,16 +1,25 @@
 use std::{convert::TryInto, str::FromStr};
+use clap::Subcommand;
 use cosmwasm_std::{Addr, StdError, StdResult, Uint256, Coin};
 use cw_storage_plus::{Bound, Key, KeyDeserialize, PrimaryKey, Prefixer, Bounder};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use crate::{asset_map::{AssetVec, AssetMap}, error::{CommonError}};
+use crate::{asset_map::{AssetVec, AssetMap}, error::{CommonError}, parser::addr_parser};
 
-#[derive(Serialize, Deserialize, Clone, Debug, Hash, PartialEq, Eq, JsonSchema, PartialOrd, Ord)]
+#[derive(Serialize, Deserialize, Clone, Debug, Hash, PartialEq, Eq, JsonSchema, PartialOrd, Ord, Subcommand)]
 #[serde(rename_all = "snake_case")]
 #[repr(u8)]
 pub enum AssetInfo {
-    Token { contract_addr: Addr },
-    NativeToken { denom: String },
+    Token {
+        /// <string>, "atom3h6lk23h6lk2j3has09d8fg"
+        #[arg(value_parser=addr_parser)]
+        contract_addr: Addr
+    },
+    NativeToken {
+        /// <string>, "uatom"
+        #[arg(value_parser=addr_parser)]
+        denom: String
+    },
 }
 
 impl FromStr for AssetInfo {
