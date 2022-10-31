@@ -1,10 +1,16 @@
 use std::{convert::TryInto, str::FromStr};
+
 use clap::Subcommand;
-use cosmwasm_std::{Addr, StdError, StdResult, Uint256, Coin};
-use cw_storage_plus::{Bound, Key, KeyDeserialize, PrimaryKey, Prefixer, Bounder};
+use cosmwasm_std::{Addr, Coin, StdError, StdResult, Uint256};
+use cw_storage_plus::{Bound, Bounder, Key, KeyDeserialize, Prefixer, PrimaryKey};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use crate::{asset_map::{AssetVec, AssetMap}, error::{CommonError}, parser::addr_parser};
+
+use crate::{
+    asset_map::{AssetMap, AssetVec},
+    error::CommonError,
+    parser::addr_parser,
+};
 
 #[derive(Serialize, Deserialize, Clone, Debug, Hash, PartialEq, Eq, JsonSchema, PartialOrd, Ord, Subcommand)]
 #[serde(rename_all = "snake_case")]
@@ -14,11 +20,11 @@ pub enum AssetInfo {
     Token {
         /// "atom3h6lk23h6lk2j3has09d8fg"
         #[arg(value_parser=addr_parser)]
-        contract_addr: Addr
+        contract_addr: Addr,
     },
     NativeToken {
         /// "uatom"
-        denom: String
+        denom: String,
     },
 }
 
@@ -117,21 +123,15 @@ impl<'a> Into<Bound<'a, &'a AssetInfo>> for &'a AssetInfo {
 }
 
 impl<'a> Bounder<'a> for AssetInfo {
-    fn inclusive_bound(self) -> Option<Bound<'a, Self>> {
-        Some(Bound::inclusive(self))
-    }
-    fn exclusive_bound(self) -> Option<Bound<'a, Self>> {
-        Some(Bound::exclusive(self))
-    }
+    fn inclusive_bound(self) -> Option<Bound<'a, Self>> { Some(Bound::inclusive(self)) }
+
+    fn exclusive_bound(self) -> Option<Bound<'a, Self>> { Some(Bound::exclusive(self)) }
 }
 
 impl<'a> Bounder<'a> for &'a AssetInfo {
-    fn inclusive_bound(self) -> Option<Bound<'a, Self>> {
-        Some(Bound::inclusive(self))
-    }
-    fn exclusive_bound(self) -> Option<Bound<'a, Self>> {
-        Some(Bound::exclusive(self))
-    }
+    fn inclusive_bound(self) -> Option<Bound<'a, Self>> { Some(Bound::inclusive(self)) }
+
+    fn exclusive_bound(self) -> Option<Bound<'a, Self>> { Some(Bound::exclusive(self)) }
 }
 
 impl KeyDeserialize for AssetInfo {
@@ -139,19 +139,12 @@ impl KeyDeserialize for AssetInfo {
 
     #[inline(always)]
     fn from_vec(mut value: Vec<u8>) -> StdResult<Self::Output> {
-        
         let mut split = value.split_off(2);
 
         match split.pop().unwrap() {
-            0 => Ok(AssetInfo::Token {
-                contract_addr: Addr::from_vec(split)?,
-            }),
-            1 => Ok(AssetInfo::NativeToken {
-                denom: String::from_vec(split)?,
-            }),
-            _ => Err(StdError::GenericErr {
-                msg: "Failed deserializing.".into(),
-            }),
+            0 => Ok(AssetInfo::Token { contract_addr: Addr::from_vec(split)? }),
+            1 => Ok(AssetInfo::NativeToken { denom: String::from_vec(split)? }),
+            _ => Err(StdError::GenericErr { msg: "Failed deserializing.".into() }),
         }
     }
 }
@@ -161,40 +154,29 @@ impl<'a> KeyDeserialize for &'a AssetInfo {
 
     #[inline(always)]
     fn from_vec(mut value: Vec<u8>) -> StdResult<Self::Output> {
-        
         let mut split = value.split_off(2);
 
         match split.pop().unwrap() {
-            0 => Ok(AssetInfo::Token {
-                contract_addr: Addr::from_vec(split)?,
-            }),
-            1 => Ok(AssetInfo::NativeToken {
-                denom: String::from_vec(split)?,
-            }),
-            _ => Err(StdError::GenericErr {
-                msg: "Failed deserializing.".into(),
-            }),
+            0 => Ok(AssetInfo::Token { contract_addr: Addr::from_vec(split)? }),
+            1 => Ok(AssetInfo::NativeToken { denom: String::from_vec(split)? }),
+            _ => Err(StdError::GenericErr { msg: "Failed deserializing.".into() }),
         }
     }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
-#[serde(rename ="Asset")]
+#[serde(rename = "Asset")]
 pub struct AssetAmount {
-    pub info:       AssetInfo,
-    pub amount:     Uint256,
+    pub info:   AssetInfo,
+    pub amount: Uint256,
 }
 
 impl Into<AssetVec> for AssetAmount {
-    fn into(self) -> AssetVec {
-        vec![self.info.clone()].into()
-    }
+    fn into(self) -> AssetVec { vec![self.info.clone()].into() }
 }
 
 impl Into<(AssetInfo, Uint256)> for AssetAmount {
-    fn into(self) -> (AssetInfo, Uint256) {
-        (self.info, self.amount)
-    }
+    fn into(self) -> (AssetInfo, Uint256) { (self.info, self.amount) }
 }
 
 impl Into<AssetVec> for AssetMap<Uint256> {
@@ -211,10 +193,7 @@ impl Into<AssetVec> for AssetMap<Uint256> {
 
 impl From<Coin> for AssetAmount {
     fn from(coin: Coin) -> Self {
-        AssetAmount {
-            info: AssetInfo::NativeToken { denom: coin.denom },
-            amount: coin.amount.into()
-        }
+        AssetAmount { info: AssetInfo::NativeToken { denom: coin.denom }, amount: coin.amount.into() }
     }
 }
 
@@ -225,23 +204,15 @@ impl TryInto<Coin> for AssetAmount {
         match self.info {
             AssetInfo::Token { .. } => {
                 return Err(StdError::GenericErr { msg: "Cannot convert to AssetAmount".into() })
-            },
-            AssetInfo::NativeToken { denom } => {
-                Ok(Coin {
-                    denom,
-                    amount: self.amount.try_into().unwrap(),
-                })
-            },
+            }
+            AssetInfo::NativeToken { denom } => Ok(Coin { denom, amount: self.amount.try_into().unwrap() }),
         }
     }
 }
 
 impl From<&Coin> for AssetAmount {
     fn from(coin: &Coin) -> Self {
-        AssetAmount {
-            info: AssetInfo::NativeToken { denom: coin.denom.clone() },
-            amount: coin.amount.into()
-        }
+        AssetAmount { info: AssetInfo::NativeToken { denom: coin.denom.clone() }, amount: coin.amount.into() }
     }
 }
 

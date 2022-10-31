@@ -5,7 +5,7 @@ use std::{
     str::FromStr,
 };
 
-use cosmwasm_std::{Uint256, Decimal256};
+use cosmwasm_std::{Decimal256, Uint256};
 use num_traits::{Num, One, Zero};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -20,12 +20,7 @@ pub struct SignedInt {
 }
 
 impl SignedInt {
-    pub fn nan() -> Self {
-        Self {
-            value: Uint256::zero(),
-            sign:  false,
-        }
-    }
+    pub fn nan() -> Self { Self { value: Uint256::zero(), sign: false } }
 
     pub fn is_nan(&self) -> bool { self.value.is_zero() && self.sign == false }
 
@@ -38,12 +33,7 @@ impl SignedInt {
 impl Neg for SignedInt {
     type Output = Self;
 
-    fn neg(self) -> Self::Output {
-        Self {
-            value: self.value,
-            sign:  !self.sign,
-        }
-    }
+    fn neg(self) -> Self::Output { Self { value: self.value, sign: !self.sign } }
 }
 
 impl Rem for SignedInt {
@@ -53,21 +43,11 @@ impl Rem for SignedInt {
 }
 
 impl One for SignedInt {
-    fn one() -> Self {
-        Self {
-            value: Uint256::from_u128(1u128),
-            sign:  true,
-        }
-    }
+    fn one() -> Self { Self { value: Uint256::from_u128(1u128), sign: true } }
 }
 
 impl Zero for SignedInt {
-    fn zero() -> Self {
-        Self {
-            value: Uint256::zero(),
-            sign:  true,
-        }
-    }
+    fn zero() -> Self { Self { value: Uint256::zero(), sign: true } }
 
     fn is_zero(&self) -> bool { self.value.is_zero() }
 }
@@ -79,12 +59,7 @@ impl Num for SignedInt {
 }
 
 impl num_traits::sign::Signed for SignedInt {
-    fn abs(&self) -> Self {
-        Self {
-            value: self.value,
-            sign:  true,
-        }
-    }
+    fn abs(&self) -> Self { Self { value: self.value, sign: true } }
 
     fn abs_sub(&self, other: &Self) -> Self {
         let new = *self - *other;
@@ -146,12 +121,7 @@ impl std::ops::Add<SignedInt> for Uint256 {
 impl std::ops::Sub<SignedInt> for SignedInt {
     type Output = Self;
 
-    fn sub(self, rhs: SignedInt) -> Self {
-        self + Self {
-            value: rhs.value,
-            sign:  !rhs.sign,
-        }
-    }
+    fn sub(self, rhs: SignedInt) -> Self { self + Self { value: rhs.value, sign: !rhs.sign } }
 }
 
 impl std::ops::Mul<SignedInt> for SignedInt {
@@ -159,10 +129,7 @@ impl std::ops::Mul<SignedInt> for SignedInt {
 
     fn mul(self, rhs: SignedInt) -> Self {
         let value = self.value * rhs.value;
-        Self {
-            value,
-            sign: self.sign == rhs.sign || value.is_zero(),
-        }
+        Self { value, sign: self.sign == rhs.sign || value.is_zero() }
     }
 }
 
@@ -171,10 +138,7 @@ impl std::ops::Mul<Decimal256> for SignedInt {
 
     fn mul(self, rhs: Decimal256) -> Self {
         let value = self.value * rhs;
-        Self {
-            value,
-            sign: self.sign || value.is_zero(),
-        }
+        Self { value, sign: self.sign || value.is_zero() }
     }
 }
 
@@ -187,10 +151,7 @@ impl std::ops::Div<SignedInt> for SignedInt {
         } else {
             self.value / rhs.value
         };
-        Self {
-            value,
-            sign: self.sign == rhs.sign || value.is_zero(),
-        }
+        Self { value, sign: self.sign == rhs.sign || value.is_zero() }
     }
 }
 
@@ -234,10 +195,7 @@ impl FromStr for SignedInt {
             sign = true;
             val_str = s;
         }
-        Ok(Self {
-            value: Uint256::from_str(val_str)?,
-            sign:  sign,
-        })
+        Ok(Self { value: Uint256::from_str(val_str)?, sign })
     }
 }
 
@@ -259,12 +217,7 @@ impl TryInto<Uint256> for SignedInt {
 }
 
 impl Default for SignedInt {
-    fn default() -> Self {
-        Self {
-            value: Uint256::default(),
-            sign:  true,
-        }
-    }
+    fn default() -> Self { Self { value: Uint256::default(), sign: true } }
 }
 
 #[test]

@@ -34,7 +34,7 @@ pub enum CommonError {
     InsufficientLiquidity {},
 
     #[error("Asset not found")]
-    AssetNotFound{},
+    AssetNotFound {},
 
     #[error("Key not found: {0}")]
     KeyNotFound(String),
@@ -77,9 +77,7 @@ pub enum CommonError {
 }
 
 impl Into<NeptuneAuthorizationError> for CommonError {
-    fn into(self) -> NeptuneAuthorizationError {
-        NeptuneAuthorizationError::Error(self.to_string())
-    }
+    fn into(self) -> NeptuneAuthorizationError { NeptuneAuthorizationError::Error(self.to_string()) }
 }
 
 impl From<Box<dyn std::error::Error>> for CommonError {

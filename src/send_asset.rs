@@ -1,11 +1,13 @@
+use std::{fmt::Debug, str::FromStr};
+
 use cosmwasm_std::{
-    attr, to_binary, Addr, Attribute, BankMsg, Binary, Coin, CosmosMsg, Deps, Env, Response,
-    Uint256, WasmMsg,
+    attr, to_binary, Addr, Attribute, BankMsg, Binary, Coin, CosmosMsg, Deps, Env, Response, Uint256, WasmMsg,
 };
 use cw20::Cw20ExecuteMsg;
+// Neptune Package crate imports
+use neptune_authorization::authorization::{neptune_execute_authorize, NeptuneContractAuthorization};
 use schemars::JsonSchema;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use std::{fmt::Debug, str::FromStr};
 
 use crate::{
     asset::AssetInfo,
@@ -14,10 +16,6 @@ use crate::{
     querier::{query_balance, query_token_balance},
     warn,
     warning::NeptuneWarning,
-};
-// Neptune Package crate imports
-use neptune_authorization::authorization::{
-    neptune_execute_authorize, NeptuneContractAuthorization,
 };
 
 /// The private messages for sending funds out of a contract.
@@ -59,14 +57,10 @@ impl Into<AssetInfo> for SendFundsMsg {
     }
 }
 
-/// TODO: this should be refactored to not modify the send value, Should likely contain a fail and no_fail variant.
+/// TODO: this should be refactored to not modify the send value, Should likely contain a fail and
+/// no_fail variant.
 pub fn send_funds_tuple<A: NeptuneContractAuthorization<SendFundsMsg>>(
-    deps: Deps,
-    env: &Env,
-    recipient: &Addr,
-    mut amount: Uint256,
-    send_msg: SendFundsMsg,
-    exec_msg: Option<Binary>,
+    deps: Deps, env: &Env, recipient: &Addr, mut amount: Uint256, send_msg: SendFundsMsg, exec_msg: Option<Binary>,
 ) -> Result<(CosmosMsg, Vec<Attribute>), CommonError> {
     neptune_execute_authorize::<SendFundsMsg, A>(deps, &env, &recipient, &send_msg)?;
 
@@ -85,10 +79,7 @@ pub fn send_funds_tuple<A: NeptuneContractAuthorization<SendFundsMsg>>(
             }
 
             // Create the Coin array and either send coins or attach to a message
-            let coins = vec![Coin {
-                denom:  denom.to_string(),
-                amount: to_uint128(amount)?,
-            }];
+            let coins = vec![Coin { denom: denom.to_string(), amount: to_uint128(amount)? }];
             match exec_msg {
                 Some(binary) => attach_coins(coins, recipient, binary),
                 None => send_coins(coins, recipient),
@@ -113,18 +104,11 @@ pub fn send_funds_tuple<A: NeptuneContractAuthorization<SendFundsMsg>>(
 }
 
 pub fn send_funds<A: NeptuneContractAuthorization<SendFundsMsg>>(
-    deps: Deps,
-    env: &Env,
-    recipient: &Addr,
-    amount: Uint256,
-    send_msg: SendFundsMsg,
-    exec_msg: Option<Binary>,
+    deps: Deps, env: &Env, recipient: &Addr, amount: Uint256, send_msg: SendFundsMsg, exec_msg: Option<Binary>,
 ) -> Result<Response, CommonError> {
     let tuple = send_funds_tuple::<A>(deps, env, recipient, amount, send_msg, exec_msg)?;
 
-    Ok(Response::new()
-        .add_message(tuple.0)
-        .add_attributes(tuple.1))
+    Ok(Response::new().add_message(tuple.0).add_attributes(tuple.1))
 }
 
 pub fn attach_coins(coins: Vec<Coin>, recipient_addr: &Addr, exec_msg: Binary) -> CosmosMsg {
@@ -136,17 +120,11 @@ pub fn attach_coins(coins: Vec<Coin>, recipient_addr: &Addr, exec_msg: Binary) -
 }
 
 pub fn send_coins(coins: Vec<Coin>, recipient_addr: &Addr) -> CosmosMsg {
-    CosmosMsg::Bank(BankMsg::Send {
-        to_address: recipient_addr.to_string(),
-        amount:     coins,
-    })
+    CosmosMsg::Bank(BankMsg::Send { to_address: recipient_addr.to_string(), amount: coins })
 }
 
 pub fn send_tokens(
-    token_addr: &Addr,
-    token_amount: Uint256,
-    exec_msg: Option<Binary>,
-    recipient_addr: &Addr,
+    token_addr: &Addr, token_amount: Uint256, exec_msg: Option<Binary>, recipient_addr: &Addr,
 ) -> Result<CosmosMsg, CommonError> {
     Ok(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: token_addr.to_string(),
@@ -157,18 +135,14 @@ pub fn send_tokens(
                 amount:   to_uint128(token_amount)?,
                 msg:      binary,
             },
-            None => Cw20ExecuteMsg::Transfer {
-                recipient: recipient_addr.to_string(),
-                amount:    to_uint128(token_amount)?,
-            },
+            None => {
+                Cw20ExecuteMsg::Transfer { recipient: recipient_addr.to_string(), amount: to_uint128(token_amount)? }
+            }
         })?,
     }))
 }
 
-pub fn msg_to_self<ExecuteMsg: Serialize + DeserializeOwned>(
-    env: &Env,
-    msg: &ExecuteMsg,
-) -> CommonResult<CosmosMsg> {
+pub fn msg_to_self<ExecuteMsg: Serialize + DeserializeOwned>(env: &Env, msg: &ExecuteMsg) -> CommonResult<CosmosMsg> {
     Ok(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
         funds:         vec![],

@@ -1,4 +1,8 @@
-use std::{ops::{Mul, Add, AddAssign, Div}, iter::FromIterator, fmt::Debug};
+use std::{
+    fmt::Debug,
+    iter::FromIterator,
+    ops::{Add, AddAssign, Div, Mul},
+};
 
 use cosmwasm_std::{Decimal256, Uint256};
 use num_traits::Zero;
@@ -6,7 +10,10 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use shrinkwraprs::Shrinkwrap;
 
-use crate::{error::{CommonResult, CommonError}, asset::AssetInfo};
+use crate::{
+    asset::AssetInfo,
+    error::{CommonError, CommonResult},
+};
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize, JsonSchema, Shrinkwrap)]
 #[shrinkwrap(mutable)]
@@ -14,16 +21,11 @@ pub struct Map<K, V>(pub Vec<(K, V)>);
 
 impl<K, V> Map<K, V>
 where
-    K: PartialEq + Clone + Debug
+    K: PartialEq + Clone + Debug,
 {
+    pub fn new() -> Self { vec![].into() }
 
-    pub fn new() -> Self {
-        vec![].into()
-    }
-
-    pub fn insert(&mut self, tuple: (K, V)) {
-        self.0.push(tuple);
-    }
+    pub fn insert(&mut self, tuple: (K, V)) { self.0.push(tuple); }
 
     pub fn contains(&self, key: &K) -> bool {
         match self.may_get(key) {
@@ -32,9 +34,7 @@ where
         }
     }
 
-    pub fn position(&self, key: &K) -> Option<usize> {
-        self.0.iter().position(|x| &x.0 == key)
-    }
+    pub fn position(&self, key: &K) -> Option<usize> { self.0.iter().position(|x| &x.0 == key) }
 
     pub fn get_mut_from_index(&mut self, index: usize) -> Option<&mut V> {
         match self.0.get_mut(index) {
@@ -71,74 +71,76 @@ where
         }
     }
 
-    pub fn map_val<F: Fn(&V) -> O, O>(&mut self, f:F) -> Map<K, O> {
+    pub fn map_val<F: Fn(&V) -> O, O>(&mut self, f: F) -> Map<K, O> {
         let mut output = vec![];
         for (key, val) in &self.0 {
-            let function_output  = f(&val);
+            let function_output = f(&val);
             output.push((key.clone(), function_output));
         }
         output.into()
     }
 
-    pub fn map_result_val<F: Fn(&V) -> Result<O, E>, O, E>(&mut self, f:F) -> Result<Map<K, O>, E>
-    {
+    pub fn map_result_val<F: Fn(&V) -> Result<O, E>, O, E>(&mut self, f: F) -> Result<Map<K, O>, E> {
         let mut output = vec![];
         for (key, val) in &self.0 {
-            let function_output  = f(&val)?;
+            let function_output = f(&val)?;
             output.push((key.clone(), function_output));
         }
         Ok(output.into())
     }
 
-    pub fn get_mut_or_zero<'a, 'b>(&'a mut self, key: &'b K) -> &'a mut V 
-    where V: Zero
+    pub fn get_mut_or_zero<'a, 'b>(&'a mut self, key: &'b K) -> &'a mut V
+    where
+        V: Zero,
     {
         match self.0.iter().position(|x| &x.0 == key) {
             Some(index) => &mut self.0[index].1,
             None => {
                 self.insert((key.clone(), V::zero()));
                 &mut self.0.last_mut().unwrap().1
-            },
+            }
         }
     }
 
-    pub fn get_mut_or_default<'a, 'b>(&'a mut self, key: &'b K) -> &'a mut V 
-    where V: Default
+    pub fn get_mut_or_default<'a, 'b>(&'a mut self, key: &'b K) -> &'a mut V
+    where
+        V: Default,
     {
         match self.0.iter().position(|x| &x.0 == key) {
             Some(index) => &mut self.0[index].1,
             None => {
                 self.insert((key.clone(), V::default()));
                 &mut self.0.last_mut().unwrap().1
-            },
+            }
         }
     }
 
-    pub fn get_mut_or<'a, 'b>(&'a mut self, key: &'b K, val: V) -> &'a mut V 
-    {
+    pub fn get_mut_or<'a, 'b>(&'a mut self, key: &'b K, val: V) -> &'a mut V {
         match self.0.iter().position(|x| &x.0 == key) {
             Some(index) => &mut self.0[index].1,
             None => {
                 self.insert((key.clone(), val));
                 &mut self.0.last_mut().unwrap().1
-            },
+            }
         }
     }
 
     pub fn mul_all<U>(self, rhs: Map<K, U>) -> CommonResult<Map<K, <V as Mul<U>>::Output>>
     where
-        V: Mul<U>, U: Clone
+        V: Mul<U>,
+        U: Clone,
     {
         let mut output = vec![];
         for (key, lhs_val) in self {
             let rhs_val = rhs.get(&key)?.clone();
-            output.push((key, lhs_val * rhs_val ))
+            output.push((key, lhs_val * rhs_val))
         }
         Ok(output.into())
     }
 
-    pub fn map<F, U>(&self, f: F) -> Map<K, U> 
-    where F: Fn(&V) -> U
+    pub fn map<F, U>(&self, f: F) -> Map<K, U>
+    where
+        F: Fn(&V) -> U,
     {
         let mut vec = vec![];
         for (key, val) in &self.0 {
@@ -148,7 +150,8 @@ where
     }
 
     pub fn sum(&self) -> V
-    where V: Default + Add<Output = V> + Clone
+    where
+        V: Default + Add<Output = V> + Clone,
     {
         let mut sum = V::default();
         for (_, val) in &self.0 {
@@ -158,64 +161,53 @@ where
     }
 
     pub fn remove_defaults(&mut self)
-    where V: Default + PartialEq
+    where
+        V: Default + PartialEq,
     {
         self.0.retain(|x| x.1 != V::default());
     }
 
     pub fn sort_by_val(&mut self)
-    where V: Default + Ord + Clone
+    where
+        V: Default + Ord + Clone,
     {
         self.0.sort_by(|a, b| a.1.cmp(&b.1))
     }
 }
 
 impl<K, V> Default for Map<K, V> {
-    fn default() -> Self {
-        Self { 0: vec![] }
-    }
+    fn default() -> Self { Self { 0: vec![] } }
 }
 
 impl<K, V> FromIterator<(K, V)> for Map<K, V> {
-    fn from_iter<T: IntoIterator<Item = (K, V)>>(iter: T) -> Self {
-        Vec::<(K, V)>::from_iter(iter).into()
-    }
+    fn from_iter<T: IntoIterator<Item = (K, V)>>(iter: T) -> Self { Vec::<(K, V)>::from_iter(iter).into() }
 }
 
 impl<K, V> IntoIterator for Map<K, V> {
+    type IntoIter = <Vec<(K, V)> as IntoIterator>::IntoIter;
     type Item = (K, V);
 
-    type IntoIter = <Vec<(K, V)> as IntoIterator>::IntoIter;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.0.into_iter()
-    }
+    fn into_iter(self) -> Self::IntoIter { self.0.into_iter() }
 }
 
 impl<'a, K, V> IntoIterator for &'a Map<K, V> {
+    type IntoIter = <&'a Vec<(K, V)> as IntoIterator>::IntoIter;
     type Item = &'a (K, V);
 
-    type IntoIter = <&'a Vec<(K, V)> as IntoIterator>::IntoIter;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.0.iter()
-    }
+    fn into_iter(self) -> Self::IntoIter { self.0.iter() }
 }
 
 impl<'a, K, V> IntoIterator for &'a mut Map<K, V> {
+    type IntoIter = <&'a mut Vec<(K, V)> as IntoIterator>::IntoIter;
     type Item = &'a mut (K, V);
 
-    type IntoIter = <&'a mut Vec<(K, V)> as IntoIterator>::IntoIter;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.0.iter_mut()
-    }
+    fn into_iter(self) -> Self::IntoIter { self.0.iter_mut() }
 }
 
 impl<K, V, U> Mul<Map<K, U>> for Map<K, V>
 where
     K: PartialEq + Clone + Debug,
-    V: Mul<U> + Clone
+    V: Mul<U> + Clone,
 {
     type Output = Map<K, <V as Mul<U>>::Output>;
 
@@ -223,7 +215,7 @@ where
         let mut output = vec![];
         for rhs_val in rhs.0 {
             if let Some(val) = self.may_get(&rhs_val.0) {
-                output.push((rhs_val.0, val.clone() * rhs_val.1 ))
+                output.push((rhs_val.0, val.clone() * rhs_val.1))
             }
         }
         output.into()
@@ -233,7 +225,7 @@ where
 impl<K, V> Mul<Decimal256> for Map<K, V>
 where
     K: PartialEq + Clone + Debug,
-    V: Mul<Decimal256, Output = V> + Clone
+    V: Mul<Decimal256, Output = V> + Clone,
 {
     type Output = Map<K, V>;
 
@@ -255,7 +247,7 @@ where
         let mut output = vec![];
         for rhs_val in rhs.0 {
             if let Some(val) = self.may_get(&rhs_val.0) {
-                output.push((rhs_val.0, Decimal256::from_ratio(val.clone(), rhs_val.1) ))
+                output.push((rhs_val.0, Decimal256::from_ratio(val.clone(), rhs_val.1)))
             }
         }
         output.into()
@@ -265,7 +257,7 @@ where
 impl<K, V> Div<Decimal256> for Map<K, V>
 where
     K: PartialEq + Clone + Debug,
-    V: Div<Decimal256, Output = V> + Clone
+    V: Div<Decimal256, Output = V> + Clone,
 {
     type Output = Map<K, V>;
 
@@ -280,7 +272,7 @@ where
 impl<K, V> Add for Map<K, V>
 where
     K: PartialEq + Clone + Debug,
-    V: Add<Output = V> + Clone + Default
+    V: Add<Output = V> + Clone + Default,
 {
     type Output = Self;
 
@@ -296,7 +288,7 @@ where
 impl<K, V> AddAssign for Map<K, V>
 where
     K: PartialEq + Clone + Debug,
-    V: Add<Output = V> + Clone + Default
+    V: Add<Output = V> + Clone + Default,
 {
     fn add_assign(&mut self, rhs: Self) {
         for rhs_key_val in rhs {
@@ -307,18 +299,16 @@ where
 }
 
 impl<K, V> From<Vec<(K, V)>> for Map<K, V> {
-    fn from(object: Vec<(K, V)>) -> Self {
-        Map(object)
-    }
+    fn from(object: Vec<(K, V)>) -> Self { Map(object) }
 }
 
 pub trait GetKeyVec<K> {
     fn get_key_vec(&self) -> Vec<K>;
 }
 
-impl<K, V> GetKeyVec<K> for Map<K, V> 
+impl<K, V> GetKeyVec<K> for Map<K, V>
 where
-    K: PartialEq + Clone
+    K: PartialEq + Clone,
 {
     fn get_key_vec(&self) -> Vec<K> {
         let mut key_vec = vec![];
@@ -331,11 +321,8 @@ where
     }
 }
 
-impl GetKeyVec<AssetInfo> for AssetInfo 
-{
-    fn get_key_vec(&self) -> Vec<AssetInfo> {
-        vec![self.clone()]
-    }
+impl GetKeyVec<AssetInfo> for AssetInfo {
+    fn get_key_vec(&self) -> Vec<AssetInfo> { vec![self.clone()] }
 }
 
 pub fn extract_keys<'a, K: 'a + PartialEq + Clone>(vec: Vec<&'a dyn GetKeyVec<K>>) -> Vec<K> {
@@ -350,8 +337,8 @@ pub fn extract_keys<'a, K: 'a + PartialEq + Clone>(vec: Vec<&'a dyn GetKeyVec<K>
     asset_vec.into()
 }
 
-// pub fn extract_keys<'a, K: 'a + PartialEq + Clone, I: IntoIterator<Item = &'a dyn GetKeyVec<K>>>(iter: I) -> Vec<K> {
-//     let mut asset_vec = vec![];
+// pub fn extract_keys<'a, K: 'a + PartialEq + Clone, I: IntoIterator<Item = &'a dyn
+// GetKeyVec<K>>>(iter: I) -> Vec<K> {     let mut asset_vec = vec![];
 //     for object in iter.into_iter() {
 //         for asset in object.get_key_vec() {
 //             if !asset_vec.contains(&asset) {

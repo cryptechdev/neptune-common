@@ -8,22 +8,14 @@ macro_rules! warn {
         fn f() {}
         fn type_name_of<T>(_: T) -> &'static str { std::any::type_name::<T>() }
         let name = type_name_of(f);
-        let msg = format!(
-            "{} In function: {}",
-            $variant.str(),
-            &name[..name.len() - 3]
-        );
+        let msg = format!("{} In function: {}", $variant.str(), &name[..name.len() - 3]);
         $attrs.push(attr("neptune_warning", msg))
     }};
     ($variant:expr) => {{
         fn f() {}
         fn type_name_of<T>(_: T) -> &'static str { std::any::type_name::<T>() }
         let name = type_name_of(f);
-        let msg = format!(
-            "{} In function: {}",
-            $variant.str(),
-            &name[..name.len() - 3]
-        );
+        let msg = format!("{} In function: {}", $variant.str(), &name[..name.len() - 3]);
         Ok(Response::new().add_attribute("neptune_warning", msg))
     }};
 }

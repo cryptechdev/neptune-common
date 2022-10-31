@@ -1,5 +1,5 @@
-use cosmwasm_std::{Addr, CanonicalAddr, Deps, StdResult, StdError, Order};
-use cw_storage_plus::{PrimaryKey, KeyDeserialize, Map, Bounder};
+use cosmwasm_std::{Addr, CanonicalAddr, Deps, Order, StdError, StdResult};
+use cw_storage_plus::{Bounder, KeyDeserialize, Map, PrimaryKey};
 use serde::{de::DeserializeOwned, Serialize};
 
 // Neptune Package crate imports
@@ -20,41 +20,29 @@ pub fn read_map<
     K: Bounder<'a> + PrimaryKey<'a> + KeyDeserialize<Output = K> + 'static,
     V: Serialize + DeserializeOwned,
 >(
-    deps: Deps,
-    start_after: Option<K>,
-    limit: Option<u32>,
-    map: Map<'a, K, V>,
+    deps: Deps, start_after: Option<K>, limit: Option<u32>, map: Map<'a, K, V>,
 ) -> Result<Vec<(K, V)>, CommonError> {
     let start = start_after.map(|key| key.inclusive_bound().unwrap());
-    let vec = 
-    match limit {
-        Some(limit) => {
-            map
-                .range(deps.storage, start, None, Order::Ascending)
-                .take(limit as usize)
-                .into_iter()
-                .collect::<Result<Vec<(K,V)>,StdError>>()?
-        },
-        None => {
-            map
-                .range(deps.storage, start, None, Order::Ascending)
-                .into_iter()
-                .collect::<Result<Vec<(K,V)>,StdError>>()?
-        },
+    let vec = match limit {
+        Some(limit) => map
+            .range(deps.storage, start, None, Order::Ascending)
+            .take(limit as usize)
+            .into_iter()
+            .collect::<Result<Vec<(K, V)>, StdError>>()?,
+        None => map
+            .range(deps.storage, start, None, Order::Ascending)
+            .into_iter()
+            .collect::<Result<Vec<(K, V)>, StdError>>()?,
     };
     Ok(vec)
 }
 
 pub fn get_contract_addr(
-    deps: Deps,
-    contract_name: &str,
-    contract_address: &Option<CanonicalAddr>,
+    deps: Deps, contract_name: &str, contract_address: &Option<CanonicalAddr>,
 ) -> Result<Addr, CommonError> {
-    Ok(deps.api.addr_humanize(
-        &contract_address
-            .clone()
-            .ok_or(CommonError::MissingAddress(contract_name.to_string()))?,
-    )?)
+    Ok(deps
+        .api
+        .addr_humanize(&contract_address.clone().ok_or(CommonError::MissingAddress(contract_name.to_string()))?)?)
 }
 
 pub fn get_config_string(var: Option<String>) -> Result<String, CommonError> {
@@ -69,19 +57,10 @@ pub fn canonicalize_address(deps: Deps, address: &String) -> StdResult<Option<Ca
     }
 }
 
-pub fn canonicalize_addresses(
-    deps: Deps,
-    addresses: &Vec<String>,
-) -> StdResult<Vec<CanonicalAddr>> {
-    addresses
-        .iter()
-        .map(|x| deps.api.addr_canonicalize(x.as_str()))
-        .collect()
+pub fn canonicalize_addresses(deps: Deps, addresses: &Vec<String>) -> StdResult<Vec<CanonicalAddr>> {
+    addresses.iter().map(|x| deps.api.addr_canonicalize(x.as_str())).collect()
 }
 
 pub fn humanize_addresses(deps: Deps, addresses: &Vec<CanonicalAddr>) -> StdResult<Vec<Addr>> {
-    addresses
-        .iter()
-        .map(|x| deps.api.addr_humanize(x))
-        .collect()
+    addresses.iter().map(|x| deps.api.addr_humanize(x)).collect()
 }

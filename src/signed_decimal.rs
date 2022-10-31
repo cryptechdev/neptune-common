@@ -1,14 +1,15 @@
 use std::{
     convert::{TryFrom, TryInto},
     error::Error,
-    ops::{Neg, Rem, Mul},
-    str::FromStr, fmt,
+    fmt,
+    ops::{Mul, Neg, Rem},
+    str::FromStr,
 };
 
-use cosmwasm_std::{Decimal256, Uint256, StdError};
+use cosmwasm_std::{Decimal256, StdError, Uint256};
 use num_traits::{Num, One, Zero};
 use schemars::JsonSchema;
-use serde::{Deserialize, Serialize, ser, Deserializer, de};
+use serde::{de, ser, Deserialize, Deserializer, Serialize};
 
 use crate::{error::CommonError, signed_int::SignedInt};
 
@@ -20,12 +21,7 @@ pub struct SignedDecimal {
 }
 
 impl SignedDecimal {
-    pub fn nan() -> Self {
-        Self {
-            value: Decimal256::zero(),
-            sign:  false,
-        }
-    }
+    pub fn nan() -> Self { Self { value: Decimal256::zero(), sign: false } }
 
     pub fn is_nan(&self) -> bool { self.value.is_zero() && self.sign == false }
 
@@ -36,8 +32,7 @@ impl SignedDecimal {
 
     pub fn from_uint256(val: Uint256) -> Result<SignedDecimal, CommonError> {
         Ok(SignedDecimal {
-            value: Decimal256::from_atomics(val, 0u32)
-                .map_err(|e| CommonError::Decimal256RangeExceeded(e))?,
+            value: Decimal256::from_atomics(val, 0u32).map_err(|e| CommonError::Decimal256RangeExceeded(e))?,
             sign:  true,
         })
     }
@@ -46,49 +41,27 @@ impl SignedDecimal {
 impl Mul<SignedDecimal> for Uint256 {
     type Output = SignedInt;
 
-    fn mul(self, rhs: SignedDecimal) -> Self::Output {
-        SignedInt {
-            value: rhs.value * self,
-            sign: rhs.sign,
-        }
-    }
+    fn mul(self, rhs: SignedDecimal) -> Self::Output { SignedInt { value: rhs.value * self, sign: rhs.sign } }
 }
 
 impl Neg for SignedDecimal {
     type Output = Self;
 
-    fn neg(self) -> Self::Output {
-        Self {
-            value: self.value,
-            sign:  !self.sign,
-        }
-    }
+    fn neg(self) -> Self::Output { Self { value: self.value, sign: !self.sign } }
 }
 
 impl Rem for SignedDecimal {
     type Output = Self;
 
-    fn rem(self, rhs: Self) -> Self::Output { 
-        Decimal256::new(self.value.atomics().rem(rhs.value.atomics())).into()
-    }
+    fn rem(self, rhs: Self) -> Self::Output { Decimal256::new(self.value.atomics().rem(rhs.value.atomics())).into() }
 }
 
 impl One for SignedDecimal {
-    fn one() -> Self {
-        Self {
-            value: Decimal256::one(),
-            sign:  true,
-        }
-    }
+    fn one() -> Self { Self { value: Decimal256::one(), sign: true } }
 }
 
 impl Zero for SignedDecimal {
-    fn zero() -> Self {
-        Self {
-            value: Decimal256::zero(),
-            sign:  true,
-        }
-    }
+    fn zero() -> Self { Self { value: Decimal256::zero(), sign: true } }
 
     fn is_zero(&self) -> bool { self.value.is_zero() }
 }
@@ -97,18 +70,13 @@ impl Num for SignedDecimal {
     type FromStrRadixErr = StdError;
 
     /// TODO: Should probably impl this for completion sake
-    fn from_str_radix(_str: &str, _radix: u32) -> Result<Self, Self::FromStrRadixErr> { 
+    fn from_str_radix(_str: &str, _radix: u32) -> Result<Self, Self::FromStrRadixErr> {
         Err(StdError::GenericErr { msg: "from_str_radix not implemented for SignedDecimal".into() })
     }
 }
 
 impl num_traits::sign::Signed for SignedDecimal {
-    fn abs(&self) -> Self {
-        Self {
-            value: self.value,
-            sign:  true,
-        }
-    }
+    fn abs(&self) -> Self { Self { value: self.value, sign: true } }
 
     fn abs_sub(&self, other: &Self) -> Self {
         let new = *self - *other;
@@ -118,20 +86,13 @@ impl num_traits::sign::Signed for SignedDecimal {
     fn signum(&self) -> Self {
         match self.sign {
             true => Self::one(),
-            false => SignedDecimal {
-                value: Decimal256::one(),
-                sign: false,
-            },
+            false => SignedDecimal { value: Decimal256::one(), sign: false },
         }
     }
 
-    fn is_positive(&self) -> bool {
-        self.sign
-    }
+    fn is_positive(&self) -> bool { self.sign }
 
-    fn is_negative(&self) -> bool {
-        !self.sign
-    }
+    fn is_negative(&self) -> bool { !self.sign }
 }
 
 impl ToString for SignedDecimal {
@@ -173,12 +134,7 @@ impl std::ops::Add<SignedDecimal> for SignedDecimal {
 impl std::ops::Sub<SignedDecimal> for SignedDecimal {
     type Output = Self;
 
-    fn sub(self, rhs: SignedDecimal) -> Self {
-        self + Self {
-            value: rhs.value,
-            sign:  !rhs.sign,
-        }
-    }
+    fn sub(self, rhs: SignedDecimal) -> Self { self + Self { value: rhs.value, sign: !rhs.sign } }
 }
 
 impl std::ops::Mul<SignedDecimal> for SignedDecimal {
@@ -186,10 +142,7 @@ impl std::ops::Mul<SignedDecimal> for SignedDecimal {
 
     fn mul(self, rhs: SignedDecimal) -> Self {
         let value = self.value * rhs.value;
-        Self {
-            value,
-            sign: self.sign == rhs.sign || value.is_zero(),
-        }
+        Self { value, sign: self.sign == rhs.sign || value.is_zero() }
     }
 }
 
@@ -202,10 +155,7 @@ impl std::ops::Div<SignedDecimal> for SignedDecimal {
         } else {
             self.value / rhs.value
         };
-        Self {
-            value,
-            sign: self.sign == rhs.sign || value.is_zero(),
-        }
+        Self { value, sign: self.sign == rhs.sign || value.is_zero() }
     }
 }
 
@@ -249,10 +199,7 @@ impl FromStr for SignedDecimal {
             sign = true;
             val_str = s;
         }
-        Ok(Self {
-            value: Decimal256::from_str(val_str)?,
-            sign:  sign,
-        })
+        Ok(Self { value: Decimal256::from_str(val_str)?, sign })
     }
 }
 
@@ -297,17 +244,11 @@ impl<'de> de::Visitor<'de> for SignedDecimalVisitor {
 }
 
 impl JsonSchema for SignedDecimal {
-    fn schema_name() -> String {
-        "SignedDecimal".to_string()
-    }
+    fn schema_name() -> String { "SignedDecimal".to_string() }
 
-    fn json_schema(gen: &mut schemars::gen::SchemaGenerator) -> schemars::schema::Schema {
-        String::json_schema(gen)
-    }
+    fn json_schema(gen: &mut schemars::gen::SchemaGenerator) -> schemars::schema::Schema { String::json_schema(gen) }
 
-    fn is_referenceable() -> bool {
-        true
-    }
+    fn is_referenceable() -> bool { true }
 }
 
 impl TryFrom<&str> for SignedDecimal {
@@ -328,12 +269,7 @@ impl TryInto<Decimal256> for SignedDecimal {
 }
 
 impl Default for SignedDecimal {
-    fn default() -> Self {
-        Self {
-            value: Decimal256::default(),
-            sign:  true,
-        }
-    }
+    fn default() -> Self { Self { value: Decimal256::default(), sign: true } }
 }
 
 // #[test]
@@ -384,9 +320,7 @@ fn signed_decimal_test() {
     assert!(small_neg > big_neg);
 
     // Utility function
-    fn f64_to_signed_decimal(val: f64) -> SignedDecimal {
-        SignedDecimal::from_str(val.to_string().as_str()).unwrap()
-    }
+    fn f64_to_signed_decimal(val: f64) -> SignedDecimal { SignedDecimal::from_str(val.to_string().as_str()).unwrap() }
 
     // Test mul
     assert!(big_pos * small_pos == f64_to_signed_decimal(big_pos_f64 * small_pos_f64));
