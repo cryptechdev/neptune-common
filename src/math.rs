@@ -35,7 +35,7 @@ pub fn get_division_or_zero(nom: Uint256, denom: Uint256) -> Decimal256 {
 }
 
 pub fn to_uint128(other: Uint256) -> CommonResult<Uint128> {
-    Uint128::try_from(other).map_err(|e| CommonError::ConversionOverflowError(e))
+    Uint128::try_from(other).map_err(CommonError::ConversionOverflowError)
 }
 
 pub fn from_decimal(other: Decimal) -> Decimal256 {
@@ -56,8 +56,7 @@ pub fn big_num_sqrt(input: cosmwasm_std::Decimal256) -> cosmwasm_std::Decimal256
 pub fn convert_through_str<From: ToString, To: FromStr>(from: From) -> Result<To, <To as FromStr>::Err> {
     let string = from.to_string();
     let str = string.as_str();
-    let to = To::from_str(str);
-    to
+    To::from_str(str)
 }
 
 #[test]

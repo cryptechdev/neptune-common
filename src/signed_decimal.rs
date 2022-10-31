@@ -23,7 +23,7 @@ pub struct SignedDecimal {
 impl SignedDecimal {
     pub fn nan() -> Self { Self { value: Decimal256::zero(), sign: false } }
 
-    pub fn is_nan(&self) -> bool { self.value.is_zero() && self.sign == false }
+    pub fn is_nan(&self) -> bool { self.value.is_zero() && !self.sign }
 
     pub fn value(&self) -> Decimal256 {
         assert!(self.sign, "SignedDecimal is negative!");
@@ -32,7 +32,7 @@ impl SignedDecimal {
 
     pub fn from_uint256(val: Uint256) -> Result<SignedDecimal, CommonError> {
         Ok(SignedDecimal {
-            value: Decimal256::from_atomics(val, 0u32).map_err(|e| CommonError::Decimal256RangeExceeded(e))?,
+            value: Decimal256::from_atomics(val, 0u32).map_err(CommonError::Decimal256RangeExceeded)?,
             sign:  true,
         })
     }
@@ -115,17 +115,15 @@ impl std::ops::Add<SignedDecimal> for SignedDecimal {
         if self.sign == rhs.sign {
             value = self.value + rhs.value;
             sign = self.sign;
+        } else if self.value > rhs.value {
+            value = self.value - rhs.value;
+            sign = self.sign;
+        } else if self.value < rhs.value {
+            value = rhs.value - self.value;
+            sign = rhs.sign
         } else {
-            if self.value > rhs.value {
-                value = self.value - rhs.value;
-                sign = self.sign;
-            } else if self.value < rhs.value {
-                value = rhs.value - self.value;
-                sign = rhs.sign
-            } else {
-                value = Decimal256::zero();
-                sign = true;
-            }
+            value = Decimal256::zero();
+            sign = true;
         }
         Self { sign, value }
     }
@@ -171,12 +169,10 @@ impl std::cmp::PartialOrd for SignedDecimal {
             } else {
                 other.value.partial_cmp(&self.value)
             }
+        } else if self.sign {
+            Some(std::cmp::Ordering::Greater)
         } else {
-            if self.sign {
-                Some(std::cmp::Ordering::Greater)
-            } else {
-                Some(std::cmp::Ordering::Less)
-            }
+            Some(std::cmp::Ordering::Less)
         }
     }
 }
@@ -354,7 +350,7 @@ fn signed_decimal_test() {
     assert!(small_pos - big_neg == f64_to_signed_decimal(small_pos_f64 - big_neg_f64));
     assert!(small_neg - big_neg == f64_to_signed_decimal(small_neg_f64 - big_neg_f64));
 
-    // Test cconversion
+    // Test conversion
     assert!(big_pos == f64_to_signed_decimal(big_pos_f64));
     assert!(big_neg == f64_to_signed_decimal(big_neg_f64));
     assert!(small_pos == f64_to_signed_decimal(small_pos_f64));

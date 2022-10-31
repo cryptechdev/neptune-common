@@ -31,7 +31,7 @@ pub enum AssetInfo {
 impl FromStr for AssetInfo {
     type Err = CommonError;
 
-    /// TODO: Not rigorous, should only be used for commandline
+    /// TODO: Not rigorous, should only be used for command line
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if s.len() < 10 || s.starts_with("ibc") {
             Ok(Self::NativeToken { denom: s.to_string() })
@@ -114,12 +114,12 @@ impl<'a> Prefixer<'a> for &'a AssetInfo {
     }
 }
 
-impl<'a> Into<Bound<'a, AssetInfo>> for AssetInfo {
-    fn into(self) -> Bound<'a, AssetInfo> { Bound::exclusive(self) }
+impl<'a> From<AssetInfo> for Bound<'a, AssetInfo> {
+    fn from(val: AssetInfo) -> Self { Bound::exclusive(val) }
 }
 
-impl<'a> Into<Bound<'a, &'a AssetInfo>> for &'a AssetInfo {
-    fn into(self) -> Bound<'a, &'a AssetInfo> { Bound::exclusive(self) }
+impl<'a> From<&'a AssetInfo> for Bound<'a, &'a AssetInfo> {
+    fn from(val: &'a AssetInfo) -> Self { Bound::exclusive(val) }
 }
 
 impl<'a> Bounder<'a> for AssetInfo {
@@ -171,18 +171,18 @@ pub struct AssetAmount {
     pub amount: Uint256,
 }
 
-impl Into<AssetVec> for AssetAmount {
-    fn into(self) -> AssetVec { vec![self.info.clone()].into() }
+impl From<AssetAmount> for AssetVec {
+    fn from(val: AssetAmount) -> Self { vec![val.info].into() }
 }
 
-impl Into<(AssetInfo, Uint256)> for AssetAmount {
-    fn into(self) -> (AssetInfo, Uint256) { (self.info, self.amount) }
+impl From<AssetAmount> for (AssetInfo, Uint256) {
+    fn from(val: AssetAmount) -> Self { (val.info, val.amount) }
 }
 
-impl Into<AssetVec> for AssetMap<Uint256> {
-    fn into(self) -> AssetVec {
+impl From<AssetMap<Uint256>> for AssetVec {
+    fn from(val: AssetMap<Uint256>) -> Self {
         let mut asset_vec = vec![];
-        for object in self {
+        for object in val {
             if !asset_vec.contains(&object.0) {
                 asset_vec.push(object.0.clone());
             }
@@ -202,9 +202,7 @@ impl TryInto<Coin> for AssetAmount {
 
     fn try_into(self) -> Result<Coin, Self::Error> {
         match self.info {
-            AssetInfo::Token { .. } => {
-                return Err(StdError::GenericErr { msg: "Cannot convert to AssetAmount".into() })
-            }
+            AssetInfo::Token { .. } => Err(StdError::GenericErr { msg: "Cannot convert to AssetAmount".into() }),
             AssetInfo::NativeToken { denom } => Ok(Coin { denom, amount: self.amount.try_into().unwrap() }),
         }
     }

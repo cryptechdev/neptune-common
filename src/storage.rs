@@ -40,13 +40,13 @@ pub fn read_map<
 pub fn get_contract_addr(
     deps: Deps, contract_name: &str, contract_address: &Option<CanonicalAddr>,
 ) -> Result<Addr, CommonError> {
-    Ok(deps
-        .api
-        .addr_humanize(&contract_address.clone().ok_or(CommonError::MissingAddress(contract_name.to_string()))?)?)
+    Ok(deps.api.addr_humanize(
+        &contract_address.clone().ok_or_else(|| CommonError::MissingAddress(contract_name.to_string()))?,
+    )?)
 }
 
 pub fn get_config_string(var: Option<String>) -> Result<String, CommonError> {
-    Ok(var.ok_or(CommonError::MissingConfigVariable {})?)
+    var.ok_or(CommonError::MissingConfigVariable {})
 }
 
 pub fn canonicalize_address(deps: Deps, address: &String) -> StdResult<Option<CanonicalAddr>> {
@@ -57,10 +57,10 @@ pub fn canonicalize_address(deps: Deps, address: &String) -> StdResult<Option<Ca
     }
 }
 
-pub fn canonicalize_addresses(deps: Deps, addresses: &Vec<String>) -> StdResult<Vec<CanonicalAddr>> {
+pub fn canonicalize_addresses(deps: Deps, addresses: &[String]) -> StdResult<Vec<CanonicalAddr>> {
     addresses.iter().map(|x| deps.api.addr_canonicalize(x.as_str())).collect()
 }
 
-pub fn humanize_addresses(deps: Deps, addresses: &Vec<CanonicalAddr>) -> StdResult<Vec<Addr>> {
+pub fn humanize_addresses(deps: Deps, addresses: &[CanonicalAddr]) -> StdResult<Vec<Addr>> {
     addresses.iter().map(|x| deps.api.addr_humanize(x)).collect()
 }

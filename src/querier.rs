@@ -34,7 +34,7 @@ pub fn query_supply(deps: Deps, contract_addr: &Addr) -> Result<Uint256, CommonE
 
 pub fn query_asset_balance(deps: Deps, account: &Addr, asset: &AssetInfo) -> Result<Uint256, CommonError> {
     match asset {
-        AssetInfo::NativeToken { denom } => Ok(query_balance(deps, &account, denom.clone())?),
-        AssetInfo::Token { contract_addr } => Ok(query_token_balance(deps, &Addr::unchecked(contract_addr), &account)?),
+        AssetInfo::NativeToken { denom } => Ok(query_balance(deps, account, denom.clone())?),
+        AssetInfo::Token { contract_addr } => Ok(query_token_balance(deps, &Addr::unchecked(contract_addr), account)?),
     }
 }

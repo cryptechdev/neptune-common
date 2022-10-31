@@ -76,8 +76,8 @@ pub enum CommonError {
     MissingHookMsg {},
 }
 
-impl Into<NeptuneAuthorizationError> for CommonError {
-    fn into(self) -> NeptuneAuthorizationError { NeptuneAuthorizationError::Error(self.to_string()) }
+impl From<CommonError> for NeptuneAuthorizationError {
+    fn from(val: CommonError) -> Self { NeptuneAuthorizationError::Error(val.to_string()) }
 }
 
 impl From<Box<dyn std::error::Error>> for CommonError {

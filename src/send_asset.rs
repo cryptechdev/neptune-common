@@ -29,7 +29,7 @@ pub enum SendFundsMsg {
 impl FromStr for SendFundsMsg {
     type Err = CommonError;
 
-    /// TODO: Not rigorous, should only be used for commandline
+    /// TODO: Not rigorous, should only be used for command line
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if s.len() < 10 || s.starts_with("ibc") {
             Ok(Self::SendCoins(s.to_string()))
@@ -48,11 +48,11 @@ impl From<AssetInfo> for SendFundsMsg {
     }
 }
 
-impl Into<AssetInfo> for SendFundsMsg {
-    fn into(self) -> AssetInfo {
-        match self {
+impl From<SendFundsMsg> for AssetInfo {
+    fn from(val: SendFundsMsg) -> Self {
+        match val {
             SendFundsMsg::SendCoins(denom) => AssetInfo::NativeToken { denom },
-            SendFundsMsg::SendTokens(addr) => AssetInfo::Token { contract_addr: addr.into() },
+            SendFundsMsg::SendTokens(addr) => AssetInfo::Token { contract_addr: addr },
         }
     }
 }
@@ -62,7 +62,7 @@ impl Into<AssetInfo> for SendFundsMsg {
 pub fn send_funds_tuple<A: NeptuneContractAuthorization<SendFundsMsg>>(
     deps: Deps, env: &Env, recipient: &Addr, mut amount: Uint256, send_msg: SendFundsMsg, exec_msg: Option<Binary>,
 ) -> Result<(CosmosMsg, Vec<Attribute>), CommonError> {
-    neptune_execute_authorize::<SendFundsMsg, A>(deps, &env, &recipient, &send_msg)?;
+    neptune_execute_authorize::<SendFundsMsg, A>(deps, env, recipient, &send_msg)?;
 
     let mut attrs: Vec<Attribute> = vec![];
 
@@ -79,7 +79,7 @@ pub fn send_funds_tuple<A: NeptuneContractAuthorization<SendFundsMsg>>(
             }
 
             // Create the Coin array and either send coins or attach to a message
-            let coins = vec![Coin { denom: denom.to_string(), amount: to_uint128(amount)? }];
+            let coins = vec![Coin { denom, amount: to_uint128(amount)? }];
             match exec_msg {
                 Some(binary) => attach_coins(coins, recipient, binary),
                 None => send_coins(coins, recipient),

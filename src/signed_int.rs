@@ -22,7 +22,7 @@ pub struct SignedInt {
 impl SignedInt {
     pub fn nan() -> Self { Self { value: Uint256::zero(), sign: false } }
 
-    pub fn is_nan(&self) -> bool { self.value.is_zero() && self.sign == false }
+    pub fn is_nan(&self) -> bool { self.value.is_zero() && !self.sign }
 
     pub fn value(&self) -> Uint256 {
         assert!(self.sign, "SignedInt is negative!");
@@ -93,17 +93,15 @@ impl std::ops::Add<SignedInt> for SignedInt {
         if self.sign == rhs.sign {
             value = self.value + rhs.value;
             sign = self.sign;
+        } else if self.value > rhs.value {
+            value = self.value - rhs.value;
+            sign = self.sign;
+        } else if self.value < rhs.value {
+            value = rhs.value - self.value;
+            sign = rhs.sign
         } else {
-            if self.value > rhs.value {
-                value = self.value - rhs.value;
-                sign = self.sign;
-            } else if self.value < rhs.value {
-                value = rhs.value - self.value;
-                sign = rhs.sign
-            } else {
-                value = Uint256::zero();
-                sign = true;
-            }
+            value = Uint256::zero();
+            sign = true;
         }
         Self { sign, value }
     }
@@ -167,12 +165,10 @@ impl std::cmp::PartialOrd for SignedInt {
             } else {
                 other.value.partial_cmp(&self.value)
             }
+        } else if self.sign {
+            Some(std::cmp::Ordering::Greater)
         } else {
-            if self.sign {
-                Some(std::cmp::Ordering::Greater)
-            } else {
-                Some(std::cmp::Ordering::Less)
-            }
+            Some(std::cmp::Ordering::Less)
         }
     }
 }
@@ -279,7 +275,7 @@ fn signed_int_test() {
     assert!(small_pos - big_neg == f64_to_signed_int(small_pos_f64 - big_neg_f64));
     assert!(small_neg - big_neg == f64_to_signed_int(small_neg_f64 - big_neg_f64));
 
-    // Test cconversion
+    // Test conversion
     assert!(big_pos == f64_to_signed_int(big_pos_f64));
     assert!(big_neg == f64_to_signed_int(big_neg_f64));
     assert!(small_pos == f64_to_signed_int(small_pos_f64));

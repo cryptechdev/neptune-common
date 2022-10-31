@@ -27,12 +27,7 @@ where
 
     pub fn insert(&mut self, tuple: (K, V)) { self.0.push(tuple); }
 
-    pub fn contains(&self, key: &K) -> bool {
-        match self.may_get(key) {
-            Some(_) => true,
-            None => false,
-        }
-    }
+    pub fn contains(&self, key: &K) -> bool { self.may_get(key).is_some() }
 
     pub fn position(&self, key: &K) -> Option<usize> { self.0.iter().position(|x| &x.0 == key) }
 
@@ -74,7 +69,7 @@ where
     pub fn map_val<F: Fn(&V) -> O, O>(&mut self, f: F) -> Map<K, O> {
         let mut output = vec![];
         for (key, val) in &self.0 {
-            let function_output = f(&val);
+            let function_output = f(val);
             output.push((key.clone(), function_output));
         }
         output.into()
@@ -83,7 +78,7 @@ where
     pub fn map_result_val<F: Fn(&V) -> Result<O, E>, O, E>(&mut self, f: F) -> Result<Map<K, O>, E> {
         let mut output = vec![];
         for (key, val) in &self.0 {
-            let function_output = f(&val)?;
+            let function_output = f(val)?;
             output.push((key.clone(), function_output));
         }
         Ok(output.into())
@@ -176,7 +171,7 @@ where
 }
 
 impl<K, V> Default for Map<K, V> {
-    fn default() -> Self { Self { 0: vec![] } }
+    fn default() -> Self { Self(Vec::new()) }
 }
 
 impl<K, V> FromIterator<(K, V)> for Map<K, V> {
@@ -247,7 +242,7 @@ where
         let mut output = vec![];
         for rhs_val in rhs.0 {
             if let Some(val) = self.may_get(&rhs_val.0) {
-                output.push((rhs_val.0, Decimal256::from_ratio(val.clone(), rhs_val.1)))
+                output.push((rhs_val.0, Decimal256::from_ratio(*val, rhs_val.1)))
             }
         }
         output.into()
@@ -317,7 +312,7 @@ where
                 key_vec.push(key.clone());
             }
         }
-        key_vec.into()
+        key_vec
     }
 }
 
@@ -334,7 +329,7 @@ pub fn extract_keys<'a, K: 'a + PartialEq + Clone>(vec: Vec<&'a dyn GetKeyVec<K>
             }
         }
     }
-    asset_vec.into()
+    asset_vec
 }
 
 // pub fn extract_keys<'a, K: 'a + PartialEq + Clone, I: IntoIterator<Item = &'a dyn
