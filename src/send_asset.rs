@@ -69,11 +69,11 @@ pub fn send_funds_tuple<A: NeptuneContractAuthorization<SendFundsMsg>>(
     let cosmos_msg = match send_msg {
         SendFundsMsg::SendCoins(denom) => {
             // Cap by our balance
-            let coin_balance = query_balance(deps, &env.contract.address, denom.to_string())?;
-            if amount > coin_balance {
-                warn!(attrs, NeptuneWarning::InsuffBalance);
-                amount = coin_balance;
-            }
+            // let coin_balance = query_balance(deps, &env.contract.address, denom.to_string())?;
+            // if amount > coin_balance {
+            //     warn!(attrs, NeptuneWarning::InsuffBalance);
+            //     amount = coin_balance;
+            // }
             if amount.is_zero() {
                 warn!(attrs, NeptuneWarning::AmountWasZero);
             }
@@ -87,11 +87,11 @@ pub fn send_funds_tuple<A: NeptuneContractAuthorization<SendFundsMsg>>(
         }
         SendFundsMsg::SendTokens(token_addr) => {
             // Cap by our balance
-            let token_balance = query_token_balance(deps, &token_addr, &env.contract.address)?;
-            if amount > token_balance {
-                warn!(attrs, NeptuneWarning::InsuffBalance);
-                amount = token_balance;
-            }
+            // let token_balance = query_token_balance(deps, &token_addr, &env.contract.address)?;
+            // if amount > token_balance {
+            //     warn!(attrs, NeptuneWarning::InsuffBalance);
+            //     amount = token_balance;
+            // }
             if amount.is_zero() {
                 warn!(attrs, NeptuneWarning::AmountWasZero);
             }

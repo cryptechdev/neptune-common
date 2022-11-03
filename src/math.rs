@@ -26,11 +26,11 @@ pub fn get_difference_or_error<T: std::ops::Sub<Output = T> + std::cmp::PartialO
     }
 }
 
-pub fn get_division_or_zero(nom: Uint256, denom: Uint256) -> Decimal256 {
+pub fn get_division_or_zero(num: Uint256, denom: Uint256) -> Decimal256 {
     if denom.is_zero() {
         Decimal256::zero()
     } else {
-        Decimal256::from_ratio(nom, denom)
+        Decimal256::from_ratio(num, denom)
     }
 }
 
