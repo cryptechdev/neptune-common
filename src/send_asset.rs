@@ -13,7 +13,6 @@ use crate::{
     asset::AssetInfo,
     error::{CommonError, CommonResult},
     math::to_uint128,
-    querier::{query_balance, query_token_balance},
     warn,
     warning::NeptuneWarning,
 };
@@ -60,7 +59,7 @@ impl From<SendFundsMsg> for AssetInfo {
 /// TODO: this should be refactored to not modify the send value, Should likely contain a fail and
 /// no_fail variant.
 pub fn send_funds_tuple<A: NeptuneContractAuthorization<SendFundsMsg>>(
-    deps: Deps, env: &Env, recipient: &Addr, mut amount: Uint256, send_msg: SendFundsMsg, exec_msg: Option<Binary>,
+    deps: Deps, env: &Env, recipient: &Addr, amount: Uint256, send_msg: SendFundsMsg, exec_msg: Option<Binary>,
 ) -> Result<(CosmosMsg, Vec<Attribute>), CommonError> {
     neptune_execute_authorize::<SendFundsMsg, A>(deps, env, recipient, &send_msg)?;
 

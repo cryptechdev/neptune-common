@@ -2,8 +2,9 @@ use std::{fmt::Debug, str::FromStr};
 
 use cosmwasm_std::{Addr, Binary, Timestamp, Uint128};
 use cw20::Cw20ReceiveMsg;
+use serde::de::DeserializeOwned;
 
-use crate::{asset::AssetInfo, error::CommonResult};
+use crate::{asset::AssetInfo, error::CommonResult, map::Map};
 
 pub fn addr_parser(s: &str) -> CommonResult<Addr> { Ok(Addr::unchecked(s.to_string())) }
 
@@ -13,6 +14,14 @@ pub fn time_stamp_parser(s: &str) -> CommonResult<Timestamp> { Ok(serde_json::fr
 
 pub fn cw20_receive_parser(_: &str) -> CommonResult<Cw20ReceiveMsg> {
     Ok(Cw20ReceiveMsg { sender: String::default(), amount: Uint128::default(), msg: Binary::default() })
+}
+
+pub fn map_parser<T, U>(s: &str) -> CommonResult<Map<T, U>>
+where
+    T: DeserializeOwned,
+    U: DeserializeOwned,
+{
+    Ok(serde_json::from_str::<Map<T, U>>(s).unwrap())
 }
 
 pub fn tuple_parser<T, U>(s: &str) -> CommonResult<(T, U)>
