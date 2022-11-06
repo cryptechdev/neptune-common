@@ -1,13 +1,10 @@
-use std::{fmt::Debug, str::FromStr};
-
 use cosmwasm_std::{
     attr, to_binary, Addr, Attribute, BankMsg, Binary, Coin, CosmosMsg, Deps, Env, Response, Uint256, WasmMsg,
 };
 use cw20::Cw20ExecuteMsg;
 // Neptune Package crate imports
 use neptune_authorization::authorization::{neptune_execute_authorize, NeptuneContractAuthorization};
-use schemars::JsonSchema;
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::{de::DeserializeOwned, Serialize};
 
 use crate::{
     asset::AssetInfo,
@@ -17,46 +14,9 @@ use crate::{
     warning::NeptuneWarning,
 };
 
-// TODO: get rid of this and just use AssetInfo instead
-/// The private messages for sending funds out of a contract.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub enum SendFundsMsg {
-    SendCoins(String),
-    SendTokens(Addr),
-}
+pub type SendFundsMsg = AssetInfo;
 
-impl FromStr for SendFundsMsg {
-    type Err = CommonError;
-
-    /// TODO: Not rigorous, should only be used for command line
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.len() < 10 || s.starts_with("ibc") {
-            Ok(Self::SendCoins(s.to_string()))
-        } else {
-            Ok(Self::SendTokens(Addr::unchecked(s)))
-        }
-    }
-}
-
-impl From<AssetInfo> for SendFundsMsg {
-    fn from(asset: AssetInfo) -> Self {
-        match asset {
-            AssetInfo::NativeToken { denom } => SendFundsMsg::SendCoins(denom),
-            AssetInfo::Token { contract_addr: addr } => SendFundsMsg::SendTokens(Addr::unchecked(addr)),
-        }
-    }
-}
-
-impl From<SendFundsMsg> for AssetInfo {
-    fn from(val: SendFundsMsg) -> Self {
-        match val {
-            SendFundsMsg::SendCoins(denom) => AssetInfo::NativeToken { denom },
-            SendFundsMsg::SendTokens(addr) => AssetInfo::Token { contract_addr: addr },
-        }
-    }
-}
-
+// TODO: consider vectorizing this. Would be nice to send multiple assets.
 pub fn send_funds_tuple<A: NeptuneContractAuthorization<SendFundsMsg>>(
     deps: Deps, env: &Env, recipient: &Addr, amount: Uint256, send_msg: SendFundsMsg, exec_msg: Option<Binary>,
 ) -> Result<(CosmosMsg, Vec<Attribute>), CommonError> {
@@ -65,7 +25,7 @@ pub fn send_funds_tuple<A: NeptuneContractAuthorization<SendFundsMsg>>(
     let mut attrs: Vec<Attribute> = vec![];
 
     let cosmos_msg = match send_msg {
-        SendFundsMsg::SendCoins(denom) => {
+        SendFundsMsg::NativeToken { denom } => {
             if amount.is_zero() {
                 warn!(attrs, NeptuneWarning::AmountWasZero);
             }
@@ -77,7 +37,7 @@ pub fn send_funds_tuple<A: NeptuneContractAuthorization<SendFundsMsg>>(
                 None => send_coins(coins, recipient),
             }
         }
-        SendFundsMsg::SendTokens(token_addr) => {
+        SendFundsMsg::Token { contract_addr: token_addr } => {
             if amount.is_zero() {
                 warn!(attrs, NeptuneWarning::AmountWasZero);
             }
