@@ -17,6 +17,7 @@ use crate::{
     warning::NeptuneWarning,
 };
 
+// TODO: get rid of this and just use AssetInfo instead
 /// The private messages for sending funds out of a contract.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
@@ -56,8 +57,6 @@ impl From<SendFundsMsg> for AssetInfo {
     }
 }
 
-/// TODO: this should be refactored to not modify the send value, Should likely contain a fail and
-/// no_fail variant.
 pub fn send_funds_tuple<A: NeptuneContractAuthorization<SendFundsMsg>>(
     deps: Deps, env: &Env, recipient: &Addr, amount: Uint256, send_msg: SendFundsMsg, exec_msg: Option<Binary>,
 ) -> Result<(CosmosMsg, Vec<Attribute>), CommonError> {
@@ -67,12 +66,6 @@ pub fn send_funds_tuple<A: NeptuneContractAuthorization<SendFundsMsg>>(
 
     let cosmos_msg = match send_msg {
         SendFundsMsg::SendCoins(denom) => {
-            // Cap by our balance
-            // let coin_balance = query_balance(deps, &env.contract.address, denom.to_string())?;
-            // if amount > coin_balance {
-            //     warn!(attrs, NeptuneWarning::InsuffBalance);
-            //     amount = coin_balance;
-            // }
             if amount.is_zero() {
                 warn!(attrs, NeptuneWarning::AmountWasZero);
             }
@@ -85,12 +78,6 @@ pub fn send_funds_tuple<A: NeptuneContractAuthorization<SendFundsMsg>>(
             }
         }
         SendFundsMsg::SendTokens(token_addr) => {
-            // Cap by our balance
-            // let token_balance = query_token_balance(deps, &token_addr, &env.contract.address)?;
-            // if amount > token_balance {
-            //     warn!(attrs, NeptuneWarning::InsuffBalance);
-            //     amount = token_balance;
-            // }
             if amount.is_zero() {
                 warn!(attrs, NeptuneWarning::AmountWasZero);
             }
