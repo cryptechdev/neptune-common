@@ -53,7 +53,7 @@ pub fn send_funds_tuple(
         SendFundsMsg::NativeToken { denom } => {
             send_coins(vec![Coin { denom, amount: to_uint128(amount)? }], recipient, exec_msg)
         }
-        SendFundsMsg::Token { contract_addr: token_addr } => send_tokens(&token_addr, amount, exec_msg, recipient)?,
+        SendFundsMsg::Token { contract_addr: token_addr } => send_tokens(&token_addr, amount, recipient, exec_msg)?,
     };
 
     Ok((cosmos_msg, attrs))
@@ -91,7 +91,7 @@ fn transfer_tokens(token_addr: &Addr, token_amount: Uint256, recipient_addr: &Ad
 }
 
 fn send_tokens(
-    token_addr: &Addr, token_amount: Uint256, exec_msg: Binary, recipient_addr: &Addr,
+    token_addr: &Addr, token_amount: Uint256, recipient_addr: &Addr, exec_msg: Binary,
 ) -> Result<CosmosMsg, CommonError> {
     Ok(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: token_addr.to_string(),
