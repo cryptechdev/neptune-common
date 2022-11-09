@@ -308,6 +308,24 @@ pub trait GetKeyVec<K> {
     fn get_key_vec(&self) -> Vec<K>;
 }
 
+impl<T, K> GetKeyVec<K> for Vec<T>
+where
+    K: PartialEq + Clone,
+    T: GetKeyVec<K>,
+{
+    fn get_key_vec(&self) -> Vec<K> {
+        let mut key_vec = vec![];
+        for val in self {
+            for key in val.get_key_vec() {
+                if !key_vec.contains(&key) {
+                    key_vec.push(key.clone());
+                }
+            }
+        }
+        key_vec
+    }
+}
+
 impl<K, V> GetKeyVec<K> for Map<K, V>
 where
     K: PartialEq + Clone,
