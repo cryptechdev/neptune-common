@@ -6,27 +6,7 @@ use crate::error::{CommonError, CommonResult};
 
 pub const UINT256_ONE: Uint256 = Uint256::from_u128(1u128);
 
-pub fn get_difference_or_zero<T: std::ops::Sub<Output = T> + std::cmp::PartialOrd + Default>(
-    first_term: T, second_term: T,
-) -> T {
-    if first_term > second_term {
-        first_term - second_term
-    } else {
-        T::default()
-    }
-}
-
-pub fn get_difference_or_error<T: std::ops::Sub<Output = T> + std::cmp::PartialOrd>(
-    first_term: T, second_term: T, error_msg: String,
-) -> CommonResult<T> {
-    if first_term < second_term {
-        Err(CommonError::Generic(error_msg))
-    } else {
-        Ok(first_term - second_term)
-    }
-}
-
-pub fn get_division_or_zero(num: Uint256, denom: Uint256) -> Decimal256 {
+pub fn div_or_zero(num: Uint256, denom: Uint256) -> Decimal256 {
     if denom.is_zero() {
         Decimal256::zero()
     } else {
@@ -69,26 +49,6 @@ fn assert_serialize() {
 }
 
 #[test]
-fn get_difference_or_zero_test() {
-    use std::str::FromStr;
-
-    use crate::signed_decimal::SignedDecimal;
-    let big = SignedDecimal::from_str("100").unwrap();
-    let small = SignedDecimal::from_str("50").unwrap();
-    assert!(get_difference_or_zero(small, big) == SignedDecimal::from_str("0").unwrap());
-}
-
-#[test]
-fn get_difference_or_error_test() {
-    use std::str::FromStr;
-
-    use crate::signed_decimal::SignedDecimal;
-    let big = SignedDecimal::from_str("100").unwrap();
-    let small = SignedDecimal::from_str("50").unwrap();
-    assert!(get_difference_or_error(small, big, "".to_string()).is_err());
-}
-
-#[test]
 fn get_division_or_zero_test() {
-    assert!(get_division_or_zero(UINT256_ONE, Uint256::zero()).is_zero());
+    assert!(div_or_zero(UINT256_ONE, Uint256::zero()).is_zero());
 }

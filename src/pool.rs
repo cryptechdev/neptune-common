@@ -2,7 +2,7 @@ use cosmwasm_std::{Decimal256, Uint256};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::{map::IsZeroed, math::get_difference_or_zero};
+use crate::map::IsZeroed;
 
 #[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq, Default, JsonSchema)]
 pub struct Pool {
@@ -11,12 +11,12 @@ pub struct Pool {
 }
 
 #[derive(Debug, PartialEq, JsonSchema)]
-pub struct PoolRef<'a> {
+pub struct PoolMut<'a> {
     pub balance: &'a mut Uint256,
     pub shares:  &'a mut Uint256,
 }
 
-impl<'a> PoolRef<'a> {
+impl<'a> PoolMut<'a> {
     pub fn add_shares(self, shares: Uint256, account: &mut PoolAccount) -> AddSharesResponse {
         let pool_balance = self.balance;
         let pool_shares = self.shares;
@@ -73,7 +73,7 @@ impl<'a> PoolRef<'a> {
         let amount_to_remove = *pool_balance * fraction_to_withdraw;
 
         *account_shares -= shares_to_remove;
-        *account_principle = get_difference_or_zero(*account_principle, amount_to_remove);
+        *account_principle = account_principle.saturating_sub(amount_to_remove);
 
         *pool_shares -= shares_to_remove;
         *pool_balance -= amount_to_remove;
@@ -101,7 +101,7 @@ impl<'a> PoolRef<'a> {
         }
 
         *account_shares -= shares_to_remove;
-        *account_principle = get_difference_or_zero(*account_principle, amount_to_remove);
+        *account_principle = account_principle.saturating_sub(amount_to_remove);
 
         *pool_shares -= shares_to_remove;
         *pool_balance -= amount_to_remove;
@@ -116,7 +116,7 @@ impl<'a> PoolRef<'a> {
 
     pub fn decrease_balance(self, amount: Uint256) {
         let pool_balance = self.balance;
-        *pool_balance = get_difference_or_zero(*pool_balance, amount);
+        *pool_balance = pool_balance.saturating_sub(amount);
     }
 
     pub fn get_account_balance(self, account: PoolAccount) -> Uint256 {
@@ -127,7 +127,7 @@ impl<'a> PoolRef<'a> {
 impl Pool {
     pub fn new() -> Self { Self { balance: Uint256::zero(), shares: Uint256::zero() } }
 
-    pub fn into_ref(&mut self) -> PoolRef { PoolRef { balance: &mut self.balance, shares: &mut self.shares } }
+    pub fn into_ref(&mut self) -> PoolMut { PoolMut { balance: &mut self.balance, shares: &mut self.shares } }
 
     pub fn add_shares(&mut self, shares: Uint256, account: &mut PoolAccount) -> AddSharesResponse {
         self.into_ref().add_shares(shares, account)
@@ -181,42 +181,46 @@ impl IsZeroed for PoolAccount {
     fn is_zeroed(&self) -> bool { self.shares.is_zero() }
 }
 
-#[test]
-fn pool_test() {
-    use cosmwasm_std::Uint256;
+mod test {
+    #[test]
+    fn pool_test() {
+        use cosmwasm_std::Uint256;
 
-    let mut pool: Pool = Pool::default();
-    let mut account1: PoolAccount = PoolAccount::default();
-    let mut account2: PoolAccount = PoolAccount::default();
+        use super::*;
 
-    pool.add_amount(Uint256::from(100u64), &mut account1);
-    assert_eq!(pool.balance, Uint256::from(100u64));
-    assert_eq!(pool.shares, Uint256::from(100u64));
-    assert_eq!(account1.principle, Uint256::from(100u64));
-    assert_eq!(account1.shares, Uint256::from(100u64));
+        let mut pool: Pool = Pool::default();
+        let mut account1: PoolAccount = PoolAccount::default();
+        let mut account2: PoolAccount = PoolAccount::default();
 
-    pool.increase_balance(Uint256::from(100u64));
-    assert_eq!(pool.balance, Uint256::from(200u64));
-    assert_eq!(pool.shares, Uint256::from(100u64));
-    assert_eq!(account1.principle, Uint256::from(100u64));
-    assert_eq!(account1.shares, Uint256::from(100u64));
-    assert_eq!(pool.get_account_balance(account1), Uint256::from(200u64));
+        pool.add_amount(Uint256::from(100u64), &mut account1);
+        assert_eq!(pool.balance, Uint256::from(100u64));
+        assert_eq!(pool.shares, Uint256::from(100u64));
+        assert_eq!(account1.principle, Uint256::from(100u64));
+        assert_eq!(account1.shares, Uint256::from(100u64));
 
-    pool.add_shares(Uint256::from(50u64), &mut account2);
-    assert_eq!(pool.balance, Uint256::from(300u64));
-    assert_eq!(pool.shares, Uint256::from(150u64));
-    assert_eq!(account2.principle, Uint256::from(100u64));
-    assert_eq!(account2.shares, Uint256::from(50u64));
+        pool.increase_balance(Uint256::from(100u64));
+        assert_eq!(pool.balance, Uint256::from(200u64));
+        assert_eq!(pool.shares, Uint256::from(100u64));
+        assert_eq!(account1.principle, Uint256::from(100u64));
+        assert_eq!(account1.shares, Uint256::from(100u64));
+        assert_eq!(pool.get_account_balance(account1), Uint256::from(200u64));
 
-    pool.remove_amount(Uint256::from(100u64), &mut account2);
-    assert_eq!(pool.balance, Uint256::from(200u64));
-    assert_eq!(pool.shares, Uint256::from(101u64));
-    assert_eq!(account2.principle, Uint256::from(0u64));
-    assert_eq!(account2.shares, Uint256::from(1u64));
+        pool.add_shares(Uint256::from(50u64), &mut account2);
+        assert_eq!(pool.balance, Uint256::from(300u64));
+        assert_eq!(pool.shares, Uint256::from(150u64));
+        assert_eq!(account2.principle, Uint256::from(100u64));
+        assert_eq!(account2.shares, Uint256::from(50u64));
 
-    pool.remove_shares(Uint256::from(100u64), &mut account2);
-    assert_eq!(pool.balance, Uint256::from(199u64));
-    assert_eq!(pool.shares, Uint256::from(100u64));
-    assert_eq!(account2.principle, Uint256::from(0u64));
-    assert_eq!(account2.shares, Uint256::from(0u64));
+        pool.remove_amount(Uint256::from(100u64), &mut account2);
+        assert_eq!(pool.balance, Uint256::from(200u64));
+        assert_eq!(pool.shares, Uint256::from(101u64));
+        assert_eq!(account2.principle, Uint256::from(0u64));
+        assert_eq!(account2.shares, Uint256::from(1u64));
+
+        pool.remove_shares(Uint256::from(100u64), &mut account2);
+        assert_eq!(pool.balance, Uint256::from(199u64));
+        assert_eq!(pool.shares, Uint256::from(100u64));
+        assert_eq!(account2.principle, Uint256::from(0u64));
+        assert_eq!(account2.shares, Uint256::from(0u64));
+    }
 }
