@@ -44,21 +44,6 @@ pub fn from_decimal(other: Decimal) -> Decimal256 {
     Decimal256::from_atomics(other.atomics(), other.decimal_places()).unwrap()
 }
 
-/// TODO Figure out a way to do this better, for testing only
-pub fn big_num_sqrt(input: cosmwasm_std::Decimal256) -> cosmwasm_std::Decimal256 {
-    let std_input: cosmwasm_std::Decimal256 = convert_through_str(input).unwrap();
-    let std_sqrt = std_input.sqrt();
-    let output: cosmwasm_std::Decimal256 = convert_through_str(std_sqrt).unwrap();
-    output
-}
-
-/// TODO Figure out a way to do this better, for testing only
-pub fn convert_through_str<From: ToString, To: FromStr>(from: From) -> Result<To, <To as FromStr>::Err> {
-    let string = from.to_string();
-    let str = string.as_str();
-    To::from_str(str)
-}
-
 #[test]
 fn assert_serialize() {
     use cosmwasm_std::to_binary;
