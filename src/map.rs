@@ -304,6 +304,10 @@ impl<K, V> From<Vec<(K, V)>> for Map<K, V> {
     fn from(object: Vec<(K, V)>) -> Self { Map(object) }
 }
 
+impl<K, V> From<(K, V)> for Map<K, V> {
+    fn from(object: (K, V)) -> Self { Map(vec![object]) }
+}
+
 pub trait GetKeyVec<K> {
     fn get_key_vec(&self) -> Vec<K>;
 }
