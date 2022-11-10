@@ -1,6 +1,4 @@
-use cosmwasm_std::{
-    attr, to_binary, Addr, Attribute, BankMsg, Binary, Coin, CosmosMsg, Env, Response, Uint256, WasmMsg,
-};
+use cosmwasm_std::{to_binary, Addr, BankMsg, Binary, Coin, CosmosMsg, Env, Uint256, WasmMsg};
 use cw20::Cw20ExecuteMsg;
 // Neptune Package crate imports
 use serde::{de::DeserializeOwned, Serialize};
@@ -10,21 +8,15 @@ use crate::{
     asset_map::AssetMap,
     error::{CommonError, CommonResult},
     math::to_uint128,
-    warn,
-    warning::NeptuneWarning,
 };
 
 pub type SendFundsMsg = AssetInfo;
 
-pub fn transfer_funds_tuple(
-    recipient: &Addr, funds: AssetMap<Uint256>,
-) -> Result<(Vec<CosmosMsg>, Vec<Attribute>), CommonError> {
+pub fn transfer_funds(recipient: &Addr, mut funds: AssetMap<Uint256>) -> Result<Vec<CosmosMsg>, CommonError> {
     let mut msgs = vec![];
-    let mut attrs = vec![];
+    // remove any elements that are zero
+    funds.retain(|x| !x.1.is_zero());
     for (asset, amount) in funds {
-        if amount.is_zero() {
-            warn!(attrs, NeptuneWarning::AmountWasZero);
-        }
         msgs.push(match asset {
             AssetInfo::NativeToken { denom } => {
                 transfer_coins(vec![Coin { denom, amount: to_uint128(amount)? }], recipient)
@@ -33,38 +25,20 @@ pub fn transfer_funds_tuple(
         });
     }
 
-    Ok((msgs, attrs))
+    Ok(msgs)
 }
 
-pub fn transfer_funds(recipient: &Addr, funds: AssetMap<Uint256>) -> Result<Response, CommonError> {
-    let (msgs, attrs) = transfer_funds_tuple(recipient, funds)?;
-    Ok(Response::new().add_messages(msgs).add_attributes(attrs))
-}
-
-pub fn send_funds_tuple(
+pub fn send_funds(
     recipient: &Addr, amount: Uint256, send_msg: SendFundsMsg, exec_msg: Binary,
-) -> Result<(CosmosMsg, Vec<Attribute>), CommonError> {
-    let mut attrs: Vec<Attribute> = vec![];
-    if amount.is_zero() {
-        warn!(attrs, NeptuneWarning::AmountWasZero);
-    }
-
-    let cosmos_msg = match send_msg {
+) -> Result<CosmosMsg, CommonError> {
+    let msg = match send_msg {
         SendFundsMsg::NativeToken { denom } => {
             send_coins(vec![Coin { denom, amount: to_uint128(amount)? }], recipient, exec_msg)
         }
         SendFundsMsg::Token { contract_addr: token_addr } => send_tokens(&token_addr, amount, recipient, exec_msg)?,
     };
 
-    Ok((cosmos_msg, attrs))
-}
-
-pub fn send_funds(
-    recipient: &Addr, amount: Uint256, send_msg: SendFundsMsg, exec_msg: Binary,
-) -> Result<Response, CommonError> {
-    let tuple = send_funds_tuple(recipient, amount, send_msg, exec_msg)?;
-
-    Ok(Response::new().add_message(tuple.0).add_attributes(tuple.1))
+    Ok(msg)
 }
 
 fn transfer_coins(coins: Vec<Coin>, recipient_addr: &Addr) -> CosmosMsg {
