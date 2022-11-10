@@ -13,5 +13,5 @@ impl IntoIterator for AssetVec {
 }
 
 impl From<Vec<AssetInfo>> for AssetVec {
-    fn from(object: Vec<AssetInfo>) -> Self { AssetVec(object) }
+    fn from(object: Vec<AssetInfo>) -> Self { Self(object) }
 }

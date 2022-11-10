@@ -29,7 +29,7 @@ pub enum NeptuneWarning<'a> {
 }
 
 impl<'a> NeptuneWarning<'a> {
-    pub fn str(self) -> &'a str {
+    pub const fn str(self) -> &'a str {
         match self {
             Self::AmountWasZero => "Amount was zero.",
             Self::AmountBelowThreshold => "Amount is below threshold.",

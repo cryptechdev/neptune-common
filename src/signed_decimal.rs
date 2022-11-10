@@ -21,17 +21,17 @@ pub struct SignedDecimal {
 }
 
 impl SignedDecimal {
-    pub fn nan() -> Self { Self { value: Decimal256::zero(), sign: false } }
+    pub const fn nan() -> Self { Self { value: Decimal256::zero(), sign: false } }
 
-    pub fn is_nan(&self) -> bool { self.value.is_zero() && !self.sign }
+    pub const fn is_nan(&self) -> bool { self.value.is_zero() && !self.sign }
 
     pub fn value(&self) -> Decimal256 {
         assert!(self.sign, "SignedDecimal is negative!");
         self.value
     }
 
-    pub fn from_uint256(val: Uint256) -> Result<SignedDecimal, CommonError> {
-        Ok(SignedDecimal {
+    pub fn from_uint256(val: Uint256) -> Result<Self, CommonError> {
+        Ok(Self {
             value: Decimal256::from_atomics(val, 0u32).map_err(CommonError::Decimal256RangeExceeded)?,
             sign:  true,
         })
@@ -86,7 +86,7 @@ impl num_traits::sign::Signed for SignedDecimal {
     fn signum(&self) -> Self {
         match self.sign {
             true => Self::one(),
-            false => SignedDecimal { value: Decimal256::one(), sign: false },
+            false => Self { value: Decimal256::one(), sign: false },
         }
     }
 
@@ -106,10 +106,10 @@ impl ToString for SignedDecimal {
     }
 }
 
-impl std::ops::Add<SignedDecimal> for SignedDecimal {
+impl std::ops::Add<Self> for SignedDecimal {
     type Output = Self;
 
-    fn add(self, rhs: SignedDecimal) -> Self {
+    fn add(self, rhs: Self) -> Self {
         let value;
         let sign;
         if self.sign == rhs.sign {
@@ -129,25 +129,25 @@ impl std::ops::Add<SignedDecimal> for SignedDecimal {
     }
 }
 
-impl std::ops::Sub<SignedDecimal> for SignedDecimal {
+impl std::ops::Sub<Self> for SignedDecimal {
     type Output = Self;
 
-    fn sub(self, rhs: SignedDecimal) -> Self { self + Self { value: rhs.value, sign: !rhs.sign } }
+    fn sub(self, rhs: Self) -> Self { self + Self { value: rhs.value, sign: !rhs.sign } }
 }
 
-impl std::ops::Mul<SignedDecimal> for SignedDecimal {
+impl std::ops::Mul<Self> for SignedDecimal {
     type Output = Self;
 
-    fn mul(self, rhs: SignedDecimal) -> Self {
+    fn mul(self, rhs: Self) -> Self {
         let value = self.value * rhs.value;
         Self { value, sign: self.sign == rhs.sign || value.is_zero() }
     }
 }
 
-impl std::ops::Div<SignedDecimal> for SignedDecimal {
+impl std::ops::Div<Self> for SignedDecimal {
     type Output = Self;
 
-    fn div(self, rhs: SignedDecimal) -> Self {
+    fn div(self, rhs: Self) -> Self {
         let value = if rhs.value.is_zero() {
             rhs.value
         } else {

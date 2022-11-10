@@ -20,9 +20,9 @@ pub struct SignedInt {
 }
 
 impl SignedInt {
-    pub fn nan() -> Self { Self { value: Uint256::zero(), sign: false } }
+    pub const fn nan() -> Self { Self { value: Uint256::zero(), sign: false } }
 
-    pub fn is_nan(&self) -> bool { self.value.is_zero() && !self.sign }
+    pub const fn is_nan(&self) -> bool { self.value.is_zero() && !self.sign }
 
     pub fn value(&self) -> Uint256 {
         assert!(self.sign, "SignedInt is negative!");
@@ -84,10 +84,10 @@ impl ToString for SignedInt {
     }
 }
 
-impl std::ops::Add<SignedInt> for SignedInt {
+impl std::ops::Add<Self> for SignedInt {
     type Output = Self;
 
-    fn add(self, rhs: SignedInt) -> Self {
+    fn add(self, rhs: Self) -> Self {
         let value;
         let sign;
         if self.sign == rhs.sign {
@@ -116,16 +116,16 @@ impl std::ops::Add<SignedInt> for Uint256 {
     }
 }
 
-impl std::ops::Sub<SignedInt> for SignedInt {
+impl std::ops::Sub<Self> for SignedInt {
     type Output = Self;
 
-    fn sub(self, rhs: SignedInt) -> Self { self + Self { value: rhs.value, sign: !rhs.sign } }
+    fn sub(self, rhs: Self) -> Self { self + Self { value: rhs.value, sign: !rhs.sign } }
 }
 
-impl std::ops::Mul<SignedInt> for SignedInt {
+impl std::ops::Mul<Self> for SignedInt {
     type Output = Self;
 
-    fn mul(self, rhs: SignedInt) -> Self {
+    fn mul(self, rhs: Self) -> Self {
         let value = self.value * rhs.value;
         Self { value, sign: self.sign == rhs.sign || value.is_zero() }
     }
@@ -140,10 +140,10 @@ impl std::ops::Mul<Decimal256> for SignedInt {
     }
 }
 
-impl std::ops::Div<SignedInt> for SignedInt {
+impl std::ops::Div<Self> for SignedInt {
     type Output = Self;
 
-    fn div(self, rhs: SignedInt) -> Self {
+    fn div(self, rhs: Self) -> Self {
         let value = if rhs.value.is_zero() {
             rhs.value
         } else {

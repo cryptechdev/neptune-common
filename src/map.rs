@@ -15,7 +15,7 @@ use crate::{
     error::{CommonError, CommonResult},
 };
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize, JsonSchema, Shrinkwrap)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize, JsonSchema, Shrinkwrap)]
 #[shrinkwrap(mutable)]
 pub struct Map<K, V>(pub Vec<(K, V)>);
 
@@ -23,7 +23,7 @@ impl<K, V> Map<K, V>
 where
     K: PartialEq + Clone + Debug,
 {
-    pub fn new() -> Self { Map(Vec::new()) }
+    pub const fn new() -> Self { Self(Vec::new()) }
 
     pub fn insert(&mut self, tuple: (K, V)) { self.0.push(tuple); }
 
@@ -224,7 +224,7 @@ where
     K: PartialEq + Clone + Debug,
     V: Mul<Decimal256, Output = V> + Clone,
 {
-    type Output = Map<K, V>;
+    type Output = Self;
 
     /// multiplies each value with a Decimal256
     fn mul(mut self, rhs: Decimal256) -> Self::Output {
@@ -244,7 +244,7 @@ where
     /// Divides two maps with Uint256 values.
     /// The result is a map of Decimal256.
     /// Values with no matching keys are discarded.
-    fn div(self, rhs: Map<K, Uint256>) -> Self::Output {
+    fn div(self, rhs: Self) -> Self::Output {
         let mut output = vec![];
         for rhs_val in rhs.0 {
             if let Some(val) = self.may_get(&rhs_val.0) {
@@ -260,7 +260,7 @@ where
     K: PartialEq + Clone + Debug,
     V: Div<Decimal256, Output = V> + Clone,
 {
-    type Output = Map<K, V>;
+    type Output = Self;
 
     /// Divides each value with a Decimal256
     fn div(mut self, rhs: Decimal256) -> Self::Output {
@@ -305,11 +305,11 @@ where
 }
 
 impl<K, V> From<Vec<(K, V)>> for Map<K, V> {
-    fn from(object: Vec<(K, V)>) -> Self { Map(object) }
+    fn from(object: Vec<(K, V)>) -> Self { Self(object) }
 }
 
 impl<K, V> From<(K, V)> for Map<K, V> {
-    fn from(object: (K, V)) -> Self { Map(vec![object]) }
+    fn from(object: (K, V)) -> Self { Self(vec![object]) }
 }
 
 pub trait GetKeyVec<K> {
@@ -349,8 +349,8 @@ where
     }
 }
 
-impl GetKeyVec<AssetInfo> for AssetInfo {
-    fn get_key_vec(&self) -> Vec<AssetInfo> { vec![self.clone()] }
+impl GetKeyVec<Self> for AssetInfo {
+    fn get_key_vec(&self) -> Vec<Self> { vec![self.clone()] }
 }
 
 pub fn extract_keys<'a, K: 'a + PartialEq + Clone>(vec: Vec<&'a dyn GetKeyVec<K>>) -> Vec<K> {

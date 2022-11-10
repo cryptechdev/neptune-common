@@ -44,8 +44,8 @@ impl FromStr for AssetInfo {
 impl ToString for AssetInfo {
     fn to_string(&self) -> String {
         match self {
-            AssetInfo::Token { contract_addr } => contract_addr.to_string(),
-            AssetInfo::NativeToken { denom } => denom.clone(),
+            Self::Token { contract_addr } => contract_addr.to_string(),
+            Self::NativeToken { denom } => denom.clone(),
         }
     }
 }
@@ -58,10 +58,10 @@ impl<'a> PrimaryKey<'a> for AssetInfo {
 
     fn key(&self) -> Vec<Key> {
         match self {
-            AssetInfo::Token { contract_addr: addr } => {
+            Self::Token { contract_addr: addr } => {
                 vec![Key::Ref(addr.as_bytes()), Key::Val8([0])]
             }
-            AssetInfo::NativeToken { denom } => {
+            Self::NativeToken { denom } => {
                 vec![Key::Ref(denom.as_bytes()), Key::Val8([1])]
             }
         }
@@ -90,10 +90,10 @@ impl<'a> PrimaryKey<'a> for &'a AssetInfo {
 impl<'a> Prefixer<'a> for AssetInfo {
     fn prefix(&self) -> Vec<Key> {
         match self {
-            AssetInfo::Token { contract_addr: addr } => {
+            Self::Token { contract_addr: addr } => {
                 vec![Key::Ref(addr.as_bytes()), Key::Val8([0])]
             }
-            AssetInfo::NativeToken { denom } => {
+            Self::NativeToken { denom } => {
                 vec![Key::Ref(denom.as_bytes()), Key::Val8([1])]
             }
         }
@@ -135,15 +135,15 @@ impl<'a> Bounder<'a> for &'a AssetInfo {
 }
 
 impl KeyDeserialize for AssetInfo {
-    type Output = AssetInfo;
+    type Output = Self;
 
     #[inline(always)]
     fn from_vec(mut value: Vec<u8>) -> StdResult<Self::Output> {
         let mut split = value.split_off(2);
 
         match split.pop().unwrap() {
-            0 => Ok(AssetInfo::Token { contract_addr: Addr::from_vec(split)? }),
-            1 => Ok(AssetInfo::NativeToken { denom: String::from_vec(split)? }),
+            0 => Ok(Self::Token { contract_addr: Addr::from_vec(split)? }),
+            1 => Ok(Self::NativeToken { denom: String::from_vec(split)? }),
             _ => Err(StdError::GenericErr { msg: "Failed deserializing.".into() }),
         }
     }
@@ -193,7 +193,7 @@ impl From<AssetMap<Uint256>> for AssetVec {
 
 impl From<Coin> for AssetAmount {
     fn from(coin: Coin) -> Self {
-        AssetAmount { info: AssetInfo::NativeToken { denom: coin.denom }, amount: coin.amount.into() }
+        Self { info: AssetInfo::NativeToken { denom: coin.denom }, amount: coin.amount.into() }
     }
 }
 
@@ -210,7 +210,7 @@ impl TryInto<Coin> for AssetAmount {
 
 impl From<&Coin> for AssetAmount {
     fn from(coin: &Coin) -> Self {
-        AssetAmount { info: AssetInfo::NativeToken { denom: coin.denom.clone() }, amount: coin.amount.into() }
+        Self { info: AssetInfo::NativeToken { denom: coin.denom.clone() }, amount: coin.amount.into() }
     }
 }
 

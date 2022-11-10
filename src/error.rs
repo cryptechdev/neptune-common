@@ -77,7 +77,7 @@ pub enum CommonError {
 }
 
 impl From<CommonError> for NeptuneAuthorizationError {
-    fn from(val: CommonError) -> Self { NeptuneAuthorizationError::Error(val.to_string()) }
+    fn from(val: CommonError) -> Self { Self::Error(val.to_string()) }
 }
 
 impl From<Box<dyn std::error::Error>> for CommonError {

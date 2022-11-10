@@ -4,13 +4,13 @@ use serde::{Deserialize, Serialize};
 
 use crate::map::Zeroed;
 
-#[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq, Default, JsonSchema)]
+#[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq, Eq, Default, JsonSchema)]
 pub struct Pool {
     pub balance: Uint256,
     pub shares:  Uint256,
 }
 
-#[derive(Debug, PartialEq, JsonSchema)]
+#[derive(Debug, PartialEq, Eq, JsonSchema)]
 pub struct PoolMut<'a> {
     pub balance: &'a mut Uint256,
     pub shares:  &'a mut Uint256,
@@ -125,7 +125,7 @@ impl<'a> PoolMut<'a> {
 }
 
 impl Pool {
-    pub fn new() -> Self { Self { balance: Uint256::zero(), shares: Uint256::zero() } }
+    pub const fn new() -> Self { Self { balance: Uint256::zero(), shares: Uint256::zero() } }
 
     pub fn into_ref(&mut self) -> PoolMut { PoolMut { balance: &mut self.balance, shares: &mut self.shares } }
 
@@ -154,7 +154,7 @@ impl Pool {
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, Debug, Default, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Copy, Clone, Debug, Default, PartialEq, Eq, JsonSchema)]
 pub struct PoolAccount {
     pub principle: Uint256,
     pub shares:    Uint256,
