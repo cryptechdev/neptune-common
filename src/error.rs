@@ -1,5 +1,5 @@
 use cosmwasm_std::{ConversionOverflowError, Decimal256RangeExceeded, OverflowError, StdError};
-use neptune_authorization::error::NeptuneAuthorizationError;
+use neptune_authorization::error::NeptAuthError;
 use thiserror::Error;
 
 pub type CommonResult<T> = core::result::Result<T, CommonError>;
@@ -16,7 +16,7 @@ pub enum CommonError {
     Std(#[from] StdError),
 
     #[error("{0}")]
-    Auth(#[from] NeptuneAuthorizationError),
+    Auth(#[from] NeptAuthError),
 
     #[error("{0}")]
     OverflowError(#[from] OverflowError),
@@ -76,7 +76,7 @@ pub enum CommonError {
     MissingHookMsg {},
 }
 
-impl From<CommonError> for NeptuneAuthorizationError {
+impl From<CommonError> for NeptAuthError {
     fn from(val: CommonError) -> Self { Self::Error(val.to_string()) }
 }
 
