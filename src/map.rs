@@ -23,7 +23,7 @@ impl<K, V> Map<K, V>
 where
     K: PartialEq + Clone + Debug,
 {
-    pub fn new() -> Self { vec![].into() }
+    pub fn new() -> Self { Map(Vec::new()) }
 
     pub fn insert(&mut self, tuple: (K, V)) { self.0.push(tuple); }
 
@@ -206,6 +206,8 @@ where
 {
     type Output = Map<K, <V as Mul<U>>::Output>;
 
+    /// multiplies each value in the left map, with the corresponding value on the right.
+    /// Values with no matching keys are discarded.
     fn mul(self, rhs: Map<K, U>) -> Self::Output {
         let mut output = vec![];
         for rhs_val in rhs.0 {
@@ -224,6 +226,7 @@ where
 {
     type Output = Map<K, V>;
 
+    /// multiplies each value with a Decimal256
     fn mul(mut self, rhs: Decimal256) -> Self::Output {
         for (_, val) in &mut self {
             *val = val.clone() * rhs
@@ -238,6 +241,9 @@ where
 {
     type Output = Map<K, Decimal256>;
 
+    /// Divides two maps with Uint256 values.
+    /// The result is a map of Decimal256.
+    /// Values with no matching keys are discarded.
     fn div(self, rhs: Map<K, Uint256>) -> Self::Output {
         let mut output = vec![];
         for rhs_val in rhs.0 {
@@ -256,6 +262,7 @@ where
 {
     type Output = Map<K, V>;
 
+    /// Divides each value with a Decimal256
     fn div(mut self, rhs: Decimal256) -> Self::Output {
         for (_, val) in &mut self {
             *val = val.clone() / rhs
@@ -271,6 +278,8 @@ where
 {
     type Output = Self;
 
+    /// Adds the corresponding values from two maps together.
+    /// If a key exists in one map but not the other, the default is used.
     fn add(mut self, rhs: Self) -> Self::Output {
         for rhs_key_val in rhs {
             let lhs = self.get_mut_or_default(&rhs_key_val.0);
@@ -285,6 +294,8 @@ where
     K: PartialEq + Clone + Debug,
     V: Add<Output = V> + Clone + Default,
 {
+    /// Adds the corresponding values from two maps together.
+    /// If a key exists in one map but not the other, the default is used.
     fn add_assign(&mut self, rhs: Self) {
         for rhs_key_val in rhs {
             let lhs = self.get_mut_or_default(&rhs_key_val.0);
