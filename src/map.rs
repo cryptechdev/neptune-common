@@ -162,13 +162,6 @@ where
         self.0.retain(|x| x.1 != V::default());
     }
 
-    pub fn remove_zeroed(&mut self)
-    where
-        V: IsZeroed,
-    {
-        self.0.retain(|x| !x.1.is_zeroed());
-    }
-
     pub fn sort_by_val(&mut self)
     where
         V: Default + Ord + Clone,
@@ -361,17 +354,20 @@ pub fn extract_keys<'a, K: 'a + PartialEq + Clone>(vec: Vec<&'a dyn GetKeyVec<K>
     asset_vec
 }
 
-impl<K, V> IsZeroed for Map<K, V>
+impl<K, V> Zeroed for Map<K, V>
 where
-    V: IsZeroed,
+    V: Zeroed,
 {
     fn is_zeroed(&self) -> bool { self.iter().all(|x| x.1.is_zeroed()) }
+
+    fn remove_zeroed(&mut self) { self.retain(|x| !x.1.is_zeroed()) }
 }
 
 /// Similar to is_empty, but allows for zeroed entries inside an iterator
 /// [].is_zeroed ==true
 /// [0, 0].is_zeroed == true
 /// [0, 1].is_zeroed == false
-pub trait IsZeroed {
+pub trait Zeroed {
     fn is_zeroed(&self) -> bool;
+    fn remove_zeroed(&mut self);
 }

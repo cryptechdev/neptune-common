@@ -2,7 +2,7 @@ use cosmwasm_std::{Decimal256, Uint256};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::map::IsZeroed;
+use crate::map::Zeroed;
 
 #[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq, Default, JsonSchema)]
 pub struct Pool {
@@ -177,8 +177,10 @@ pub struct RemoveAmountResponse {
     pub shares_removed: Uint256,
 }
 
-impl IsZeroed for PoolAccount {
+impl Zeroed for PoolAccount {
     fn is_zeroed(&self) -> bool { self.shares.is_zero() }
+
+    fn remove_zeroed(&mut self) {}
 }
 
 mod test {
