@@ -120,12 +120,15 @@ where
         }
     }
 
-    pub fn mul_all<U>(self, rhs: Map<K, U>) -> CommonResult<Map<K, <V as Mul<U>>::Output>>
+    /// multiplies every value in self with the corresponding value in rhs. Returns an error if rhs
+    /// is missing a key. Rhs must contain every key in self, but self needs not contain every key
+    /// in rhs.
+    pub fn mul_all<U>(self, rhs: &Map<K, U>) -> CommonResult<Map<K, <V as Mul<U>>::Output>>
     where
         V: Mul<U>,
         U: Clone,
     {
-        let mut output = vec![];
+        let mut output = Vec::with_capacity(self.len());
         for (key, lhs_val) in self {
             let rhs_val = rhs.get(&key)?.clone();
             output.push((key, lhs_val * rhs_val))
@@ -137,11 +140,7 @@ where
     where
         F: Fn(&V) -> U,
     {
-        let mut vec = vec![];
-        for (key, val) in &self.0 {
-            vec.push((key.clone(), f(val)));
-        }
-        vec.into()
+        self.iter().map(|x| (x.0.clone(), f(&x.1))).collect()
     }
 
     pub fn sum(&self) -> V
@@ -206,6 +205,8 @@ where
 {
     type Output = Map<K, <V as Mul<U>>::Output>;
 
+    // TODO: scan the codebase for any usage of this function. Can potentially be dangerous so we need
+    // TODO: make sure we're using it correctly
     /// multiplies each value in the left map, with the corresponding value on the right.
     /// Values with no matching keys are discarded.
     fn mul(self, rhs: Map<K, U>) -> Self::Output {
@@ -241,6 +242,8 @@ where
 {
     type Output = Map<K, Decimal256>;
 
+    // TODO: scan the codebase for any usage of this function. Can potentially be dangerous so we need
+    // TODO: make sure we're using it correctly
     /// Divides two maps with Uint256 values.
     /// The result is a map of Decimal256.
     /// Values with no matching keys are discarded.
@@ -382,3 +385,5 @@ pub trait Zeroed {
     fn is_zeroed(&self) -> bool;
     fn remove_zeroed(&mut self);
 }
+
+// TODO: Unit tests for everything in here
