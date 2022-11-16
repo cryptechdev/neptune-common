@@ -216,12 +216,12 @@ mod test {
 
         pool.remove_amount(Uint256::from(100u64), &mut account2);
         assert_eq!(pool.balance, Uint256::from(200u64));
-        assert_eq!(pool.shares, Uint256::from(101u64));
+        assert_eq!(pool.shares, Uint256::from(100u64));
         assert_eq!(account2.principle, Uint256::from(0u64));
-        assert_eq!(account2.shares, Uint256::from(1u64));
+        assert_eq!(account2.shares, Uint256::from(0u64));
 
         pool.remove_shares(Uint256::from(100u64), &mut account2);
-        assert_eq!(pool.balance, Uint256::from(199u64));
+        assert_eq!(pool.balance, Uint256::from(200u64));
         assert_eq!(pool.shares, Uint256::from(100u64));
         assert_eq!(account2.principle, Uint256::from(0u64));
         assert_eq!(account2.shares, Uint256::from(0u64));
