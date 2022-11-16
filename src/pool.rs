@@ -24,7 +24,7 @@ impl<'a> PoolMut<'a> {
         let account_shares = &mut account.shares;
 
         let shares_to_issue = shares;
-        let balance_to_issue = shares_to_issue * Decimal256::from_ratio(*pool_balance, *pool_shares);
+        let balance_to_issue = shares_to_issue.multiply_ratio(*pool_balance, *pool_shares);
 
         *account_shares += shares_to_issue;
         *account_principle += balance_to_issue;
@@ -43,10 +43,10 @@ impl<'a> PoolMut<'a> {
         let account_principle = &mut account.principle;
         let account_shares = &mut account.shares;
 
-        let shares_to_issue = if *pool_balance == Uint256::zero() {
+        let shares_to_issue = if pool_balance.is_zero() {
             amount
         } else {
-            *pool_shares * Decimal256::from_ratio(amount, *pool_balance)
+            pool_shares.multiply_ratio(amount, *pool_balance)
         };
 
         *account_shares += shares_to_issue;
@@ -69,8 +69,8 @@ impl<'a> PoolMut<'a> {
         } else {
             shares
         };
-        let fraction_to_withdraw = Decimal256::from_ratio(shares_to_remove, *pool_shares);
-        let amount_to_remove = *pool_balance * fraction_to_withdraw;
+
+        let amount_to_remove = pool_balance.multiply_ratio(shares_to_remove, *pool_shares);
 
         *account_shares -= shares_to_remove;
         *account_principle = account_principle.saturating_sub(amount_to_remove);
@@ -88,16 +88,17 @@ impl<'a> PoolMut<'a> {
         let account_shares = &mut account.shares;
 
         let mut amount_to_remove = amount;
-        let mut shares_to_remove = if *pool_balance == Uint256::zero() {
+        let mut shares_to_remove = if pool_balance.is_zero() {
             Uint256::zero()
         } else {
-            *pool_shares * Decimal256::from_ratio(amount_to_remove, *pool_balance)
+            pool_shares.multiply_ratio(amount_to_remove, *pool_balance)
         };
 
-        if shares_to_remove > *account_shares {
+        // TODO: this addition is to eliminate rounding errors and ensures accounts
+        // TODO: aren't left with 1u left inside them. Perhaps needs a better way.
+        if shares_to_remove + Uint256::from(2u64) > *account_shares {
             shares_to_remove = *account_shares;
-            let fraction_to_withdraw = Decimal256::from_ratio(shares_to_remove, *pool_shares);
-            amount_to_remove = *pool_balance * fraction_to_withdraw;
+            amount_to_remove = pool_balance.multiply_ratio(shares_to_remove, *pool_shares);
         }
 
         *account_shares -= shares_to_remove;

@@ -374,7 +374,10 @@ where
 {
     fn is_zeroed(&self) -> bool { self.iter().all(|x| x.1.is_zeroed()) }
 
-    fn remove_zeroed(&mut self) { self.retain(|x| !x.1.is_zeroed()) }
+    fn remove_zeroed(&mut self) {
+        self.iter_mut().for_each(|x| x.1.remove_zeroed());
+        self.retain(|x| !x.1.is_zeroed())
+    }
 }
 
 /// Similar to is_empty, but allows for zeroed entries inside an iterator
