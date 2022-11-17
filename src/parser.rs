@@ -42,3 +42,8 @@ pub fn asset_info_iter_parser(s: &str) -> CommonResult<impl IntoIterator<Item = 
     }
     Ok(asset_infos)
 }
+
+pub fn asset_info_array_parser(s: &str) -> CommonResult<[AssetInfo; 2]> {
+    let (lhs, rhs) = s.split_once(',').unwrap();
+    Ok([AssetInfo::from_str(lhs)?, AssetInfo::from_str(rhs)?])
+}
