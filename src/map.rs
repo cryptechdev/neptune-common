@@ -59,13 +59,16 @@ where
         }
     }
 
-    // TODO: any way to make this better?
     pub fn get_muts<const LEN: usize>(&mut self, keys: [&K; LEN]) -> CommonResult<[&mut V; LEN]>
     where
         V: Debug,
     {
-        let mut filtered = self.iter_mut().filter(|elem| keys.iter().any(|key| key == &&elem.0));
-        let vec: Vec<&mut V> = keys.iter().map(|key| &mut filtered.find(|elem| key == &&elem.0).unwrap().1).collect();
+        let mut refs = self.iter_mut();
+        let vec = keys
+            .iter()
+            .map(|key| refs.find(|elem| key == &&elem.0).map(|x| &mut x.1))
+            .collect::<Option<Vec<&mut V>>>()
+            .ok_or_else(|| CommonError::KeyNotFound(String::new()))?;
         Ok(vec.try_into().unwrap())
     }
 
@@ -75,7 +78,7 @@ where
     {
         // add a default if it doesn't exist
         for key in keys {
-            if self.iter().any(|x| &x.0 == key) {
+            if self.iter().all(|x| &x.0 != key) {
                 self.insert((key.to_owned(), V::default()));
             }
         }
