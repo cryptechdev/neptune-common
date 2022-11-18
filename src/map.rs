@@ -59,6 +59,29 @@ where
         }
     }
 
+    // TODO: any way to make this better?
+    pub fn get_muts<const LEN: usize>(&mut self, keys: [&K; LEN]) -> CommonResult<[&mut V; LEN]>
+    where
+        V: Debug,
+    {
+        let mut filtered = self.iter_mut().filter(|elem| keys.iter().any(|key| key == &&elem.0));
+        let vec: Vec<&mut V> = keys.iter().map(|key| &mut filtered.find(|elem| key == &&elem.0).unwrap().1).collect();
+        Ok(vec.try_into().unwrap())
+    }
+
+    pub fn get_muts_or_default<const LEN: usize>(&mut self, keys: [&K; LEN]) -> CommonResult<[&mut V; LEN]>
+    where
+        V: Debug + Default,
+    {
+        // add a default if it doesn't exist
+        for key in keys {
+            if self.iter().any(|x| &x.0 == key) {
+                self.insert((key.to_owned(), V::default()));
+            }
+        }
+        self.get_muts(keys)
+    }
+
     pub fn may_get_mut(&mut self, key: &K) -> Option<&mut V> {
         match self.0.iter().position(|x| &x.0 == key) {
             Some(index) => Some(&mut self.0[index].1),
