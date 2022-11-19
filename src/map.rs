@@ -59,17 +59,12 @@ where
         }
     }
 
-    pub fn get_muts<const LEN: usize>(&mut self, keys: [&K; LEN]) -> CommonResult<[&mut V; LEN]>
+    pub fn get_muts<'a, 'b, const LEN: usize>(&'a mut self, keys: [&'b K; LEN]) -> CommonResult<[&mut V; LEN]>
     where
         V: Debug,
     {
-        let mut refs = self.iter_mut();
-        let vec = keys
-            .iter()
-            .map(|key| refs.find(|elem| key == &&elem.0).map(|x| &mut x.1))
-            .collect::<Option<Vec<&mut V>>>()
-            .ok_or_else(|| CommonError::KeyNotFound(String::new()))?;
-        Ok(vec.try_into().unwrap())
+        find_map_many(self, keys, |item, key| &item.0 == key, |item| &mut item.1)
+            .ok_or_else(|| CommonError::KeyNotFound(String::new()))
     }
 
     pub fn get_muts_or_default<const LEN: usize>(&mut self, keys: [&K; LEN]) -> CommonResult<[&mut V; LEN]>
@@ -78,7 +73,7 @@ where
     {
         // add a default if it doesn't exist
         for key in keys {
-            if self.iter().all(|x| &x.0 != key) {
+            if !self.contains(key) {
                 self.insert((key.to_owned(), V::default()));
             }
         }
@@ -415,4 +410,105 @@ pub trait Zeroed {
     fn remove_zeroed(&mut self);
 }
 
+/// finds multiple items in a collection and maps the elements to &muts.
+///
+/// ```
+/// # use contracts_common::map::find_map_many;
+/// # fn test_find_many() {
+/// let mut v = vec![(0, 1), (1, 2), (2, 3), (3, 4), (4, 5)];
+/// let [left, right] =
+///     find_map_many(&mut v, [&2, &3], |item, key| &item.0 == key, |item| &mut item.1).unwrap();
+/// assert_eq!(*left, 3);
+/// assert_eq!(*right, 4);
+/// # }
+/// ```
+pub fn find_map_many<'a, I, T, U, F, M, K, const LEN: usize>(
+    collection: I, keys: [&K; LEN], mut find: F, mut map: M,
+) -> Option<[&'a mut U; LEN]>
+where
+    I: IntoIterator<Item = &'a mut T>,
+    T: Debug + 'a,
+    U: Debug,
+    F: FnMut(&T, &K) -> bool,
+    M: FnMut(&'a mut T) -> &'a mut U,
+{
+    let mut remaining = LEN;
+    // When inline_const is stabilized this unsafe block can be removed
+    let mut output: [Option<&'a mut U>; LEN] = unsafe { std::mem::zeroed() };
+
+    'collection: for elem in collection {
+        for (key, out) in std::iter::zip(&keys, &mut output) {
+            if out.is_none() && find(elem, key) {
+                *out = Some(map(elem));
+                remaining -= 1;
+                if remaining == 0 {
+                    break 'collection;
+                }
+                break;
+            }
+        }
+    }
+
+    // When array_try_map is stabilized this can be made better.
+    let vec = output.into_iter().collect::<Option<Vec<&mut U>>>();
+    vec.map(|x| x.try_into().unwrap())
+}
+
+#[cfg(test)]
+mod test {
+
+    use crate::map::find_map_many;
+
+    #[test]
+    fn test_scrambled_key() {
+        let mut v = vec![(0, 1), (1, 2), (2, 3), (3, 4), (4, 5)];
+        let keys = [&4, &2];
+        let res = find_map_many(&mut v, keys, |item, key| &item.0 == key, |item| &mut item.1);
+        let unwrapped = res.unwrap();
+        assert_eq!(*unwrapped[0], 5);
+        assert_eq!(*unwrapped[1], 3);
+    }
+
+    #[test]
+    fn test_duplicate_key() {
+        let mut v = vec![(0, 1), (1, 2), (2, 3), (3, 4), (4, 5)];
+        let keys = [&2, &2];
+        let res = find_map_many(&mut v, keys, |item, key| &item.0 == key, |item| &mut item.1);
+        assert!(res.is_none());
+    }
+
+    #[test]
+    fn test_duplicate_matching_keys() {
+        let mut v = vec![(0, 1), (2, 3), (2, 4), (3, 4), (4, 5)];
+        let keys = [&2, &2];
+        let res = find_map_many(&mut v, keys, |item, key| &item.0 == key, |item| &mut item.1);
+        let unwrapped = res.unwrap();
+        assert_eq!(*unwrapped[0], 3);
+        assert_eq!(*unwrapped[1], 4);
+    }
+
+    #[test]
+    fn test_missing_key() {
+        let mut v = vec![(0, 1), (1, 2), (2, 3), (3, 4), (4, 5)];
+        let keys = [&2, &7];
+        let res = find_map_many(&mut v, keys, |item, key| &item.0 == key, |item| &mut item.1);
+        assert!(res.is_none());
+    }
+
+    #[test]
+    fn test_too_many_keys() {
+        let mut v = vec![(0, 1), (1, 2), (2, 3), (3, 4), (4, 5)];
+        let keys = [&1, &2, &3, &4, &5, &5, &5];
+        let res = find_map_many(&mut v, keys, |item, key| &item.0 == key, |item| &mut item.1);
+        assert!(res.is_none());
+    }
+
+    #[test]
+    fn test_zero_len() {
+        let mut v = vec![(0, 1), (1, 2), (2, 3), (3, 4), (4, 5)];
+        let keys: [&u64; 0] = [];
+        let res = find_map_many(&mut v, keys, |item, key| &item.0 == key, |item| &mut item.1);
+        assert_eq!(res, Some([]));
+    }
+}
 // TODO: Unit tests for everything in here
