@@ -410,6 +410,33 @@ pub trait Zeroed {
     fn remove_zeroed(&mut self);
 }
 
+pub fn find_many<'a, I, T, F, K, const LEN: usize>(
+    collection: I, keys: [&K; LEN], mut predicate: F,
+) -> Option<[&'a mut T; LEN]>
+where
+    I: IntoIterator<Item = &'a mut T>,
+    F: FnMut(&T, &K) -> bool,
+{
+    let mut remaining = LEN;
+    let mut output = [const { None::<&'a mut T> }; LEN];
+
+    'collection: for elem in collection {
+        for (key, out) in std::iter::zip(&keys, &mut output) {
+            if out.is_none() && predicate(elem, key) {
+                *out = Some(elem);
+                remaining -= 1;
+                if remaining == 0 {
+                    break 'collection;
+                }
+                break;
+            }
+        }
+    }
+
+    // map [Option<&mut T>; LEN] to Option<[&mut T; LEN]>
+    output.try_map(|opt| opt)
+}
+
 /// finds multiple items in a collection and maps the elements to &muts.
 ///
 /// ```
@@ -423,22 +450,20 @@ pub trait Zeroed {
 /// # }
 /// ```
 pub fn find_map_many<'a, I, T, U, F, M, K, const LEN: usize>(
-    collection: I, keys: [&K; LEN], mut find: F, mut map: M,
+    collection: I, keys: [&K; LEN], mut predicate: F, mut map: M,
 ) -> Option<[&'a mut U; LEN]>
 where
     I: IntoIterator<Item = &'a mut T>,
-    T: Debug + 'a,
-    U: Debug,
+    T: 'a,
     F: FnMut(&T, &K) -> bool,
     M: FnMut(&'a mut T) -> &'a mut U,
 {
     let mut remaining = LEN;
-    // When inline_const is stabilized this unsafe block can be removed
-    let mut output: [Option<&'a mut U>; LEN] = unsafe { std::mem::zeroed() };
+    let mut output = [const { None::<&'a mut U> }; LEN];
 
     'collection: for elem in collection {
         for (key, out) in std::iter::zip(&keys, &mut output) {
-            if out.is_none() && find(elem, key) {
+            if out.is_none() && predicate(elem, key) {
                 *out = Some(map(elem));
                 remaining -= 1;
                 if remaining == 0 {
@@ -449,9 +474,7 @@ where
         }
     }
 
-    // When array_try_map is stabilized this can be made better.
-    let vec = output.into_iter().collect::<Option<Vec<&mut U>>>();
-    vec.map(|x| x.try_into().unwrap())
+    output.try_map(|opt| opt)
 }
 
 #[cfg(test)]
