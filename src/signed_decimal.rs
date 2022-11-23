@@ -7,6 +7,7 @@ use std::{
 };
 
 use cosmwasm_std::{Decimal256, StdError, Uint256};
+pub use num_traits::*;
 use num_traits::{Num, One, Zero};
 use schemars::JsonSchema;
 use serde::{de, ser, Deserialize, Deserializer, Serialize};
@@ -14,17 +15,13 @@ use serde::{de, ser, Deserialize, Deserializer, Serialize};
 use crate::{error::CommonError, signed_int::SignedInt};
 
 /// Decimal256 with a sign
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Eq)]
 pub struct SignedDecimal {
     value: Decimal256,
     sign:  bool,
 }
 
 impl SignedDecimal {
-    pub const fn nan() -> Self { Self { value: Decimal256::zero(), sign: false } }
-
-    pub const fn is_nan(&self) -> bool { self.value.is_zero() && !self.sign }
-
     pub fn value(&self) -> Decimal256 {
         assert!(self.sign, "SignedDecimal is negative!");
         self.value
@@ -42,6 +39,15 @@ impl Mul<SignedDecimal> for Uint256 {
     type Output = SignedInt;
 
     fn mul(self, rhs: SignedDecimal) -> Self::Output { SignedInt { value: rhs.value * self, sign: rhs.sign } }
+}
+
+impl Mul<Decimal256> for SignedDecimal {
+    type Output = SignedDecimal;
+
+    fn mul(mut self, rhs: Decimal256) -> Self::Output {
+        self.value *= rhs;
+        self
+    }
 }
 
 impl Neg for SignedDecimal {
@@ -97,8 +103,8 @@ impl num_traits::sign::Signed for SignedDecimal {
 
 impl ToString for SignedDecimal {
     fn to_string(&self) -> String {
-        if self.is_nan() {
-            String::from("NaN")
+        if self.is_zero() {
+            String::from("0.0")
         } else {
             let sign_str = if self.sign { "" } else { "-" }.to_owned();
             sign_str + self.value.to_string().as_str()
@@ -127,6 +133,10 @@ impl std::ops::Add<Self> for SignedDecimal {
         }
         Self { sign, value }
     }
+}
+
+impl std::ops::AddAssign<Self> for SignedDecimal {
+    fn add_assign(&mut self, rhs: Self) { *self = *self + rhs; }
 }
 
 impl std::ops::Sub<Self> for SignedDecimal {
@@ -158,7 +168,7 @@ impl std::ops::Div<Self> for SignedDecimal {
 }
 
 impl std::cmp::PartialEq for SignedDecimal {
-    fn eq(&self, other: &Self) -> bool { self.value == other.value && self.sign == other.sign }
+    fn eq(&self, other: &Self) -> bool { self.value == other.value }
 }
 
 impl std::cmp::PartialOrd for SignedDecimal {
@@ -175,6 +185,10 @@ impl std::cmp::PartialOrd for SignedDecimal {
             Some(std::cmp::Ordering::Less)
         }
     }
+}
+
+impl std::cmp::Ord for SignedDecimal {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering { self.partial_cmp(other).unwrap() }
 }
 
 impl From<Decimal256> for SignedDecimal {
