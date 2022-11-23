@@ -1,4 +1,4 @@
-use cosmwasm_std::{Decimal256, Uint256};
+use cosmwasm_std::Uint256;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -121,7 +121,7 @@ impl<'a> PoolMut<'a> {
     }
 
     pub fn get_account_balance(self, account: PoolAccount) -> Uint256 {
-        account.shares * Decimal256::from_ratio(*self.balance, *self.shares)
+        account.shares.checked_multiply_ratio(*self.balance, *self.shares).unwrap_or_default()
     }
 }
 
@@ -151,7 +151,7 @@ impl Pool {
     pub fn decrease_balance(&mut self, amount: Uint256) { self.into_ref().decrease_balance(amount) }
 
     pub fn get_account_balance(&self, account: PoolAccount) -> Uint256 {
-        account.shares * Decimal256::from_ratio(self.balance, self.shares)
+        account.shares.checked_multiply_ratio(self.balance, self.shares).unwrap_or_default()
     }
 }
 
