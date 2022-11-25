@@ -59,7 +59,7 @@ where
         }
     }
 
-    pub fn get_muts<'a, 'b, const LEN: usize>(&'a mut self, keys: [&'b K; LEN]) -> CommonResult<[&mut V; LEN]>
+    pub fn get_muts<'a, const LEN: usize>(&'a mut self, keys: [&K; LEN]) -> CommonResult<[&mut V; LEN]>
     where
         V: Debug,
     {
@@ -105,7 +105,7 @@ where
         Ok(output.into())
     }
 
-    pub fn get_mut_or_zero<'a, 'b>(&'a mut self, key: &'b K) -> &'a mut V
+    pub fn get_mut_or_zero<'a>(&'a mut self, key: &K) -> &'a mut V
     where
         V: Zero,
     {
@@ -118,7 +118,7 @@ where
         }
     }
 
-    pub fn get_mut_or_default<'a, 'b>(&'a mut self, key: &'b K) -> &'a mut V
+    pub fn get_mut_or_default<'a>(&'a mut self, key: &K) -> &'a mut V
     where
         V: Default,
     {
@@ -131,7 +131,7 @@ where
         }
     }
 
-    pub fn get_mut_or<'a, 'b>(&'a mut self, key: &'b K, val: V) -> &'a mut V {
+    pub fn get_mut_or<'a>(&'a mut self, key: &K, val: V) -> &'a mut V {
         match self.0.iter().position(|x| &x.0 == key) {
             Some(index) => &mut self.0[index].1,
             None => {
