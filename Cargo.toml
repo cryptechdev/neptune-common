@@ -19,7 +19,7 @@ default-features = false
 
 [dependencies]
 cw20 = { version = "0.16.0" } 
-cw-storage-plus = { version = "0.16.0", features = ["iterator"]}
+cw-storage-plus = { version = "1", features = ["iterator"]}
 cosmwasm-std = "1.1.5"
 cosmwasm-derive = "1.1.5"
 schemars = "0.8.8"
