@@ -1,15 +1,17 @@
-use cosmwasm_std::{Decimal256, Uint256};
+use cosmwasm_std::Uint256;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::map::Zeroed;
 
+/// This data type helps to keep track of pooling together assets between multiple accounts.
 #[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq, Eq, Default, JsonSchema)]
 pub struct Pool {
     pub balance: Uint256,
     pub shares:  Uint256,
 }
 
+/// This serves the same purpose as Pool, but can be constructed directly from mutable references.
 #[derive(Debug, PartialEq, Eq, JsonSchema)]
 pub struct PoolMut<'a> {
     pub balance: &'a mut Uint256,
@@ -17,6 +19,7 @@ pub struct PoolMut<'a> {
 }
 
 impl<'a> PoolMut<'a> {
+    /// Mints shares for an account and calculates the corresponding balance to issue.
     pub fn add_shares(self, shares: Uint256, account: &mut PoolAccount) -> AddSharesResponse {
         let pool_balance = self.balance;
         let pool_shares = self.shares;
@@ -35,6 +38,7 @@ impl<'a> PoolMut<'a> {
         AddSharesResponse { balance_added: balance_to_issue }
     }
 
+    /// Adds a balance to an account and calculates the corresponding shares to issue.
     pub fn add_amount(self, amount: Uint256, account: &mut PoolAccount) -> AddAmountResponse {
         let balance_to_issue = amount;
 
@@ -57,7 +61,7 @@ impl<'a> PoolMut<'a> {
 
         AddAmountResponse { shares_added: shares_to_issue }
     }
-
+    /// Removes shares from an account and calculates the corresponding balance to return.
     pub fn remove_shares(self, shares: Uint256, account: &mut PoolAccount) -> RemoveSharesResponse {
         let pool_balance = self.balance;
         let pool_shares = self.shares;
@@ -81,6 +85,7 @@ impl<'a> PoolMut<'a> {
         RemoveSharesResponse { balance_removed: amount_to_remove }
     }
 
+    /// Removes a balance from an account and calculates the corresponding shares to return.
     pub fn remove_amount(self, amount: Uint256, account: &mut PoolAccount) -> RemoveAmountResponse {
         let pool_balance = self.balance;
         let pool_shares = self.shares;
@@ -91,7 +96,8 @@ impl<'a> PoolMut<'a> {
         let mut shares_to_remove = if pool_balance.is_zero() {
             Uint256::zero()
         } else {
-            // TODO: ?
+            // An addition of one is required here to ensure that all shares are removed
+            // when an account is completely empty.
             (amount_to_remove + Uint256::one()).multiply_ratio(*pool_shares, *pool_balance)
         };
 
@@ -109,16 +115,17 @@ impl<'a> PoolMut<'a> {
         RemoveAmountResponse { amount_removed: amount_to_remove, shares_removed: shares_to_remove }
     }
 
+    /// Increases the balance of the pool by the amount specified.
     pub fn increase_balance(self, amount: Uint256) {
         let pool_balance = self.balance;
         *pool_balance += amount;
     }
-
+    /// Decreases the balance of the pool by the amount specified.
     pub fn decrease_balance(self, amount: Uint256) {
         let pool_balance = self.balance;
         *pool_balance = pool_balance.saturating_sub(amount);
     }
-
+    /// Returns the balance of an account
     pub fn get_account_balance(self, account: PoolAccount) -> Uint256 {
         account.shares.checked_multiply_ratio(*self.balance, *self.shares).unwrap_or_default()
     }
@@ -190,10 +197,9 @@ mod test {
 
     use super::*;
 
-    #[ignore]
     #[test]
     fn test_add_and_remove() {
-        for _ in 0..10000 {
+        for _ in 0..1000 {
             let start_pool_balance = Uint256::from(random::<u64>());
             let start_pool_shares = Uint256::from(random::<u64>());
             let amount = Uint256::from(random::<u64>());
