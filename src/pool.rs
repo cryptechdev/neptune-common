@@ -94,7 +94,8 @@ impl<'a> PoolMut<'a> {
             amount_to_remove * Decimal256::from_ratio(*pool_shares, *pool_balance)
         };
 
-        if shares_to_remove > *account_shares {
+        // TODO: This is a work around to prevent rounding errors
+        if shares_to_remove + Uint256::from(2u64) > *account_shares {
             shares_to_remove = *account_shares;
             amount_to_remove = shares_to_remove * Decimal256::from_ratio(*pool_balance, *pool_shares);
         }
@@ -182,13 +183,40 @@ impl Zeroed for PoolAccount {
     fn remove_zeroed(&mut self) {}
 }
 
+#[cfg(test)]
 mod test {
+    use cosmwasm_std::Uint256;
+    use rand::random;
+
+    use super::*;
+
+    #[ignore]
+    #[test]
+    fn test_add_and_remove() {
+        for _ in 0..1000 {
+            let start_pool_balance = Uint256::from(random::<u64>());
+            let start_pool_shares = Uint256::from(random::<u64>());
+            let amount = Uint256::from(random::<u64>());
+
+            let mut account = PoolAccount::default();
+            let mut pool = Pool { balance: start_pool_balance, shares: start_pool_shares };
+            pool.add_amount(amount, &mut account);
+            let balance = pool.get_account_balance(account);
+            pool.remove_amount(balance, &mut account);
+
+            assert_eq!(
+                pool.get_account_balance(account),
+                Uint256::zero(),
+                "start_pool_balance: {}, start_pool_shares: {}, amount: {}",
+                start_pool_balance,
+                start_pool_shares,
+                amount
+            );
+        }
+    }
+
     #[test]
     fn pool_test() {
-        use cosmwasm_std::Uint256;
-
-        use super::*;
-
         let mut pool: Pool = Pool::default();
         let mut account1: PoolAccount = PoolAccount::default();
         let mut account2: PoolAccount = PoolAccount::default();
