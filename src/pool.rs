@@ -99,7 +99,7 @@ impl<'a> PoolMut<'a> {
 
         let amount_to_remove;
         let shares_to_remove;
-        let account_amount = pool_balance.multiply_ratio(*account_shares, *pool_shares);
+        let account_amount = account_shares.multiply_ratio(*pool_balance, *pool_shares);
         if amount > account_amount {
             amount_to_remove = account_amount;
             shares_to_remove = *account_shares;
