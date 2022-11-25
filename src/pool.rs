@@ -61,6 +61,7 @@ impl<'a> PoolMut<'a> {
 
         AddAmountResponse { shares_added: shares_to_issue }
     }
+
     /// Removes shares from an account and calculates the corresponding balance to return.
     pub fn remove_shares(self, shares: Uint256, account: &mut PoolAccount) -> RemoveSharesResponse {
         let pool_balance = self.balance;
@@ -92,18 +93,19 @@ impl<'a> PoolMut<'a> {
         let account_principle = &mut account.principle;
         let account_shares = &mut account.shares;
 
-        let mut amount_to_remove = amount;
-        let mut shares_to_remove = if pool_balance.is_zero() {
-            Uint256::zero()
-        } else {
-            // An addition of one is required here to ensure that all shares are removed
-            // when an account is completely empty.
-            (amount_to_remove + Uint256::one()).multiply_ratio(*pool_shares, *pool_balance)
-        };
+        if pool_balance.is_zero() || pool_shares.is_zero() || account_shares.is_zero() {
+            return RemoveAmountResponse { amount_removed: Uint256::zero(), shares_removed: Uint256::zero() };
+        }
 
-        if shares_to_remove > *account_shares {
+        let amount_to_remove;
+        let shares_to_remove;
+        let account_amount = pool_balance.multiply_ratio(*account_shares, *pool_shares);
+        if amount > account_amount {
+            amount_to_remove = account_amount;
             shares_to_remove = *account_shares;
-            amount_to_remove = shares_to_remove.multiply_ratio(*pool_balance, *pool_shares);
+        } else {
+            amount_to_remove = amount;
+            shares_to_remove = account_shares.multiply_ratio(amount, account_amount);
         }
 
         *account_shares -= shares_to_remove;
@@ -120,11 +122,13 @@ impl<'a> PoolMut<'a> {
         let pool_balance = self.balance;
         *pool_balance += amount;
     }
+
     /// Decreases the balance of the pool by the amount specified.
     pub fn decrease_balance(self, amount: Uint256) {
         let pool_balance = self.balance;
         *pool_balance = pool_balance.saturating_sub(amount);
     }
+
     /// Returns the balance of an account
     pub fn get_account_balance(self, account: PoolAccount) -> Uint256 {
         account.shares.checked_multiply_ratio(*self.balance, *self.shares).unwrap_or_default()
