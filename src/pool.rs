@@ -24,7 +24,7 @@ impl<'a> PoolMut<'a> {
         let account_shares = &mut account.shares;
 
         let shares_to_issue = shares;
-        let balance_to_issue = shares_to_issue * Decimal256::from_ratio(*pool_balance, *pool_shares);
+        let balance_to_issue = shares_to_issue.multiply_ratio(*pool_balance, *pool_shares);
 
         *account_shares += shares_to_issue;
         *account_principle += balance_to_issue;
@@ -46,7 +46,7 @@ impl<'a> PoolMut<'a> {
         let shares_to_issue = if pool_balance.is_zero() {
             amount
         } else {
-            amount * Decimal256::from_ratio(*pool_shares, *pool_balance)
+            amount.multiply_ratio(*pool_shares, *pool_balance)
         };
 
         *account_shares += shares_to_issue;
@@ -70,7 +70,7 @@ impl<'a> PoolMut<'a> {
             shares
         };
 
-        let amount_to_remove = shares_to_remove * Decimal256::from_ratio(*pool_balance, *pool_shares);
+        let amount_to_remove = shares_to_remove.multiply_ratio(*pool_balance, *pool_shares);
 
         *account_shares -= shares_to_remove;
         *account_principle = account_principle.saturating_sub(amount_to_remove);
@@ -91,13 +91,13 @@ impl<'a> PoolMut<'a> {
         let mut shares_to_remove = if pool_balance.is_zero() {
             Uint256::zero()
         } else {
-            amount_to_remove * Decimal256::from_ratio(*pool_shares, *pool_balance)
+            // TODO: ?
+            (amount_to_remove + Uint256::one()).multiply_ratio(*pool_shares, *pool_balance)
         };
 
-        // TODO: This is a work around to prevent rounding errors
-        if shares_to_remove + Uint256::from(2u64) > *account_shares {
+        if shares_to_remove > *account_shares {
             shares_to_remove = *account_shares;
-            amount_to_remove = shares_to_remove * Decimal256::from_ratio(*pool_balance, *pool_shares);
+            amount_to_remove = shares_to_remove.multiply_ratio(*pool_balance, *pool_shares);
         }
 
         *account_shares -= shares_to_remove;
@@ -120,7 +120,7 @@ impl<'a> PoolMut<'a> {
     }
 
     pub fn get_account_balance(self, account: PoolAccount) -> Uint256 {
-        account.shares * Decimal256::checked_from_ratio(*self.balance, *self.shares).unwrap_or_default()
+        account.shares.checked_multiply_ratio(*self.balance, *self.shares).unwrap_or_default()
     }
 }
 
@@ -150,7 +150,7 @@ impl Pool {
     pub fn decrease_balance(&mut self, amount: Uint256) { self.into_ref().decrease_balance(amount) }
 
     pub fn get_account_balance(&self, account: PoolAccount) -> Uint256 {
-        account.shares * Decimal256::checked_from_ratio(self.balance, self.shares).unwrap_or_default()
+        account.shares.checked_multiply_ratio(self.balance, self.shares).unwrap_or_default()
     }
 }
 
@@ -193,7 +193,7 @@ mod test {
     #[ignore]
     #[test]
     fn test_add_and_remove() {
-        for _ in 0..1000 {
+        for _ in 0..10000 {
             let start_pool_balance = Uint256::from(random::<u64>());
             let start_pool_shares = Uint256::from(random::<u64>());
             let amount = Uint256::from(random::<u64>());
@@ -207,10 +207,11 @@ mod test {
             assert_eq!(
                 pool.get_account_balance(account),
                 Uint256::zero(),
-                "start_pool_balance: {}, start_pool_shares: {}, amount: {}",
+                "start_pool_balance: {}, start_pool_shares: {}, amount: {}, account {:#?}",
                 start_pool_balance,
                 start_pool_shares,
-                amount
+                amount,
+                account
             );
         }
     }
