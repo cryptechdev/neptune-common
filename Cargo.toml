@@ -18,8 +18,8 @@ version = "0.2"
 default-features = false
 
 [dependencies]
-cw20 = { version = "0.16.0" } 
-cw-storage-plus = { version = "1", features = ["iterator"]}
+cw20 = "0.16.0" 
+cw-storage-plus = "0.16.0"
 cosmwasm-std = "1.1.5"
 cosmwasm-derive = "1.1.5"
 schemars = "0.8.8"
@@ -28,9 +28,9 @@ serde = { version = "1.0.137", default-features = false, features = ["derive"] }
 serde_json = "1.0.0"
 thiserror = "1.0.31"
 shrinkwraprs = "0.3.0"
-# TODO. default-features = false for neptune-authorization should probably be removed
-neptune-authorization = { path = "../neptune-auth", default-features = false, version = "0.1.0" }
+neptune-authorization = { path = "../neptune-auth" }
 clap = { version = "4.0.18", features = ["derive", "string"] }
+
 
 [dev-dependencies]
 cosmwasm-schema = "1.0.0"
