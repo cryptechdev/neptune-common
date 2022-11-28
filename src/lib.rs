@@ -7,7 +7,6 @@ pub mod debug;
 pub mod error;
 pub mod map;
 pub mod math;
-pub mod parser;
 pub mod pool;
 pub mod querier;
 pub mod send_asset;
