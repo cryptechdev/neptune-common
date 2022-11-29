@@ -20,7 +20,7 @@ default-features = false
 [dependencies]
 # TODO: hack
 getrandom = { version = "0.2", features = ["js"] }
-cw20 = "0.16.0" 
+cw20 = "1" 
 cw-storage-plus = "1"
 cosmwasm-std = "1.1.5"
 cosmwasm-derive = "1.1.5"
