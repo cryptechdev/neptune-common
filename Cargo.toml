@@ -36,4 +36,3 @@ neptune-authorization = { git = "https://github.com/cryptechdev/neptune-auth" }
 cosmwasm-schema = "1.0.0"
 rand = "0.8.5"
 serde_json = "1.0"
-cosmwasm-vm = "1.0.0"
