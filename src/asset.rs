@@ -21,7 +21,7 @@ pub enum AssetInfo {
 impl FromStr for AssetInfo {
     type Err = CommonError;
 
-    /// TODO: Not rigorous, should only be used for command line
+    /// Not rigorous, should only be used for command line
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if s.len() < 10 || s.starts_with("ibc") {
             Ok(Self::NativeToken { denom: s.to_string() })

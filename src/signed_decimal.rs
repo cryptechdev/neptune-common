@@ -1,6 +1,5 @@
 use std::{
     convert::{TryFrom, TryInto},
-    error::Error,
     fmt,
     ops::{Mul, Neg, Rem},
     str::FromStr,
@@ -268,11 +267,11 @@ impl TryFrom<&str> for SignedDecimal {
 }
 
 impl TryInto<Decimal256> for SignedDecimal {
-    type Error = Box<dyn Error>;
+    type Error = CommonError;
 
     fn try_into(self) -> Result<Decimal256, Self::Error> {
         if !self.sign && !self.value.is_zero() {
-            return Err("Cannot convert negative SignedDecimal to Decimal256".into());
+            return Err(CommonError::Generic("Cannot convert negative SignedDecimal to Decimal256".into()));
         }
         Ok(self.value)
     }

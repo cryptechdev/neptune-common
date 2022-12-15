@@ -1,6 +1,5 @@
 use std::{
     convert::{TryFrom, TryInto},
-    error::Error,
     ops::{Neg, Rem},
     str::FromStr,
 };
@@ -202,11 +201,11 @@ impl TryFrom<&str> for SignedInt {
 }
 
 impl TryInto<Uint256> for SignedInt {
-    type Error = Box<dyn Error>;
+    type Error = CommonError;
 
     fn try_into(self) -> Result<Uint256, Self::Error> {
         if !self.sign && !self.value.is_zero() {
-            return Err("Cannot convert negative SignedInt to Uint256".into());
+            return Err(CommonError::Generic("Cannot convert negative SignedInt to Uint256".into()));
         }
         Ok(self.value)
     }
