@@ -4,7 +4,7 @@ use std::{
     ops::{Add, AddAssign, Div, Mul, Sub, SubAssign},
 };
 
-use cosmwasm_std::{Decimal256, Uint256};
+use cosmwasm_std::Decimal256;
 use num_traits::Zero;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -219,28 +219,6 @@ impl<'a, K, V> IntoIterator for &'a mut Map<K, V> {
     fn into_iter(self) -> Self::IntoIter { self.0.iter_mut() }
 }
 
-impl<K, V, U> Mul<Map<K, U>> for Map<K, V>
-where
-    K: PartialEq + Clone + Debug,
-    V: Mul<U> + Clone,
-{
-    type Output = Map<K, <V as Mul<U>>::Output>;
-
-    // TODO: scan the codebase for any usage of this function. Can potentially be dangerous so we need
-    // TODO: make sure we're using it correctly
-    /// multiplies each value in the left map, with the corresponding value on the right.
-    /// Values with no matching keys are discarded.
-    fn mul(self, rhs: Map<K, U>) -> Self::Output {
-        let mut output = vec![];
-        for rhs_val in rhs.0 {
-            if let Some(val) = self.may_get(&rhs_val.0) {
-                output.push((rhs_val.0, val.clone() * rhs_val.1))
-            }
-        }
-        output.into()
-    }
-}
-
 impl<K, V> Mul<Decimal256> for Map<K, V>
 where
     K: PartialEq + Clone + Debug,
@@ -254,28 +232,6 @@ where
             *val = val.clone() * rhs
         }
         self
-    }
-}
-
-impl<K> Div for Map<K, Uint256>
-where
-    K: PartialEq + Clone + Debug,
-{
-    type Output = Map<K, Decimal256>;
-
-    // TODO: scan the codebase for any usage of this function. Can potentially be dangerous so we need
-    // TODO: make sure we're using it correctly
-    /// Divides two maps with Uint256 values.
-    /// The result is a map of Decimal256.
-    /// Values with no matching keys are discarded.
-    fn div(self, rhs: Self) -> Self::Output {
-        let mut output = vec![];
-        for rhs_val in rhs.0 {
-            if let Some(val) = self.may_get(&rhs_val.0) {
-                output.push((rhs_val.0, Decimal256::from_ratio(*val, rhs_val.1)))
-            }
-        }
-        output.into()
     }
 }
 
@@ -466,7 +422,6 @@ where
         }
     }
 
-    // map [Option<&mut T>; LEN] to Option<[&mut T; LEN]>
     output.try_map(|opt| opt)
 }
 
