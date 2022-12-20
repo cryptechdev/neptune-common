@@ -211,9 +211,11 @@ mod test {
             let mut account = PoolAccount::default();
             let mut pool = Pool { balance: start_pool_balance, shares: start_pool_shares };
             pool.add_amount(amount, &mut account);
+            pool.balance += Uint256::from(random::<u64>());
             let balance = pool.get_account_balance(account);
-            pool.remove_amount(balance, &mut account);
+            let amount_removed = pool.remove_amount(balance, &mut account);
 
+            assert_eq!(amount_removed.amount_removed, balance);
             assert_eq!(
                 pool.get_account_balance(account),
                 Uint256::zero(),
