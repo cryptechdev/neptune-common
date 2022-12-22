@@ -88,21 +88,21 @@ impl std::ops::Add<Self> for SignedInt {
 
     fn add(self, rhs: Self) -> Self {
         let value;
-        let sign;
+        let is_positive;
         if self.is_positive == rhs.is_positive {
             value = self.value + rhs.value;
-            sign = self.is_positive;
+            is_positive = self.is_positive;
         } else if self.value > rhs.value {
             value = self.value - rhs.value;
-            sign = self.is_positive;
+            is_positive = self.is_positive;
         } else if self.value < rhs.value {
             value = rhs.value - self.value;
-            sign = rhs.is_positive
+            is_positive = rhs.is_positive
         } else {
             value = Uint256::zero();
-            sign = true;
+            is_positive = true;
         }
-        Self { is_positive: sign, value }
+        Self { is_positive, value }
     }
 }
 
