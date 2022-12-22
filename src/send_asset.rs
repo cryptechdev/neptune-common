@@ -4,8 +4,7 @@ use cw20::Cw20ExecuteMsg;
 use serde::{de::DeserializeOwned, Serialize};
 
 use crate::{
-    asset::AssetInfo,
-    asset_map::AssetMap,
+    asset::{AssetInfo, AssetMap},
     error::{CommonError, CommonResult},
     math::to_uint128,
 };

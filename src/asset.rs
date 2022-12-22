@@ -5,10 +5,7 @@ use cw_storage_plus::{Bound, Bounder, Key, KeyDeserialize, Prefixer, PrimaryKey}
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    asset_map::{AssetMap, AssetVec},
-    error::CommonError,
-};
+use crate::{error::CommonError, map::Map};
 
 #[derive(Serialize, Deserialize, Clone, Debug, Hash, PartialEq, Eq, JsonSchema, PartialOrd, Ord)]
 #[serde(rename_all = "snake_case")]
@@ -17,6 +14,8 @@ pub enum AssetInfo {
     Token { contract_addr: Addr },
     NativeToken { denom: String },
 }
+
+pub type AssetMap<T> = Map<AssetInfo, T>;
 
 impl FromStr for AssetInfo {
     type Err = CommonError;
@@ -161,24 +160,8 @@ pub struct AssetAmount {
     pub amount: Uint256,
 }
 
-impl From<AssetAmount> for AssetVec {
-    fn from(val: AssetAmount) -> Self { vec![val.info].into() }
-}
-
 impl From<AssetAmount> for (AssetInfo, Uint256) {
     fn from(val: AssetAmount) -> Self { (val.info, val.amount) }
-}
-
-impl From<AssetMap<Uint256>> for AssetVec {
-    fn from(val: AssetMap<Uint256>) -> Self {
-        let mut asset_vec = vec![];
-        for object in val {
-            if !asset_vec.contains(&object.0) {
-                asset_vec.push(object.0.clone());
-            }
-        }
-        asset_vec.into()
-    }
 }
 
 impl From<Coin> for AssetAmount {
