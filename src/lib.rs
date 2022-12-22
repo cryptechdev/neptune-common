@@ -1,6 +1,3 @@
-#![feature(let_chains)]
-#![feature(array_try_map)]
-#![feature(inline_const)]
 pub mod asset;
 pub mod debug;
 pub mod error;

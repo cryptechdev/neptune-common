@@ -403,11 +403,13 @@ pub fn find_many<'a, I, T, F, K, const LEN: usize>(
     collection: I, keys: [&K; LEN], mut predicate: F,
 ) -> Option<[&'a mut T; LEN]>
 where
+    T: Debug,
     I: IntoIterator<Item = &'a mut T>,
     F: FnMut(&T, &K) -> bool,
 {
     let mut remaining = LEN;
-    let mut output = [const { None::<&'a mut T> }; LEN];
+    let mut output = Vec::with_capacity(LEN);
+    (0..LEN).into_iter().for_each(|_| output.push(None));
 
     'collection: for elem in collection {
         for (key, out) in std::iter::zip(&keys, &mut output) {
@@ -422,7 +424,10 @@ where
         }
     }
 
-    output.try_map(|opt| opt)
+    let Some(vec) = output.into_iter().collect::<Option<Vec<&mut T>>>() else {
+        return None
+    };
+    Some(vec.try_into().unwrap())
 }
 
 /// finds multiple items in a collection and maps the elements to &muts.
@@ -443,11 +448,13 @@ pub fn find_map_many<'a, I, T, U, F, M, K, const LEN: usize>(
 where
     I: IntoIterator<Item = &'a mut T>,
     T: 'a,
+    U: Debug,
     F: FnMut(&T, &K) -> bool,
     M: FnMut(&'a mut T) -> &'a mut U,
 {
     let mut remaining = LEN;
-    let mut output = [const { None::<&'a mut U> }; LEN];
+    let mut output = Vec::with_capacity(LEN);
+    (0..LEN).into_iter().for_each(|_| output.push(None));
 
     'collection: for elem in collection {
         for (key, out) in std::iter::zip(&keys, &mut output) {
@@ -462,7 +469,10 @@ where
         }
     }
 
-    output.try_map(|opt| opt)
+    let Some(vec) = output.into_iter().collect::<Option<Vec<&mut U>>>() else {
+        return None
+    };
+    Some(vec.try_into().unwrap())
 }
 
 #[cfg(test)]
