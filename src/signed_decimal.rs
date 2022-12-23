@@ -54,10 +54,14 @@ impl Mul<Decimal256> for SignedDecimal {
 impl Neg for SignedDecimal {
     type Output = Self;
 
-    fn neg(self) -> Self::Output { Self { value: self.value, is_positive: !self.is_positive } }
+    fn neg(self) -> Self::Output {
+        if self.is_zero() {
+            return self;
+        }
+        Self { value: self.value, is_positive: !self.is_positive }
+    }
 }
 
-// todo. check this logic
 impl Rem for SignedDecimal {
     type Output = Self;
 

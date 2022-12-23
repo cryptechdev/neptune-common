@@ -32,7 +32,12 @@ impl SignedInt {
 impl Neg for SignedInt {
     type Output = Self;
 
-    fn neg(self) -> Self::Output { Self { value: self.value, is_positive: !self.is_positive } }
+    fn neg(self) -> Self::Output {
+        if self.is_zero() {
+            return self;
+        }
+        Self { value: self.value, is_positive: !self.is_positive }
+    }
 }
 
 impl Rem for SignedInt {
@@ -280,4 +285,57 @@ fn signed_int_test() {
     assert!(small_pos == f64_to_signed_int(small_pos_f64));
     assert!(small_neg == f64_to_signed_int(small_neg_f64));
     assert!(dec_neg == f64_to_signed_int(dec_neg_f64));
+}
+
+#[test]
+fn test_zero_is_positive() {
+    {
+        let mut x = SignedInt::zero();
+        let y = SignedInt::one().neg();
+
+        x = x * y;
+        assert!(x.is_positive);
+
+        x = y * x;
+        assert!(x.is_positive);
+
+        x = x / y;
+        assert!(x.is_positive);
+
+        x = x + y;
+        x = x - y;
+        assert!(x.is_positive);
+
+        x = x - y;
+        x = x + y;
+        assert!(x.is_positive);
+    }
+    {
+        let x = SignedInt::one() * SignedInt::from_str("5").unwrap();
+        let y = SignedInt::one() * SignedInt::from_str("-5").unwrap();
+
+        let z = x + y;
+        assert!(z.is_positive);
+
+        let z = -x - y;
+        assert!(z.is_positive);
+    }
+    {
+        let x = -SignedInt::zero();
+        assert!(x.is_positive);
+    }
+    {
+        let x = SignedInt::zero().neg();
+        assert!(x.is_positive);
+    }
+    {
+        let x = SignedInt::zero().neg();
+        let y = SignedInt::from_str("5").unwrap();
+
+        let z = x * y;
+        assert!(z.is_positive);
+
+        let z = y * x;
+        assert!(z.is_positive);
+    }
 }
