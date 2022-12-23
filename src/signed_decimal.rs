@@ -174,7 +174,12 @@ impl std::ops::Div<Self> for SignedDecimal {
 }
 
 impl std::cmp::PartialEq for SignedDecimal {
-    fn eq(&self, other: &Self) -> bool { self.value == other.value }
+    fn eq(&self, other: &Self) -> bool {
+        if self.is_zero() {
+            return other.is_zero();
+        }
+        self.value == other.value && self.is_positive == other.is_positive
+    }
 }
 
 impl std::cmp::PartialOrd for SignedDecimal {
