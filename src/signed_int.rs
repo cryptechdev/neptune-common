@@ -241,7 +241,7 @@ fn signed_int_test() {
     // Utility function
     fn f64_to_signed_int(val: f64) -> SignedInt {
         let string = val.to_string();
-        println!("val is {}", string);
+        println!("val is {string}");
         SignedInt::from_str(string.as_str()).unwrap()
     }
 

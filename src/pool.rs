@@ -219,12 +219,7 @@ mod test {
             assert_eq!(
                 pool.get_account_balance(account),
                 Uint256::zero(),
-                "start_pool_balance: {}, start_pool_shares: {}, amount: {}, account {:#?}",
-                start_pool_balance,
-                start_pool_shares,
-                amount,
-                account
-            );
+                "start_pool_balance: {start_pool_balance}, start_pool_shares: {start_pool_shares}, amount: {amount}, account {account:#?}");
         }
     }
 

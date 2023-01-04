@@ -59,7 +59,7 @@ where
         }
     }
 
-    pub fn get_muts<'a, const LEN: usize>(&'a mut self, keys: [&K; LEN]) -> CommonResult<[&mut V; LEN]>
+    pub fn get_muts<const LEN: usize>(&mut self, keys: [&K; LEN]) -> CommonResult<[&mut V; LEN]>
     where
         V: Debug,
     {
@@ -409,7 +409,7 @@ where
 {
     let mut remaining = LEN;
     let mut output = Vec::with_capacity(LEN);
-    (0..LEN).into_iter().for_each(|_| output.push(None));
+    (0..LEN).for_each(|_| output.push(None));
 
     'collection: for elem in collection {
         for (key, out) in std::iter::zip(&keys, &mut output) {
@@ -454,7 +454,7 @@ where
 {
     let mut remaining = LEN;
     let mut output = Vec::with_capacity(LEN);
-    (0..LEN).into_iter().for_each(|_| output.push(None));
+    (0..LEN).for_each(|_| output.push(None));
 
     'collection: for elem in collection {
         for (key, out) in std::iter::zip(&keys, &mut output) {

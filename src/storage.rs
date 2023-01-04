@@ -27,12 +27,8 @@ pub fn read_map<
         Some(limit) => map
             .range(deps.storage, start, None, Order::Ascending)
             .take(limit as usize)
-            .into_iter()
             .collect::<Result<Vec<(K, V)>, StdError>>()?,
-        None => map
-            .range(deps.storage, start, None, Order::Ascending)
-            .into_iter()
-            .collect::<Result<Vec<(K, V)>, StdError>>()?,
+        None => map.range(deps.storage, start, None, Order::Ascending).collect::<Result<Vec<(K, V)>, StdError>>()?,
     };
     Ok(vec)
 }
