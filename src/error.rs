@@ -75,11 +75,3 @@ pub enum CommonError {
     #[error("Missing Cw20HookMg")]
     MissingHookMsg {},
 }
-
-impl From<CommonError> for NeptAuthError {
-    fn from(val: CommonError) -> Self { Self::Error(val.to_string()) }
-}
-
-impl From<Box<dyn std::error::Error>> for CommonError {
-    fn from(error: Box<dyn std::error::Error>) -> Self { Self::Error(error.to_string()) }
-}

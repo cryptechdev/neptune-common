@@ -281,30 +281,6 @@ impl Default for SignedDecimal {
     fn default() -> Self { Self { value: Decimal256::default(), sign: true } }
 }
 
-// #[test]
-// fn decimal256_pid_test() {
-//     let mut pid = pid::Pid {
-//         kp: SignedDecimal::from_str("").unwrap(),
-//         ki: SignedDecimal::from_str("1.0").unwrap(),
-//         kd: SignedDecimal::from_str("1.0").unwrap(),
-//         p_limit: SignedDecimal::from_str("1.0").unwrap(),
-//         i_limit: SignedDecimal::from_str("1.0").unwrap(),
-//         d_limit: SignedDecimal::from_str("1.0").unwrap(),
-//         output_limit: SignedDecimal::from_str("1.0").unwrap(),
-//         setpoint: SignedDecimal::from_str("1.0").unwrap(),
-//         prev_measurement: SignedDecimal::from_str("1.0").unwrap(),
-//         integral_term: SignedDecimal::from_str("1.0").unwrap(),
-//     };
-
-//     let out = pid.next_control_output(0.0);
-//     assert_eq!(out.p, 10.0); // 1.0 * 10.0
-//     assert_eq!(out.output, 1.0);
-
-//     let out = pid.next_control_output(20.0);
-//     assert_eq!(out.p, -10.0); // 1.0 * (10.0 - 20.0)
-//     assert_eq!(out.output, -1.0);
-// }
-
 #[test]
 fn signed_decimal_test() {
     let big_pos = SignedDecimal::from_str("100").unwrap();

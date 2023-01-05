@@ -20,7 +20,7 @@ pub fn transfer_funds(recipient: &Addr, mut funds: AssetMap<Uint256>) -> Result<
             AssetInfo::NativeToken { denom } => {
                 transfer_coins(vec![Coin { denom, amount: to_uint128(amount)? }], recipient)
             }
-            AssetInfo::Token { contract_addr } => transfer_tokens(&contract_addr, amount, recipient)?,
+            AssetInfo::Token { contract_addr } => transfer_token(&contract_addr, amount, recipient)?,
         });
     }
 
@@ -34,13 +34,14 @@ pub fn send_funds(
         SendFundsMsg::NativeToken { denom } => {
             send_coins(vec![Coin { denom, amount: to_uint128(amount)? }], recipient, exec_msg)
         }
-        SendFundsMsg::Token { contract_addr: token_addr } => send_tokens(&token_addr, amount, recipient, exec_msg)?,
+        SendFundsMsg::Token { contract_addr: token_addr } => send_token(&token_addr, amount, recipient, exec_msg)?,
     };
 
     Ok(msg)
 }
 
-fn transfer_coins(coins: Vec<Coin>, recipient_addr: &Addr) -> CosmosMsg {
+fn transfer_coins(mut coins: Vec<Coin>, recipient_addr: &Addr) -> CosmosMsg {
+    coins.retain(|x| !x.amount.is_zero());
     CosmosMsg::Bank(BankMsg::Send { to_address: recipient_addr.to_string(), amount: coins })
 }
 
@@ -52,7 +53,7 @@ fn send_coins(coins: Vec<Coin>, recipient_addr: &Addr, exec_msg: Binary) -> Cosm
     })
 }
 
-fn transfer_tokens(token_addr: &Addr, token_amount: Uint256, recipient_addr: &Addr) -> Result<CosmosMsg, CommonError> {
+fn transfer_token(token_addr: &Addr, token_amount: Uint256, recipient_addr: &Addr) -> Result<CosmosMsg, CommonError> {
     Ok(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: token_addr.to_string(),
         funds:         vec![],
@@ -63,7 +64,7 @@ fn transfer_tokens(token_addr: &Addr, token_amount: Uint256, recipient_addr: &Ad
     }))
 }
 
-fn send_tokens(
+fn send_token(
     token_addr: &Addr, token_amount: Uint256, recipient_addr: &Addr, exec_msg: Binary,
 ) -> Result<CosmosMsg, CommonError> {
     Ok(CosmosMsg::Wasm(WasmMsg::Execute {
