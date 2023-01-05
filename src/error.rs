@@ -1,5 +1,5 @@
 use cosmwasm_std::{ConversionOverflowError, Decimal256RangeExceeded, OverflowError, StdError};
-use neptune_authorization::error::NeptAuthError;
+use neptune_auth::error::NeptAuthError;
 use thiserror::Error;
 
 pub type CommonResult<T> = core::result::Result<T, CommonError>;
