@@ -433,7 +433,7 @@ where
 /// finds multiple items in a collection and maps the elements to &muts.
 ///
 /// ```
-/// # use contracts_common::map::find_map_many;
+/// # use neptune_common::map::find_map_many;
 /// # fn test_find_many() {
 /// let mut v = vec![(0, 1), (1, 2), (2, 3), (3, 4), (4, 5)];
 /// let [left, right] =
