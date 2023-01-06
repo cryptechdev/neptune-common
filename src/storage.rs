@@ -1,4 +1,4 @@
-use cosmwasm_std::{Deps, Order, StdError};
+use cosmwasm_std::{Deps, Order};
 use cw_storage_plus::{Bounder, KeyDeserialize, Map, PrimaryKey};
 use serde::{de::DeserializeOwned, Serialize};
 
@@ -7,6 +7,10 @@ use crate::error::CommonError;
 pub const PARAMS_KEY: &str = "params";
 pub const STATE_KEY: &str = "state";
 
+/// Reads a map from storage is ascending order.
+///
+/// TODO: Doc Test Here
+///
 pub fn read_map<
     'a,
     K: 'static,
@@ -20,8 +24,8 @@ pub fn read_map<
         Some(limit) => map
             .range(deps.storage, start, None, Order::Ascending)
             .take(limit as usize)
-            .collect::<Result<Vec<(K, V)>, StdError>>()?,
-        None => map.range(deps.storage, start, None, Order::Ascending).collect::<Result<Vec<(K, V)>, StdError>>()?,
+            .collect::<Result<Vec<_>, _>>()?,
+        None => map.range(deps.storage, start, None, Order::Ascending).collect::<Result<Vec<_>, _>>()?,
     };
     Ok(vec)
 }

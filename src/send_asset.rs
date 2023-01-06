@@ -4,7 +4,6 @@ use cw20::Cw20ExecuteMsg;
 use crate::{
     asset::{AssetInfo, AssetMap},
     error::CommonError,
-    math::to_uint128,
 };
 
 pub type SendFundsMsg = AssetInfo;
@@ -18,7 +17,7 @@ pub fn transfer_funds(recipient: &Addr, mut funds: AssetMap<Uint256>) -> Result<
     for (asset, amount) in funds {
         msgs.push(match asset {
             AssetInfo::NativeToken { denom } => {
-                transfer_coins(vec![Coin { denom, amount: to_uint128(amount)? }], recipient)
+                transfer_coins(vec![Coin { denom, amount: amount.try_into()? }], recipient)
             }
             AssetInfo::Token { contract_addr } => transfer_token(&contract_addr, amount, recipient)?,
         });
@@ -34,7 +33,7 @@ pub fn send_funds(
 ) -> Result<CosmosMsg, CommonError> {
     let msg = match send_msg {
         SendFundsMsg::NativeToken { denom } => {
-            send_coins(vec![Coin { denom, amount: to_uint128(amount)? }], recipient, exec_msg)
+            send_coins(vec![Coin { denom, amount: amount.try_into()? }], recipient, exec_msg)
         }
         SendFundsMsg::Token { contract_addr: token_addr } => send_token(&token_addr, amount, recipient, exec_msg)?,
     };
@@ -66,7 +65,7 @@ fn transfer_token(token_addr: &Addr, token_amount: Uint256, recipient_addr: &Add
         funds:         vec![],
         msg:           to_binary(&Cw20ExecuteMsg::Transfer {
             recipient: recipient_addr.to_string(),
-            amount:    to_uint128(token_amount)?,
+            amount:    token_amount.try_into()?,
         })?,
     }))
 }
@@ -80,7 +79,7 @@ fn send_token(
         contract_addr: token_addr.to_string(),
         msg:           to_binary(&Cw20ExecuteMsg::Send {
             contract: recipient_addr.to_string(),
-            amount:   to_uint128(token_amount)?,
+            amount:   token_amount.try_into()?,
             msg:      exec_msg,
         })?,
         funds:         vec![],
