@@ -26,24 +26,6 @@ impl ToString for AssetInfo {
     }
 }
 
-impl<'a> PrimaryKey<'a> for AssetInfo {
-    type Prefix = String;
-    type SubPrefix = ();
-    type Suffix = u8;
-    type SuperSuffix = Self;
-
-    fn key(&self) -> Vec<Key> {
-        match self {
-            Self::Token { contract_addr: addr } => {
-                vec![Key::Ref(addr.as_bytes()), Key::Val8([0])]
-            }
-            Self::NativeToken { denom } => {
-                vec![Key::Ref(denom.as_bytes()), Key::Val8([1])]
-            }
-        }
-    }
-}
-
 impl<'a> PrimaryKey<'a> for &'a AssetInfo {
     type Prefix = String;
     type SubPrefix = ();
@@ -56,19 +38,6 @@ impl<'a> PrimaryKey<'a> for &'a AssetInfo {
                 vec![Key::Ref(addr.as_bytes()), Key::Val8([0])]
             }
             AssetInfo::NativeToken { denom } => {
-                vec![Key::Ref(denom.as_bytes()), Key::Val8([1])]
-            }
-        }
-    }
-}
-
-impl<'a> Prefixer<'a> for AssetInfo {
-    fn prefix(&self) -> Vec<Key> {
-        match self {
-            Self::Token { contract_addr: addr } => {
-                vec![Key::Ref(addr.as_bytes()), Key::Val8([0])]
-            }
-            Self::NativeToken { denom } => {
                 vec![Key::Ref(denom.as_bytes()), Key::Val8([1])]
             }
         }
@@ -88,39 +57,10 @@ impl<'a> Prefixer<'a> for &'a AssetInfo {
     }
 }
 
-impl<'a> From<AssetInfo> for Bound<'a, AssetInfo> {
-    fn from(val: AssetInfo) -> Self { Bound::exclusive(val) }
-}
-
-impl<'a> From<&'a AssetInfo> for Bound<'a, &'a AssetInfo> {
-    fn from(val: &'a AssetInfo) -> Self { Bound::exclusive(val) }
-}
-
-impl<'a> Bounder<'a> for AssetInfo {
-    fn inclusive_bound(self) -> Option<Bound<'a, Self>> { Some(Bound::inclusive(self)) }
-
-    fn exclusive_bound(self) -> Option<Bound<'a, Self>> { Some(Bound::exclusive(self)) }
-}
-
 impl<'a> Bounder<'a> for &'a AssetInfo {
     fn inclusive_bound(self) -> Option<Bound<'a, Self>> { Some(Bound::inclusive(self)) }
 
     fn exclusive_bound(self) -> Option<Bound<'a, Self>> { Some(Bound::exclusive(self)) }
-}
-
-impl KeyDeserialize for AssetInfo {
-    type Output = Self;
-
-    #[inline(always)]
-    fn from_vec(mut value: Vec<u8>) -> StdResult<Self::Output> {
-        let mut split = value.split_off(2);
-
-        match split.pop().unwrap() {
-            0 => Ok(Self::Token { contract_addr: Addr::from_vec(split)? }),
-            1 => Ok(Self::NativeToken { denom: String::from_vec(split)? }),
-            _ => Err(StdError::GenericErr { msg: "Failed deserializing.".into() }),
-        }
-    }
 }
 
 impl<'a> KeyDeserialize for &'a AssetInfo {
@@ -174,9 +114,7 @@ impl From<&Coin> for AssetAmount {
 
 // #[test]
 // fn asset_key_works() {
-//     let k = Asset::NativeToken {
-//         denom: "test".to_string(),
-//     };
+//     let k = Asset::NativeToken { denom: "test".to_string() };
 //     let path = k.key();
 //     let asset_key_vec = Into::<Vec<u8>>::into(k.clone());
 
