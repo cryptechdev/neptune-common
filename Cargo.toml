@@ -1,10 +1,19 @@
 [package]
 name = "neptune-common"
 version = "0.1.0"
-authors = ["Cryptech Developments Ltd."]
+authors = [
+    "Eric Woolsey<eric@cryptech.dev>",
+    "Francisco Inacio<cisco@cryptech.dev>",
+    "Ihor Farion<Ihor@cryptech.dev>",
+    "Cryptech Developments Ltd."
+]
 edition = "2021"
 description = "The common data, interfaces and functionality used across the Neptune Finance smart contracts"
 homepage = "https://nept.finance"
+keywords = ["cosmwasm", "smart-contracts", "cosmos", "money-market", "neptune"]
+license = "Apache-2.0"
+repository = "https://github.com/cryptechdev/neptune-common"
+readme = "README.md"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
@@ -13,24 +22,17 @@ crate-type = ["cdylib", "rlib"]
 backtraces = ["cosmwasm-std/backtraces"]
 library = []
 
-[dependencies.num-traits]
-version = "0.2"
-default-features = false
-
 [dependencies]
 cw20 = "1" 
 cw-storage-plus = "1"
-cosmwasm-std = "1.1.5"
-cosmwasm-derive = "1.1.5"
+cosmwasm-std = "1.1"
+cosmwasm-derive = "1.1"
 schemars = "0.8"
-base64 = "0.20.0"
-serde = { version = "1.0.137", default-features = false, features = ["derive"] }
-serde_json = "1.0.0"
-thiserror = "1.0.31"
-shrinkwraprs = "0.3.0"
-neptune-auth = { git = "https://github.com/cryptechdev/neptune-auth" }
+serde = { version = "1", default-features = false, features = ["derive"] }
+thiserror = "1"
+shrinkwraprs = "0.3"
+neptune-auth = "0.1"
+num-traits = { version = "0.2", default-features = false }
 
 [dev-dependencies]
-cosmwasm-schema = "1.0.0"
-rand = "0.8.5"
-serde_json = "1.0"
+rand = "0.8"

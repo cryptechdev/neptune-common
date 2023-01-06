@@ -1,11 +1,11 @@
-use std::{convert::TryInto, str::FromStr};
+use std::convert::TryInto;
 
 use cosmwasm_std::{Addr, Coin, StdError, StdResult, Uint256};
 use cw_storage_plus::{Bound, Bounder, Key, KeyDeserialize, Prefixer, PrimaryKey};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::{error::CommonError, map::Map};
+use crate::map::Map;
 
 #[derive(Serialize, Deserialize, Clone, Debug, Hash, PartialEq, Eq, JsonSchema, PartialOrd, Ord)]
 #[serde(rename_all = "snake_case")]
@@ -16,19 +16,6 @@ pub enum AssetInfo {
 }
 
 pub type AssetMap<T> = Map<AssetInfo, T>;
-
-impl FromStr for AssetInfo {
-    type Err = CommonError;
-
-    /// Not rigorous, should only be used for command line
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.len() < 10 || s.starts_with("ibc") {
-            Ok(Self::NativeToken { denom: s.to_string() })
-        } else {
-            Ok(Self::Token { contract_addr: Addr::unchecked(s) })
-        }
-    }
-}
 
 impl ToString for AssetInfo {
     fn to_string(&self) -> String {
@@ -75,7 +62,6 @@ impl<'a> PrimaryKey<'a> for &'a AssetInfo {
     }
 }
 
-/// TODO: Might not be correct, Untested
 impl<'a> Prefixer<'a> for AssetInfo {
     fn prefix(&self) -> Vec<Key> {
         match self {
@@ -89,7 +75,6 @@ impl<'a> Prefixer<'a> for AssetInfo {
     }
 }
 
-/// TODO: Might not be correct, Untested
 impl<'a> Prefixer<'a> for &'a AssetInfo {
     fn prefix(&self) -> Vec<Key> {
         match self {
