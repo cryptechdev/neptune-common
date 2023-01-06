@@ -30,18 +30,6 @@ pub enum CommonError {
     #[error("Only one tx is allowed per block")]
     MultipleTx {},
 
-    #[error("Denominator was zero")]
-    ZeroDenominator {},
-
-    #[error("Basset price was returned as zero")]
-    BassetPriceIsZero {},
-
-    #[error("Argument is out of range")]
-    ArgOutOfRange,
-
-    #[error("This function has not yet been implemented")]
-    Unimplemented {},
-
     #[error("Missing Cw20HookMg")]
     MissingHookMsg {},
 }
