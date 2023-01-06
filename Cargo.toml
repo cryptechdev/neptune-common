@@ -25,8 +25,8 @@ library = []
 [dependencies]
 cw20 = "1" 
 cw-storage-plus = "1"
-cosmwasm-std = "1.1"
-cosmwasm-derive = "1.1"
+cosmwasm-std = "1"
+cosmwasm-derive = "1"
 schemars = "0.8"
 serde = { version = "1", default-features = false, features = ["derive"] }
 thiserror = "1"

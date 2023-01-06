@@ -1,4 +1,4 @@
-use cosmwasm_std::{ConversionOverflowError, Decimal256RangeExceeded, OverflowError, StdError};
+use cosmwasm_std::{ConversionOverflowError, Decimal256RangeExceeded, StdError};
 use neptune_auth::error::NeptAuthError;
 use thiserror::Error;
 
@@ -19,43 +19,13 @@ pub enum CommonError {
     Auth(#[from] NeptAuthError),
 
     #[error("{0}")]
-    OverflowError(#[from] OverflowError),
-
-    #[error("{0}")]
     ConversionOverflowError(#[from] ConversionOverflowError),
 
     #[error("{0}")]
     Decimal256RangeExceeded(#[from] Decimal256RangeExceeded),
 
-    #[error("Unauthorized: {0}")]
-    Unauthorized(String),
-
-    #[error("Insufficient liquidity to send funds")]
-    InsufficientLiquidity {},
-
-    #[error("Asset not found")]
-    AssetNotFound {},
-
     #[error("Key not found: {0}")]
     KeyNotFound(String),
-
-    #[error("No stable funds were attached")]
-    NoFundsReceived {},
-
-    #[error("Amount received is less than minimum receive")]
-    MinimumReceive(),
-
-    #[error("Missing address for {0}")]
-    MissingAddress(String),
-
-    #[error("Missing config variable")]
-    MissingConfigVariable {},
-
-    #[error("Missing admin addresses")]
-    MissingAdminAddresses {},
-
-    #[error("Missing admin double sig address")]
-    MissingAdminDoubleSigAddress {},
 
     #[error("Only one tx is allowed per block")]
     MultipleTx {},
