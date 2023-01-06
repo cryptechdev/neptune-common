@@ -1,16 +1,16 @@
-use cosmwasm_std::{to_binary, Addr, BankMsg, Binary, Coin, CosmosMsg, Env, Uint256, WasmMsg};
+use cosmwasm_std::{to_binary, Addr, BankMsg, Binary, Coin, CosmosMsg, Uint256, WasmMsg};
 use cw20::Cw20ExecuteMsg;
-// Neptune Package crate imports
-use serde::{de::DeserializeOwned, Serialize};
 
 use crate::{
     asset::{AssetInfo, AssetMap},
-    error::{CommonError, CommonResult},
+    error::CommonError,
     math::to_uint128,
 };
 
 pub type SendFundsMsg = AssetInfo;
 
+/// Transfers both tokens and native tokens to the recipient.
+/// If the amount is zero, it is not included in the returned messages.
 pub fn transfer_funds(recipient: &Addr, mut funds: AssetMap<Uint256>) -> Result<Vec<CosmosMsg>, CommonError> {
     let mut msgs = vec![];
     // remove any elements that are zero
@@ -27,6 +27,8 @@ pub fn transfer_funds(recipient: &Addr, mut funds: AssetMap<Uint256>) -> Result<
     Ok(msgs)
 }
 
+/// Sends both tokens and native tokens to the recipient along with an attached message.
+/// If the amount is zero the message is still sent.
 pub fn send_funds(
     recipient: &Addr, amount: Uint256, send_msg: SendFundsMsg, exec_msg: Binary,
 ) -> Result<CosmosMsg, CommonError> {
@@ -40,11 +42,14 @@ pub fn send_funds(
     Ok(msg)
 }
 
-fn transfer_coins(mut coins: Vec<Coin>, recipient_addr: &Addr) -> CosmosMsg {
-    coins.retain(|x| !x.amount.is_zero());
+/// Transfers native tokens to the recipient.
+/// Does not check if the amount is zero.
+fn transfer_coins(coins: Vec<Coin>, recipient_addr: &Addr) -> CosmosMsg {
     CosmosMsg::Bank(BankMsg::Send { to_address: recipient_addr.to_string(), amount: coins })
 }
 
+/// Sends native tokens to the recipient along with a message.
+/// Does not check if the amount is zero.
 fn send_coins(coins: Vec<Coin>, recipient_addr: &Addr, exec_msg: Binary) -> CosmosMsg {
     CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: recipient_addr.to_string(),
@@ -53,6 +58,8 @@ fn send_coins(coins: Vec<Coin>, recipient_addr: &Addr, exec_msg: Binary) -> Cosm
     })
 }
 
+/// Transfers tokens to the recipient.
+/// Does not check if the amount is zero.
 fn transfer_token(token_addr: &Addr, token_amount: Uint256, recipient_addr: &Addr) -> Result<CosmosMsg, CommonError> {
     Ok(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: token_addr.to_string(),
@@ -64,6 +71,8 @@ fn transfer_token(token_addr: &Addr, token_amount: Uint256, recipient_addr: &Add
     }))
 }
 
+/// Sends tokens to the recipient along with a message.
+/// Does not check if the amount is zero.
 fn send_token(
     token_addr: &Addr, token_amount: Uint256, recipient_addr: &Addr, exec_msg: Binary,
 ) -> Result<CosmosMsg, CommonError> {
@@ -75,13 +84,5 @@ fn send_token(
             msg:      exec_msg,
         })?,
         funds:         vec![],
-    }))
-}
-
-pub fn msg_to_self<ExecuteMsg: Serialize + DeserializeOwned>(env: &Env, msg: &ExecuteMsg) -> CommonResult<CosmosMsg> {
-    Ok(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: env.contract.address.to_string(),
-        funds:         vec![],
-        msg:           to_binary(&msg)?,
     }))
 }

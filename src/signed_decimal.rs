@@ -74,10 +74,7 @@ impl Zero for SignedDecimal {
 impl Num for SignedDecimal {
     type FromStrRadixErr = StdError;
 
-    /// TODO: Should probably impl this for completion sake
-    fn from_str_radix(_str: &str, _radix: u32) -> Result<Self, Self::FromStrRadixErr> {
-        Err(StdError::GenericErr { msg: "from_str_radix not implemented for SignedDecimal".into() })
-    }
+    fn from_str_radix(_str: &str, _radix: u32) -> Result<Self, Self::FromStrRadixErr> { panic!("unimplemented") }
 }
 
 impl num_traits::sign::Signed for SignedDecimal {

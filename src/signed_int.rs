@@ -54,7 +54,7 @@ impl Zero for SignedInt {
 impl Num for SignedInt {
     type FromStrRadixErr = Self;
 
-    fn from_str_radix(_str: &str, _radix: u32) -> Result<Self, Self::FromStrRadixErr> { todo!() }
+    fn from_str_radix(_str: &str, _radix: u32) -> Result<Self, Self::FromStrRadixErr> { panic!("unimplemented") }
 }
 
 impl num_traits::sign::Signed for SignedInt {

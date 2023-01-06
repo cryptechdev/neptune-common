@@ -10,4 +10,4 @@ pub mod signed_decimal;
 pub mod signed_int;
 pub mod storage;
 pub mod utilities;
-pub mod warning;
+pub mod warn;

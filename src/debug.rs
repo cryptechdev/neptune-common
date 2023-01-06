@@ -1,5 +1,6 @@
 /// This macro prints debug information to the wasm attributes
 /// and then exits without sending any additional messages.
+/// Additional information is included in the attributes like the function name.
 /// ```
 /// # use cosmwasm_std::{attr, Response, StdResult};
 /// # use neptune_common::debug;
@@ -29,6 +30,7 @@ macro_rules! debug {
 
 /// This macro prints debug information to the wasm attributes
 /// and then exits without sending any additional messages.
+/// Additional information is included in the attributes like the function name.
 /// ```
 /// # use cosmwasm_std::{attr, Response, StdResult};
 /// # use neptune_common::debug_and_exit;
