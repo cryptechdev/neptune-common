@@ -5,7 +5,6 @@ use std::{
 };
 
 use cosmwasm_std::Decimal256;
-use num_traits::Zero;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use shrinkwraprs::Shrinkwrap;
@@ -13,6 +12,7 @@ use shrinkwraprs::Shrinkwrap;
 use crate::{
     asset::AssetInfo,
     error::{CommonError, CommonResult},
+    traits::{KeyVec, Zeroed},
 };
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize, JsonSchema, Shrinkwrap)]
@@ -25,41 +25,40 @@ where
 {
     pub const fn new() -> Self { Self(Vec::new()) }
 
-    pub fn insert(&mut self, tuple: (K, V)) { self.0.push(tuple); }
-
-    pub fn contains(&self, key: &K) -> bool { self.may_get(key).is_some() }
-
-    pub fn position(&self, key: &K) -> Option<usize> { self.0.iter().position(|x| &x.0 == key) }
-
-    pub fn get_mut_from_index(&mut self, index: usize) -> Option<&mut V> {
-        match self.0.get_mut(index) {
-            Some((_, val)) => Some(val),
-            None => None,
+    pub fn insert(&mut self, tuple: (K, V)) -> Option<V> {
+        match self.get_mut(&tuple.0) {
+            Some(value) => Some(std::mem::replace(value, tuple.1)),
+            None => {
+                self.0.push(tuple);
+                None
+            }
         }
     }
 
-    pub fn get(&self, key: &K) -> CommonResult<&V> {
+    pub fn contains_key(&self, key: &K) -> bool { self.get(key).is_some() }
+
+    pub fn must_get(&self, key: &K) -> CommonResult<&V> {
         match self.0.iter().position(|x| &x.0 == key) {
             Some(index) => Ok(&self.0[index].1),
             None => Err(CommonError::KeyNotFound(format!("{:?}", key.clone()))),
         }
     }
 
-    pub fn may_get(&self, key: &K) -> Option<&V> {
+    pub fn get(&self, key: &K) -> Option<&V> {
         match self.0.iter().position(|x| &x.0 == key) {
             Some(index) => Some(&self.0[index].1),
             None => None,
         }
     }
 
-    pub fn get_mut(&mut self, key: &K) -> CommonResult<&mut V> {
+    pub fn must_get_mut(&mut self, key: &K) -> CommonResult<&mut V> {
         match self.0.iter().position(|x| &x.0 == key) {
             Some(index) => Ok(&mut self.0[index].1),
             None => Err(CommonError::KeyNotFound(format!("{:?}", key.clone()))),
         }
     }
 
-    pub fn get_muts<const LEN: usize>(&mut self, keys: [&K; LEN]) -> CommonResult<[&mut V; LEN]>
+    pub fn must_get_muts<const LEN: usize>(&mut self, keys: [&K; LEN]) -> CommonResult<[&mut V; LEN]>
     where
         V: Debug,
     {
@@ -67,27 +66,28 @@ where
             .ok_or_else(|| CommonError::KeyNotFound(String::new()))
     }
 
-    pub fn get_muts_or_default<const LEN: usize>(&mut self, keys: [&K; LEN]) -> CommonResult<[&mut V; LEN]>
+    pub fn get_muts_or_default<const LEN: usize>(&mut self, keys: [&K; LEN]) -> [&mut V; LEN]
     where
         V: Debug + Default,
     {
         // add a default if it doesn't exist
         for key in keys {
-            if !self.contains(key) {
+            if !self.contains_key(key) {
                 self.insert((key.to_owned(), V::default()));
             }
         }
-        self.get_muts(keys)
+        // unwrap is safe because we just added all the keys
+        self.must_get_muts(keys).unwrap()
     }
 
-    pub fn may_get_mut(&mut self, key: &K) -> Option<&mut V> {
+    pub fn get_mut(&mut self, key: &K) -> Option<&mut V> {
         match self.0.iter().position(|x| &x.0 == key) {
             Some(index) => Some(&mut self.0[index].1),
             None => None,
         }
     }
 
-    pub fn map_val<F: Fn(&V) -> O, O>(&mut self, f: F) -> Map<K, O> {
+    pub fn map<F: Fn(&V) -> O, O>(&mut self, f: F) -> Map<K, O> {
         let mut output = vec![];
         for (key, val) in &self.0 {
             let function_output = f(val);
@@ -105,19 +105,6 @@ where
         Ok(output.into())
     }
 
-    pub fn get_mut_or_zero<'a>(&'a mut self, key: &K) -> &'a mut V
-    where
-        V: Zero,
-    {
-        match self.0.iter().position(|x| &x.0 == key) {
-            Some(index) => &mut self.0[index].1,
-            None => {
-                self.insert((key.clone(), V::zero()));
-                &mut self.0.last_mut().unwrap().1
-            }
-        }
-    }
-
     pub fn get_mut_or_default<'a>(&'a mut self, key: &K) -> &'a mut V
     where
         V: Default,
@@ -126,16 +113,6 @@ where
             Some(index) => &mut self.0[index].1,
             None => {
                 self.insert((key.clone(), V::default()));
-                &mut self.0.last_mut().unwrap().1
-            }
-        }
-    }
-
-    pub fn get_mut_or<'a>(&'a mut self, key: &K, val: V) -> &'a mut V {
-        match self.0.iter().position(|x| &x.0 == key) {
-            Some(index) => &mut self.0[index].1,
-            None => {
-                self.insert((key.clone(), val));
                 &mut self.0.last_mut().unwrap().1
             }
         }
@@ -151,17 +128,10 @@ where
     {
         let mut output = Vec::with_capacity(self.len());
         for (key, lhs_val) in self {
-            let rhs_val = rhs.get(&key)?.clone();
+            let rhs_val = rhs.must_get(&key)?.clone();
             output.push((key, lhs_val * rhs_val))
         }
         Ok(output.into())
-    }
-
-    pub fn map<F, U>(&self, f: F) -> Map<K, U>
-    where
-        F: Fn(&V) -> U,
-    {
-        self.iter().map(|x| (x.0.clone(), f(&x.1))).collect()
     }
 
     pub fn sum(&self) -> V
@@ -325,59 +295,6 @@ impl<K, V> From<(K, V)> for Map<K, V> {
     fn from(object: (K, V)) -> Self { Self(vec![object]) }
 }
 
-pub trait GetKeyVec<K> {
-    fn get_key_vec(&self) -> Vec<K>;
-}
-
-impl<T, K> GetKeyVec<K> for Vec<T>
-where
-    K: PartialEq + Clone,
-    T: GetKeyVec<K>,
-{
-    fn get_key_vec(&self) -> Vec<K> {
-        let mut key_vec = vec![];
-        for val in self {
-            for key in val.get_key_vec() {
-                if !key_vec.contains(&key) {
-                    key_vec.push(key.clone());
-                }
-            }
-        }
-        key_vec
-    }
-}
-
-impl<K, V> GetKeyVec<K> for Map<K, V>
-where
-    K: PartialEq + Clone,
-{
-    fn get_key_vec(&self) -> Vec<K> {
-        let mut key_vec = vec![];
-        for (key, _) in &self.0 {
-            if !key_vec.contains(key) {
-                key_vec.push(key.clone());
-            }
-        }
-        key_vec
-    }
-}
-
-impl GetKeyVec<Self> for AssetInfo {
-    fn get_key_vec(&self) -> Vec<Self> { vec![self.clone()] }
-}
-
-pub fn extract_keys<'a, K: 'a + PartialEq + Clone>(vec: Vec<&'a dyn GetKeyVec<K>>) -> Vec<K> {
-    let mut asset_vec = vec![];
-    for object in vec {
-        for asset in object.get_key_vec() {
-            if !asset_vec.contains(&asset) {
-                asset_vec.push(asset.clone());
-            }
-        }
-    }
-    asset_vec
-}
-
 impl<K, V> Zeroed for Map<K, V>
 where
     V: Zeroed,
@@ -390,13 +307,53 @@ where
     }
 }
 
-/// Similar to is_empty, but allows for zeroed entries inside an iterator
-/// [].is_zeroed ==true
-/// [0, 0].is_zeroed == true
-/// [0, 1].is_zeroed == false
-pub trait Zeroed {
-    fn is_zeroed(&self) -> bool;
-    fn remove_zeroed(&mut self);
+impl<T, K> KeyVec<K> for Vec<T>
+where
+    K: PartialEq + Clone,
+    T: KeyVec<K>,
+{
+    fn key_vec(&self) -> Vec<K> {
+        let mut key_vec = vec![];
+        for val in self {
+            for key in val.key_vec() {
+                if !key_vec.contains(&key) {
+                    key_vec.push(key.clone());
+                }
+            }
+        }
+        key_vec
+    }
+}
+
+impl<K, V> KeyVec<K> for Map<K, V>
+where
+    K: PartialEq + Clone,
+{
+    fn key_vec(&self) -> Vec<K> {
+        let mut key_vec = vec![];
+        for (key, _) in &self.0 {
+            if !key_vec.contains(key) {
+                key_vec.push(key.clone());
+            }
+        }
+        key_vec
+    }
+}
+
+impl KeyVec<Self> for AssetInfo {
+    fn key_vec(&self) -> Vec<Self> { vec![self.clone()] }
+}
+
+pub fn extract_keys<'a, K: 'a + PartialEq + Clone>(vec: Vec<&'a dyn KeyVec<K>>) -> Vec<K> {
+    let mut asset_vec = vec![];
+    for object in vec {
+        for asset in object.key_vec() {
+            if !asset_vec.contains(&asset) {
+                asset_vec.push(asset.clone());
+            }
+        }
+    }
+    asset_vec
 }
 
 pub fn find_many<'a, I, T, F, K, const LEN: usize>(

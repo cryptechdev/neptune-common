@@ -9,5 +9,6 @@ pub mod send_asset;
 pub mod signed_decimal;
 pub mod signed_int;
 pub mod storage;
+pub mod traits;
 pub mod utilities;
 pub mod warn;

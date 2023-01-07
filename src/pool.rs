@@ -2,7 +2,7 @@ use cosmwasm_std::Uint256;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::map::Zeroed;
+use crate::traits::Zeroed;
 
 /// This data type helps to keep track of pooling together assets between multiple accounts.
 #[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq, Eq, Default, JsonSchema)]
