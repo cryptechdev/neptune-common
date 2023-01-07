@@ -1,4 +1,4 @@
-use std::convert::TryInto;
+use std::fmt::Display;
 
 use cosmwasm_std::{Addr, Coin, StdError, StdResult, Uint256};
 use cw_storage_plus::{Bound, Bounder, Key, KeyDeserialize, Prefixer, PrimaryKey};
@@ -20,11 +20,11 @@ const TOKEN_DISCRIMINANT: u8 = 1;
 
 pub type AssetMap<T> = Map<AssetInfo, T>;
 
-impl ToString for AssetInfo {
-    fn to_string(&self) -> String {
+impl Display for AssetInfo {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Token { contract_addr } => contract_addr.to_string(),
-            Self::NativeToken { denom } => denom.clone(),
+            Self::Token { contract_addr } => contract_addr.fmt(f),
+            Self::NativeToken { denom } => denom.fmt(f),
         }
     }
 }
