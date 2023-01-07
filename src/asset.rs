@@ -7,13 +7,16 @@ use serde::{Deserialize, Serialize};
 
 use crate::map::Map;
 
+/// AssetInfo can represent either a native token or a token in cosmwasm.
 #[derive(Serialize, Deserialize, Clone, Debug, Hash, PartialEq, Eq, JsonSchema, PartialOrd, Ord)]
 #[serde(rename_all = "snake_case")]
-#[repr(u8)]
 pub enum AssetInfo {
     Token { contract_addr: Addr },
     NativeToken { denom: String },
 }
+
+const NATIVE_TOKEN_DISCRIMINANT: u8 = 0;
+const TOKEN_DISCRIMINANT: u8 = 1;
 
 pub type AssetMap<T> = Map<AssetInfo, T>;
 
@@ -33,12 +36,13 @@ impl<'a> PrimaryKey<'a> for &'a AssetInfo {
     type SuperSuffix = Self;
 
     fn key(&self) -> Vec<Key> {
+        // The descriminate is added as a prefix.
         match self {
             AssetInfo::Token { contract_addr: addr } => {
-                vec![Key::Ref(addr.as_bytes()), Key::Val8([0])]
+                vec![Key::Val8([TOKEN_DISCRIMINANT]), Key::Ref(addr.as_bytes())]
             }
             AssetInfo::NativeToken { denom } => {
-                vec![Key::Ref(denom.as_bytes()), Key::Val8([1])]
+                vec![Key::Val8([NATIVE_TOKEN_DISCRIMINANT]), Key::Ref(denom.as_bytes())]
             }
         }
     }
@@ -48,10 +52,10 @@ impl<'a> Prefixer<'a> for &'a AssetInfo {
     fn prefix(&self) -> Vec<Key> {
         match self {
             AssetInfo::Token { contract_addr: addr } => {
-                vec![Key::Ref(addr.as_bytes()), Key::Val8([0])]
+                vec![Key::Val8([TOKEN_DISCRIMINANT]), Key::Ref(addr.as_bytes())]
             }
             AssetInfo::NativeToken { denom } => {
-                vec![Key::Ref(denom.as_bytes()), Key::Val8([1])]
+                vec![Key::Val8([NATIVE_TOKEN_DISCRIMINANT]), Key::Ref(denom.as_bytes())]
             }
         }
     }
@@ -68,11 +72,14 @@ impl<'a> KeyDeserialize for &'a AssetInfo {
 
     #[inline(always)]
     fn from_vec(mut value: Vec<u8>) -> StdResult<Self::Output> {
-        let mut split = value.split_off(2);
+        // The descriminate is the first byte after the prefix.
+        // Split off after the 3rd.
+        let split = value.split_off(3);
 
-        match split.pop().unwrap() {
-            0 => Ok(AssetInfo::Token { contract_addr: Addr::from_vec(split)? }),
-            1 => Ok(AssetInfo::NativeToken { denom: String::from_vec(split)? }),
+        // Pop off the last byte (3rd) in value which is the discriminate.
+        match value.pop().unwrap() {
+            TOKEN_DISCRIMINANT => Ok(AssetInfo::Token { contract_addr: Addr::from_vec(split)? }),
+            NATIVE_TOKEN_DISCRIMINANT => Ok(AssetInfo::NativeToken { denom: String::from_vec(split)? }),
             _ => Err(StdError::GenericErr { msg: "Failed deserializing.".into() }),
         }
     }
@@ -112,18 +119,40 @@ impl From<&Coin> for AssetAmount {
     }
 }
 
-// #[test]
-// fn asset_key_works() {
-//     let k = Asset::NativeToken { denom: "test".to_string() };
-//     let path = k.key();
-//     let asset_key_vec = Into::<Vec<u8>>::into(k.clone());
+#[cfg(test)]
+mod test {
+    use cosmwasm_std::testing::mock_dependencies;
 
-//     println!("asset_key = {:?}", asset_key_vec);
-//     println!("path length = {:?}", path.len());
+    use super::*;
+    use crate::storage::read_map;
 
-//     assert_eq!(asset_key_vec, [path[0].as_ref(), path[1].as_ref()].concat());
-//     assert_eq!(k, Asset::from_vec(asset_key_vec.clone()).unwrap());
+    #[test]
+    fn test_key_serialize_deserialzie() {
+        let mut owned_deps = mock_dependencies();
+        let deps = owned_deps.as_mut();
+        pub const ASSETS: cw_storage_plus::Map<&AssetInfo, String> = cw_storage_plus::Map::new("assets");
 
-//     // let joined = k.joined_key();
-//     // assert_eq!(joined, asset_key_vec);
-// }
+        let native_token_1 = AssetInfo::NativeToken { denom: "utest1".into() };
+        let native_token_2 = AssetInfo::NativeToken { denom: "utest2".into() };
+        let token_1 = AssetInfo::Token { contract_addr: Addr::unchecked("my_address1") };
+        let token_2 = AssetInfo::Token { contract_addr: Addr::unchecked("my_address2") };
+
+        ASSETS.save(deps.storage, &token_1, &"token_1".into()).unwrap();
+        ASSETS.save(deps.storage, &token_2, &"token_2".into()).unwrap();
+        ASSETS.save(deps.storage, &native_token_1, &"native_token_1".into()).unwrap();
+        ASSETS.save(deps.storage, &native_token_2, &"native_token_2".into()).unwrap();
+
+        assert_eq!(ASSETS.load(deps.storage, &native_token_1).unwrap(), "native_token_1");
+        assert_eq!(ASSETS.load(deps.storage, &native_token_2).unwrap(), "native_token_2");
+        assert_eq!(ASSETS.load(deps.storage, &token_1).unwrap(), "token_1");
+        assert_eq!(ASSETS.load(deps.storage, &token_2).unwrap(), "token_2");
+
+        let list = read_map(deps.as_ref(), None, None, ASSETS).unwrap();
+        assert_eq!(list.len(), 4);
+        // native tokens have a discriminate of 0 so are sorted first
+        assert_eq!(list[0].0, native_token_1);
+        assert_eq!(list[1].0, native_token_2);
+        assert_eq!(list[2].0, token_1);
+        assert_eq!(list[3].0, token_2);
+    }
+}
