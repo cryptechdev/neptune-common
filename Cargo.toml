@@ -32,7 +32,6 @@ serde = { version = "1", default-features = false, features = ["derive"] }
 thiserror = "1"
 shrinkwraprs = "0.3"
 neptune-auth = "0.1"
-num-traits = { version = "0.2", default-features = false }
 
 [dev-dependencies]
 rand = "0.8"
