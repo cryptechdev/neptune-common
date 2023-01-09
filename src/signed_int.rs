@@ -14,17 +14,17 @@ use crate::error::CommonError;
 /// Uint256 with a sign
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, JsonSchema)]
 pub struct SignedInt {
-    pub value: Uint256,
-    pub sign:  bool,
+    pub value:       Uint256,
+    pub is_positive: bool,
 }
 
 impl SignedInt {
-    pub const fn nan() -> Self { Self { value: Uint256::zero(), sign: false } }
+    pub const fn nan() -> Self { Self { value: Uint256::zero(), is_positive: false } }
 
-    pub const fn is_nan(&self) -> bool { self.value.is_zero() && !self.sign }
+    pub const fn is_nan(&self) -> bool { self.value.is_zero() && !self.is_positive }
 
     pub fn value(&self) -> Uint256 {
-        assert!(self.sign, "SignedInt is negative!");
+        assert!(self.is_positive, "SignedInt is negative!");
         self.value
     }
 }
@@ -32,7 +32,12 @@ impl SignedInt {
 impl Neg for SignedInt {
     type Output = Self;
 
-    fn neg(self) -> Self::Output { Self { value: self.value, sign: !self.sign } }
+    fn neg(self) -> Self::Output {
+        if self.is_zero() {
+            return self;
+        }
+        Self { value: self.value, is_positive: !self.is_positive }
+    }
 }
 
 impl Rem for SignedInt {
@@ -42,11 +47,11 @@ impl Rem for SignedInt {
 }
 
 impl One for SignedInt {
-    fn one() -> Self { Self { value: Uint256::from_u128(1u128), sign: true } }
+    fn one() -> Self { Self { value: Uint256::from_u128(1u128), is_positive: true } }
 }
 
 impl Zero for SignedInt {
-    fn zero() -> Self { Self { value: Uint256::zero(), sign: true } }
+    fn zero() -> Self { Self { value: Uint256::zero(), is_positive: true } }
 
     fn is_zero(&self) -> bool { self.value.is_zero() }
 }
@@ -58,7 +63,7 @@ impl Num for SignedInt {
 }
 
 impl num_traits::sign::Signed for SignedInt {
-    fn abs(&self) -> Self { Self { value: self.value, sign: true } }
+    fn abs(&self) -> Self { Self { value: self.value, is_positive: true } }
 
     fn abs_sub(&self, other: &Self) -> Self {
         let new = *self - *other;
@@ -77,7 +82,7 @@ impl ToString for SignedInt {
         if self.is_nan() {
             String::from("NaN")
         } else {
-            let sign_str = if self.sign { "" } else { "-" }.to_owned();
+            let sign_str = if self.is_positive { "" } else { "-" }.to_owned();
             sign_str + self.value.to_string().as_str()
         }
     }
@@ -88,21 +93,21 @@ impl std::ops::Add<Self> for SignedInt {
 
     fn add(self, rhs: Self) -> Self {
         let value;
-        let sign;
-        if self.sign == rhs.sign {
+        let is_positive;
+        if self.is_positive == rhs.is_positive {
             value = self.value + rhs.value;
-            sign = self.sign;
+            is_positive = self.is_positive;
         } else if self.value > rhs.value {
             value = self.value - rhs.value;
-            sign = self.sign;
+            is_positive = self.is_positive;
         } else if self.value < rhs.value {
             value = rhs.value - self.value;
-            sign = rhs.sign
+            is_positive = rhs.is_positive
         } else {
             value = Uint256::zero();
-            sign = true;
+            is_positive = true;
         }
-        Self { sign, value }
+        Self { is_positive, value }
     }
 }
 
@@ -118,7 +123,7 @@ impl std::ops::Add<SignedInt> for Uint256 {
 impl std::ops::Sub<Self> for SignedInt {
     type Output = Self;
 
-    fn sub(self, rhs: Self) -> Self { self + Self { value: rhs.value, sign: !rhs.sign } }
+    fn sub(self, rhs: Self) -> Self { self + Self { value: rhs.value, is_positive: !rhs.is_positive } }
 }
 
 impl std::ops::Mul<Self> for SignedInt {
@@ -126,7 +131,7 @@ impl std::ops::Mul<Self> for SignedInt {
 
     fn mul(self, rhs: Self) -> Self {
         let value = self.value * rhs.value;
-        Self { value, sign: self.sign == rhs.sign || value.is_zero() }
+        Self { value, is_positive: self.is_positive == rhs.is_positive || value.is_zero() }
     }
 }
 
@@ -135,7 +140,7 @@ impl std::ops::Mul<Decimal256> for SignedInt {
 
     fn mul(self, rhs: Decimal256) -> Self {
         let value = self.value * rhs;
-        Self { value, sign: self.sign || value.is_zero() }
+        Self { value, is_positive: self.is_positive || value.is_zero() }
     }
 }
 
@@ -148,23 +153,23 @@ impl std::ops::Div<Self> for SignedInt {
         } else {
             self.value / rhs.value
         };
-        Self { value, sign: self.sign == rhs.sign || value.is_zero() }
+        Self { value, is_positive: self.is_positive == rhs.is_positive || value.is_zero() }
     }
 }
 
 impl std::cmp::PartialEq for SignedInt {
-    fn eq(&self, other: &Self) -> bool { self.value == other.value && self.sign == other.sign }
+    fn eq(&self, other: &Self) -> bool { self.value == other.value && self.is_positive == other.is_positive }
 }
 
 impl std::cmp::PartialOrd for SignedInt {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        if self.sign == other.sign {
-            if self.sign {
+        if self.is_positive == other.is_positive {
+            if self.is_positive {
                 self.value.partial_cmp(&other.value)
             } else {
                 other.value.partial_cmp(&self.value)
             }
-        } else if self.sign {
+        } else if self.is_positive {
             Some(std::cmp::Ordering::Greater)
         } else {
             Some(std::cmp::Ordering::Less)
@@ -173,7 +178,7 @@ impl std::cmp::PartialOrd for SignedInt {
 }
 
 impl From<Uint256> for SignedInt {
-    fn from(value: Uint256) -> Self { Self { value, sign: true } }
+    fn from(value: Uint256) -> Self { Self { value, is_positive: true } }
 }
 
 impl FromStr for SignedInt {
@@ -190,7 +195,7 @@ impl FromStr for SignedInt {
             sign = true;
             val_str = s;
         }
-        Ok(Self { value: Uint256::from_str(val_str)?, sign })
+        Ok(Self { value: Uint256::from_str(val_str)?, is_positive: sign })
     }
 }
 
@@ -204,7 +209,7 @@ impl TryInto<Uint256> for SignedInt {
     type Error = CommonError;
 
     fn try_into(self) -> Result<Uint256, Self::Error> {
-        if !self.sign && !self.value.is_zero() {
+        if !self.is_positive && !self.value.is_zero() {
             return Err(CommonError::Generic("Cannot convert negative SignedInt to Uint256".into()));
         }
         Ok(self.value)
@@ -212,7 +217,7 @@ impl TryInto<Uint256> for SignedInt {
 }
 
 impl Default for SignedInt {
-    fn default() -> Self { Self { value: Uint256::default(), sign: true } }
+    fn default() -> Self { Self { value: Uint256::default(), is_positive: true } }
 }
 
 #[test]
@@ -280,4 +285,57 @@ fn signed_int_test() {
     assert!(small_pos == f64_to_signed_int(small_pos_f64));
     assert!(small_neg == f64_to_signed_int(small_neg_f64));
     assert!(dec_neg == f64_to_signed_int(dec_neg_f64));
+}
+
+#[test]
+fn test_zero_is_positive() {
+    {
+        let mut x = SignedInt::zero();
+        let y = SignedInt::one().neg();
+
+        x = x * y;
+        assert!(x.is_positive);
+
+        x = y * x;
+        assert!(x.is_positive);
+
+        x = x / y;
+        assert!(x.is_positive);
+
+        x = x + y;
+        x = x - y;
+        assert!(x.is_positive);
+
+        x = x - y;
+        x = x + y;
+        assert!(x.is_positive);
+    }
+    {
+        let x = SignedInt::one() * SignedInt::from_str("5").unwrap();
+        let y = SignedInt::one() * SignedInt::from_str("-5").unwrap();
+
+        let z = x + y;
+        assert!(z.is_positive);
+
+        let z = -x - y;
+        assert!(z.is_positive);
+    }
+    {
+        let x = -SignedInt::zero();
+        assert!(x.is_positive);
+    }
+    {
+        let x = SignedInt::zero().neg();
+        assert!(x.is_positive);
+    }
+    {
+        let x = SignedInt::zero().neg();
+        let y = SignedInt::from_str("5").unwrap();
+
+        let z = x * y;
+        assert!(z.is_positive);
+
+        let z = y * x;
+        assert!(z.is_positive);
+    }
 }
