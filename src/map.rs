@@ -145,13 +145,6 @@ where
         sum
     }
 
-    pub fn remove_defaults(&mut self)
-    where
-        V: Default + PartialEq,
-    {
-        self.0.retain(|x| x.1 != V::default());
-    }
-
     pub fn sort_by_val(&mut self)
     where
         V: Default + Ord + Clone,
