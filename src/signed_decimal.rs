@@ -1,17 +1,15 @@
 use std::{
     convert::{TryFrom, TryInto},
     fmt,
-    ops::{Mul, Neg, Rem},
+    ops::{Mul, Neg},
     str::FromStr,
 };
 
-use cosmwasm_std::{Decimal256, StdError, Uint256};
-pub use num_traits::*;
-use num_traits::{Num, One, Zero};
+use cosmwasm_std::{Decimal256, Uint256};
 use schemars::JsonSchema;
 use serde::{de, ser, Deserialize, Deserializer, Serialize};
 
-use crate::{error::CommonError, signed_int::SignedInt};
+use crate::error::CommonError;
 
 /// Decimal256 with a sign
 #[derive(Clone, Copy, Debug, Eq)]
@@ -32,14 +30,30 @@ impl SignedDecimal {
             is_positive: true,
         })
     }
-}
 
-impl Mul<SignedDecimal> for Uint256 {
-    type Output = SignedInt;
+    pub fn abs(&self) -> Self { Self { value: self.value, is_positive: true } }
 
-    fn mul(self, rhs: SignedDecimal) -> Self::Output {
-        SignedInt { value: rhs.value * self, is_positive: rhs.is_positive }
+    pub fn abs_sub(&self, other: &Self) -> Self {
+        let new = *self - *other;
+        new.abs()
     }
+
+    pub fn signum(&self) -> Self {
+        match self.is_positive {
+            true => Self::one(),
+            false => Self { value: Decimal256::one(), is_positive: false },
+        }
+    }
+
+    pub fn is_positive(&self) -> bool { self.is_positive }
+
+    pub fn is_negative(&self) -> bool { !self.is_positive }
+
+    pub fn one() -> Self { Self { value: Decimal256::one(), is_positive: true } }
+
+    pub fn zero() -> Self { Self { value: Decimal256::zero(), is_positive: true } }
+
+    pub fn is_zero(&self) -> bool { self.value.is_zero() }
 }
 
 impl Mul<Decimal256> for SignedDecimal {
@@ -60,48 +74,6 @@ impl Neg for SignedDecimal {
         }
         Self { value: self.value, is_positive: !self.is_positive }
     }
-}
-
-impl Rem for SignedDecimal {
-    type Output = Self;
-
-    fn rem(self, rhs: Self) -> Self::Output { Decimal256::new(self.value.atomics().rem(rhs.value.atomics())).into() }
-}
-
-impl One for SignedDecimal {
-    fn one() -> Self { Self { value: Decimal256::one(), is_positive: true } }
-}
-
-impl Zero for SignedDecimal {
-    fn zero() -> Self { Self { value: Decimal256::zero(), is_positive: true } }
-
-    fn is_zero(&self) -> bool { self.value.is_zero() }
-}
-
-impl Num for SignedDecimal {
-    type FromStrRadixErr = StdError;
-
-    fn from_str_radix(_str: &str, _radix: u32) -> Result<Self, Self::FromStrRadixErr> { panic!("unimplemented") }
-}
-
-impl num_traits::sign::Signed for SignedDecimal {
-    fn abs(&self) -> Self { Self { value: self.value, is_positive: true } }
-
-    fn abs_sub(&self, other: &Self) -> Self {
-        let new = *self - *other;
-        new.abs()
-    }
-
-    fn signum(&self) -> Self {
-        match self.is_positive {
-            true => Self::one(),
-            false => Self { value: Decimal256::one(), is_positive: false },
-        }
-    }
-
-    fn is_positive(&self) -> bool { self.is_positive }
-
-    fn is_negative(&self) -> bool { !self.is_positive }
 }
 
 impl ToString for SignedDecimal {
