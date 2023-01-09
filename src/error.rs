@@ -7,9 +7,6 @@ pub type CommonResult<T> = core::result::Result<T, CommonError>;
 #[derive(Error, Debug, PartialEq)]
 pub enum CommonError {
     #[error("{0}")]
-    Error(String),
-
-    #[error("{0}")]
     Generic(String),
 
     #[error("{0}")]

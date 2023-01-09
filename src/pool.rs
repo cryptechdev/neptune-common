@@ -11,6 +11,21 @@ pub struct Pool {
     pub shares:  Uint256,
 }
 
+impl GetPoolMut for Pool {
+    fn get_pool_mut(&mut self) -> PoolMut { PoolMut { balance: &mut self.balance, shares: &mut self.shares } }
+}
+
+impl GetPoolRef for Pool {
+    fn get_pool_ref(&self) -> PoolRef { PoolRef { balance: &self.balance, shares: &self.shares } }
+}
+
+/// This serves the same purpose as Pool, but can be constructed directly from mutable references.
+#[derive(Debug, PartialEq, Eq, JsonSchema)]
+pub struct PoolRef<'a> {
+    pub balance: &'a Uint256,
+    pub shares:  &'a Uint256,
+}
+
 /// This serves the same purpose as Pool, but can be constructed directly from mutable references.
 #[derive(Debug, PartialEq, Eq, JsonSchema)]
 pub struct PoolMut<'a> {
@@ -18,151 +33,143 @@ pub struct PoolMut<'a> {
     pub shares:  &'a mut Uint256,
 }
 
-impl<'a> PoolMut<'a> {
-    /// Mints shares for an account and calculates the corresponding balance to issue.
-    pub fn add_shares(self, shares: Uint256, account: &mut PoolAccount) -> AddSharesResponse {
-        let pool_balance = self.balance;
-        let pool_shares = self.shares;
-        let account_principle = &mut account.principle;
-        let account_shares = &mut account.shares;
-
-        let shares_to_issue = shares;
-        let balance_to_issue = shares_to_issue.multiply_ratio(*pool_balance, *pool_shares);
-
-        *account_shares += shares_to_issue;
-        *account_principle += balance_to_issue;
-
-        *pool_shares += shares_to_issue;
-        *pool_balance += balance_to_issue;
-
-        AddSharesResponse { balance_added: balance_to_issue }
-    }
-
-    /// Adds a balance to an account and calculates the corresponding shares to issue.
-    pub fn add_amount(self, amount: Uint256, account: &mut PoolAccount) -> AddAmountResponse {
-        let balance_to_issue = amount;
-
-        let pool_balance = self.balance;
-        let pool_shares = self.shares;
-        let account_principle = &mut account.principle;
-        let account_shares = &mut account.shares;
-
-        let shares_to_issue = if pool_balance.is_zero() {
-            amount
-        } else {
-            amount.multiply_ratio(*pool_shares, *pool_balance)
-        };
-
-        *account_shares += shares_to_issue;
-        *account_principle += balance_to_issue;
-
-        *pool_shares += shares_to_issue;
-        *pool_balance += balance_to_issue;
-
-        AddAmountResponse { shares_added: shares_to_issue }
-    }
-
-    /// Removes shares from an account and calculates the corresponding balance to return.
-    pub fn remove_shares(self, shares: Uint256, account: &mut PoolAccount) -> RemoveSharesResponse {
-        let pool_balance = self.balance;
-        let pool_shares = self.shares;
-        let account_principle = &mut account.principle;
-        let account_shares = &mut account.shares;
-
-        let shares_to_remove = if shares > *account_shares {
-            *account_shares
-        } else {
-            shares
-        };
-
-        let amount_to_remove = shares_to_remove.multiply_ratio(*pool_balance, *pool_shares);
-
-        *account_shares -= shares_to_remove;
-        *account_principle = account_principle.saturating_sub(amount_to_remove);
-
-        *pool_shares -= shares_to_remove;
-        *pool_balance -= amount_to_remove;
-
-        RemoveSharesResponse { balance_removed: amount_to_remove }
-    }
-
-    /// Removes a balance from an account and calculates the corresponding shares to return.
-    pub fn remove_amount(self, amount: Uint256, account: &mut PoolAccount) -> RemoveAmountResponse {
-        let pool_balance = self.balance;
-        let pool_shares = self.shares;
-        let account_principle = &mut account.principle;
-        let account_shares = &mut account.shares;
-
-        if pool_balance.is_zero() || pool_shares.is_zero() || account_shares.is_zero() {
-            return RemoveAmountResponse { amount_removed: Uint256::zero(), shares_removed: Uint256::zero() };
-        }
-
-        let amount_to_remove;
-        let shares_to_remove;
-        let account_amount = account_shares.multiply_ratio(*pool_balance, *pool_shares);
-        if amount > account_amount {
-            amount_to_remove = account_amount;
-            shares_to_remove = *account_shares;
-        } else {
-            amount_to_remove = amount;
-            shares_to_remove = account_shares.multiply_ratio(amount, account_amount);
-        }
-
-        *account_shares -= shares_to_remove;
-        *account_principle = account_principle.saturating_sub(amount_to_remove);
-
-        *pool_shares -= shares_to_remove;
-        *pool_balance -= amount_to_remove;
-
-        RemoveAmountResponse { amount_removed: amount_to_remove, shares_removed: shares_to_remove }
-    }
-
-    /// Increases the balance of the pool by the amount specified.
-    pub fn increase_balance(self, amount: Uint256) {
-        let pool_balance = self.balance;
-        *pool_balance += amount;
-    }
-
-    /// Decreases the balance of the pool by the amount specified.
-    pub fn decrease_balance(self, amount: Uint256) {
-        let pool_balance = self.balance;
-        *pool_balance = pool_balance.saturating_sub(amount);
-    }
-
-    /// Returns the balance of an account
-    pub fn get_account_balance(self, account: PoolAccount) -> Uint256 {
-        account.shares.checked_multiply_ratio(*self.balance, *self.shares).unwrap_or_default()
-    }
+impl GetPoolMut for PoolMut<'_> {
+    fn get_pool_mut(&mut self) -> PoolMut { PoolMut { balance: self.balance, shares: self.shares } }
 }
 
-impl Pool {
-    pub const fn new() -> Self { Self { balance: Uint256::zero(), shares: Uint256::zero() } }
+impl GetPoolRef for PoolMut<'_> {
+    fn get_pool_ref(&self) -> PoolRef { PoolRef { balance: self.balance, shares: self.shares } }
+}
 
-    pub fn into_ref(&mut self) -> PoolMut { PoolMut { balance: &mut self.balance, shares: &mut self.shares } }
+pub trait GetPoolMut {
+    fn get_pool_mut(&mut self) -> PoolMut;
+}
 
-    pub fn add_shares(&mut self, shares: Uint256, account: &mut PoolAccount) -> AddSharesResponse {
-        self.into_ref().add_shares(shares, account)
+pub trait GetPoolRef {
+    fn get_pool_ref(&self) -> PoolRef;
+}
+
+pub fn add_shares(pool: &mut dyn GetPoolMut, shares: Uint256, account: &mut PoolAccount) -> AddSharesResponse {
+    let pool_mut = pool.get_pool_mut();
+    let pool_balance = pool_mut.balance;
+    let pool_shares = pool_mut.shares;
+    let account_principle = &mut account.principle;
+    let account_shares = &mut account.shares;
+
+    let shares_to_issue = shares;
+    let balance_to_issue = shares_to_issue.multiply_ratio(*pool_balance, *pool_shares);
+
+    *account_shares += shares_to_issue;
+    *account_principle += balance_to_issue;
+
+    *pool_shares += shares_to_issue;
+    *pool_balance += balance_to_issue;
+
+    AddSharesResponse { balance_added: balance_to_issue }
+}
+
+/// Adds a balance to an account and calculates the corresponding shares to issue.
+pub fn add_amount(pool: &mut dyn GetPoolMut, amount: Uint256, account: &mut PoolAccount) -> AddAmountResponse {
+    let balance_to_issue = amount;
+
+    let pool_mut = pool.get_pool_mut();
+    let pool_balance = pool_mut.balance;
+    let pool_shares = pool_mut.shares;
+    let account_principle = &mut account.principle;
+    let account_shares = &mut account.shares;
+
+    let shares_to_issue = if pool_balance.is_zero() {
+        amount
+    } else {
+        amount.multiply_ratio(*pool_shares, *pool_balance)
+    };
+
+    *account_shares += shares_to_issue;
+    *account_principle += balance_to_issue;
+
+    *pool_shares += shares_to_issue;
+    *pool_balance += balance_to_issue;
+
+    AddAmountResponse { shares_added: shares_to_issue }
+}
+
+/// Removes shares from an account and calculates the corresponding balance to return.
+pub fn remove_shares(pool: &mut dyn GetPoolMut, shares: Uint256, account: &mut PoolAccount) -> RemoveSharesResponse {
+    let pool_mut = pool.get_pool_mut();
+    let pool_balance = pool_mut.balance;
+    let pool_shares = pool_mut.shares;
+    let account_principle = &mut account.principle;
+    let account_shares = &mut account.shares;
+
+    let shares_to_remove = if shares > *account_shares {
+        *account_shares
+    } else {
+        shares
+    };
+
+    let amount_to_remove = shares_to_remove.multiply_ratio(*pool_balance, *pool_shares);
+
+    *account_shares -= shares_to_remove;
+    *account_principle = account_principle.saturating_sub(amount_to_remove);
+
+    *pool_shares -= shares_to_remove;
+    *pool_balance -= amount_to_remove;
+
+    RemoveSharesResponse { balance_removed: amount_to_remove }
+}
+
+/// Removes a balance from an account and calculates the corresponding shares to return.
+pub fn remove_amount(pool: &mut dyn GetPoolMut, amount: Uint256, account: &mut PoolAccount) -> RemoveAmountResponse {
+    let pool_mut = pool.get_pool_mut();
+    let pool_balance = pool_mut.balance;
+    let pool_shares = pool_mut.shares;
+    let account_principle = &mut account.principle;
+    let account_shares = &mut account.shares;
+
+    if pool_balance.is_zero() || pool_shares.is_zero() || account_shares.is_zero() {
+        return RemoveAmountResponse { amount_removed: Uint256::zero(), shares_removed: Uint256::zero() };
     }
 
-    pub fn add_amount(&mut self, amount: Uint256, account: &mut PoolAccount) -> AddAmountResponse {
-        self.into_ref().add_amount(amount, account)
+    let amount_to_remove;
+    let shares_to_remove;
+    let account_amount = account_shares.multiply_ratio(*pool_balance, *pool_shares);
+    if amount > account_amount {
+        amount_to_remove = account_amount;
+        shares_to_remove = *account_shares;
+    } else {
+        amount_to_remove = amount;
+        shares_to_remove = account_shares.multiply_ratio(amount, account_amount);
     }
 
-    pub fn remove_shares(&mut self, shares: Uint256, account: &mut PoolAccount) -> RemoveSharesResponse {
-        self.into_ref().remove_shares(shares, account)
-    }
+    *account_shares -= shares_to_remove;
+    *account_principle = account_principle.saturating_sub(amount_to_remove);
 
-    pub fn remove_amount(&mut self, amount: Uint256, account: &mut PoolAccount) -> RemoveAmountResponse {
-        self.into_ref().remove_amount(amount, account)
-    }
+    *pool_shares -= shares_to_remove;
+    *pool_balance -= amount_to_remove;
 
-    pub fn increase_balance(&mut self, amount: Uint256) { self.into_ref().increase_balance(amount) }
+    RemoveAmountResponse { amount_removed: amount_to_remove, shares_removed: shares_to_remove }
+}
 
-    pub fn decrease_balance(&mut self, amount: Uint256) { self.into_ref().decrease_balance(amount) }
+/// Increases the balance of the pool by the amount specified.
+pub fn increase_balance(pool: &mut dyn GetPoolMut, amount: Uint256) {
+    let pool_mut = pool.get_pool_mut();
+    let pool_balance = pool_mut.balance;
+    *pool_balance += amount;
+}
 
-    pub fn get_account_balance(&self, account: PoolAccount) -> Uint256 {
-        account.shares.checked_multiply_ratio(self.balance, self.shares).unwrap_or_default()
-    }
+/// Decreases the balance of the pool by the amount specified.
+pub fn decrease_balance(pool: &mut dyn GetPoolMut, amount: Uint256) {
+    let pool_mut = pool.get_pool_mut();
+    let pool_balance = pool_mut.balance;
+    *pool_balance = pool_balance.saturating_sub(amount);
+}
+
+/// Returns the balance of an account
+pub fn get_account_balance(pool: &dyn GetPoolRef, account: PoolAccount) -> Uint256 {
+    let pool_ref = pool.get_pool_ref();
+    let pool_balance = pool_ref.balance;
+    let pool_shares = pool_ref.shares;
+    account.shares.checked_multiply_ratio(*pool_balance, *pool_shares).unwrap_or_default()
 }
 
 #[derive(Serialize, Deserialize, Copy, Clone, Debug, Default, PartialEq, Eq, JsonSchema)]
@@ -210,16 +217,21 @@ mod test {
 
             let mut account = PoolAccount::default();
             let mut pool = Pool { balance: start_pool_balance, shares: start_pool_shares };
-            pool.add_amount(amount, &mut account);
+            // add_amount(&mut pool, amount, &mut account);
+            //add_amount(&mut pool, amount, &mut account);
+            add_amount(&mut pool, amount, &mut account);
+            // pool_mut.add_amount(amount, &mut account);
             pool.balance += Uint256::from(random::<u64>());
-            let balance = pool.get_account_balance(account);
-            let amount_removed = pool.remove_amount(balance, &mut account);
+            let balance = get_account_balance(&pool, account);
+            let amount_removed = remove_amount(&mut pool, balance, &mut account);
 
             assert_eq!(amount_removed.amount_removed, balance);
             assert_eq!(
-                pool.get_account_balance(account),
+                get_account_balance(&pool, account),
                 Uint256::zero(),
-                "start_pool_balance: {start_pool_balance}, start_pool_shares: {start_pool_shares}, amount: {amount}, account {account:#?}");
+                "start_pool_balance: {start_pool_balance}, start_pool_shares:
+{start_pool_shares}, amount: {amount}, account {account:#?}"
+            );
         }
     }
 
@@ -229,32 +241,32 @@ mod test {
         let mut account1: PoolAccount = PoolAccount::default();
         let mut account2: PoolAccount = PoolAccount::default();
 
-        pool.add_amount(Uint256::from(100u64), &mut account1);
+        add_amount(&mut pool, Uint256::from(100u64), &mut account1);
         assert_eq!(pool.balance, Uint256::from(100u64));
         assert_eq!(pool.shares, Uint256::from(100u64));
         assert_eq!(account1.principle, Uint256::from(100u64));
         assert_eq!(account1.shares, Uint256::from(100u64));
 
-        pool.increase_balance(Uint256::from(100u64));
+        increase_balance(&mut pool, Uint256::from(100u64));
         assert_eq!(pool.balance, Uint256::from(200u64));
         assert_eq!(pool.shares, Uint256::from(100u64));
         assert_eq!(account1.principle, Uint256::from(100u64));
         assert_eq!(account1.shares, Uint256::from(100u64));
-        assert_eq!(pool.get_account_balance(account1), Uint256::from(200u64));
+        assert_eq!(get_account_balance(&pool, account1), Uint256::from(200u64));
 
-        pool.add_shares(Uint256::from(50u64), &mut account2);
+        add_shares(&mut pool, Uint256::from(50u64), &mut account2);
         assert_eq!(pool.balance, Uint256::from(300u64));
         assert_eq!(pool.shares, Uint256::from(150u64));
         assert_eq!(account2.principle, Uint256::from(100u64));
         assert_eq!(account2.shares, Uint256::from(50u64));
 
-        pool.remove_amount(Uint256::from(100u64), &mut account2);
+        remove_amount(&mut pool, Uint256::from(100u64), &mut account2);
         assert_eq!(pool.balance, Uint256::from(200u64));
         assert_eq!(pool.shares, Uint256::from(100u64));
         assert_eq!(account2.principle, Uint256::from(0u64));
         assert_eq!(account2.shares, Uint256::from(0u64));
 
-        pool.remove_shares(Uint256::from(100u64), &mut account2);
+        remove_shares(&mut pool, Uint256::from(100u64), &mut account2);
         assert_eq!(pool.balance, Uint256::from(200u64));
         assert_eq!(pool.shares, Uint256::from(100u64));
         assert_eq!(account2.principle, Uint256::from(0u64));

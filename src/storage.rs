@@ -10,7 +10,6 @@ pub const STATE_KEY: &str = "state";
 /// Reads a map from storage is ascending order.
 ///
 /// TODO: Doc Test Here
-///
 pub fn read_map<
     'a,
     K: 'static,
