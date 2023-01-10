@@ -4,6 +4,7 @@ use cw20::Cw20ExecuteMsg;
 use crate::{
     asset::{AssetInfo, AssetMap},
     error::CommonError,
+    traits::Zeroed,
 };
 
 pub type SendFundsMsg = AssetInfo;
@@ -13,7 +14,7 @@ pub type SendFundsMsg = AssetInfo;
 pub fn transfer_funds(recipient: &Addr, mut funds: AssetMap<Uint256>) -> Result<Vec<CosmosMsg>, CommonError> {
     let mut msgs = vec![];
     // remove any elements that are zero
-    funds.retain(|x| !x.1.is_zero());
+    funds.remove_zeroed();
     for (asset, amount) in funds {
         msgs.push(match asset {
             AssetInfo::NativeToken { denom } => {

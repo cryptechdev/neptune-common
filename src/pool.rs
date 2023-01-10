@@ -49,6 +49,7 @@ pub trait GetPoolRef {
     fn get_pool_ref(&self) -> PoolRef;
 }
 
+/// Adds shares to an account and calculates the corresponding balance.
 pub fn add_shares(pool: &mut dyn GetPoolMut, shares: Uint256, account: &mut PoolAccount) -> AddSharesResponse {
     let pool_mut = pool.get_pool_mut();
     let pool_balance = pool_mut.balance;
@@ -172,7 +173,7 @@ pub fn get_account_balance(pool: &dyn GetPoolRef, account: PoolAccount) -> Uint2
     account.shares.checked_multiply_ratio(*pool_balance, *pool_shares).unwrap_or_default()
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, Debug, Default, PartialEq, Eq, JsonSchema)]
+#[derive(Serialize, Deserialize, Copy, Clone, Debug, Default, PartialEq, Eq, JsonSchema, PartialOrd, Ord)]
 pub struct PoolAccount {
     pub principle: Uint256,
     pub shares:    Uint256,

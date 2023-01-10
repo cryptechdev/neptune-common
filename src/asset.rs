@@ -5,7 +5,7 @@ use cw_storage_plus::{Bound, Bounder, Key, KeyDeserialize, Prefixer, PrimaryKey}
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::map::Map;
+use crate::{neptune_map::NeptuneMap, traits::KeyVec};
 
 /// AssetInfo can represent either a native token or a token in cosmwasm.
 #[derive(Serialize, Deserialize, Clone, Debug, Hash, PartialEq, Eq, JsonSchema, PartialOrd, Ord)]
@@ -18,7 +18,7 @@ pub enum AssetInfo {
 const NATIVE_TOKEN_DISCRIMINANT: u8 = 0;
 const TOKEN_DISCRIMINANT: u8 = 1;
 
-pub type AssetMap<T> = Map<AssetInfo, T>;
+pub type AssetMap<T> = NeptuneMap<AssetInfo, T>;
 
 impl Display for AssetInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -83,6 +83,10 @@ impl<'a> KeyDeserialize for &'a AssetInfo {
             _ => Err(StdError::GenericErr { msg: "Failed deserializing.".into() }),
         }
     }
+}
+
+impl KeyVec<Self> for AssetInfo {
+    fn key_vec(&self) -> Vec<Self> { vec![self.clone()] }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
