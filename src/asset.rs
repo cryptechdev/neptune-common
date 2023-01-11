@@ -1,15 +1,14 @@
 use std::fmt::Display;
 
+use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, Coin, StdError, StdResult, Uint256};
 use cw_storage_plus::{Bound, Bounder, Key, KeyDeserialize, Prefixer, PrimaryKey};
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
-use crate::map::Map;
+use crate::{neptune_map::NeptuneMap, traits::KeyVec};
 
 /// AssetInfo can represent either a native token or a token in cosmwasm.
-#[derive(Serialize, Deserialize, Clone, Debug, Hash, PartialEq, Eq, JsonSchema, PartialOrd, Ord)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
+#[derive(Eq, PartialOrd, Ord)]
 pub enum AssetInfo {
     Token { contract_addr: Addr },
     NativeToken { denom: String },
@@ -18,7 +17,7 @@ pub enum AssetInfo {
 const NATIVE_TOKEN_DISCRIMINANT: u8 = 0;
 const TOKEN_DISCRIMINANT: u8 = 1;
 
-pub type AssetMap<T> = Map<AssetInfo, T>;
+pub type AssetMap<T> = NeptuneMap<AssetInfo, T>;
 
 impl Display for AssetInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -85,8 +84,11 @@ impl<'a> KeyDeserialize for &'a AssetInfo {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
-#[serde(rename = "Asset")]
+impl KeyVec<Self> for AssetInfo {
+    fn key_vec(&self) -> Vec<Self> { vec![self.clone()] }
+}
+
+#[cw_serde]
 pub struct AssetAmount {
     pub info:   AssetInfo,
     pub amount: Uint256,

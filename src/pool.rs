@@ -1,11 +1,11 @@
+use cosmwasm_schema::cw_serde;
 use cosmwasm_std::Uint256;
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
 use crate::traits::Zeroed;
 
 /// This data type helps to keep track of pooling together assets between multiple accounts.
-#[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq, Eq, Default, JsonSchema)]
+#[cw_serde]
+#[derive(Copy, Default)]
 pub struct Pool {
     pub balance: Uint256,
     pub shares:  Uint256,
@@ -20,14 +20,12 @@ impl GetPoolRef for Pool {
 }
 
 /// This serves the same purpose as Pool, but can be constructed directly from mutable references.
-#[derive(Debug, PartialEq, Eq, JsonSchema)]
 pub struct PoolRef<'a> {
     pub balance: &'a Uint256,
     pub shares:  &'a Uint256,
 }
 
-/// This serves the same purpose as Pool, but can be constructed directly from mutable references.
-#[derive(Debug, PartialEq, Eq, JsonSchema)]
+// This serves the same purpose as Pool, but can be constructed directly from immutable references.
 pub struct PoolMut<'a> {
     pub balance: &'a mut Uint256,
     pub shares:  &'a mut Uint256,
@@ -49,6 +47,7 @@ pub trait GetPoolRef {
     fn get_pool_ref(&self) -> PoolRef;
 }
 
+/// Adds shares to an account and calculates the corresponding balance.
 pub fn add_shares(pool: &mut dyn GetPoolMut, shares: Uint256, account: &mut PoolAccount) -> AddSharesResponse {
     let pool_mut = pool.get_pool_mut();
     let pool_balance = pool_mut.balance;
@@ -172,7 +171,8 @@ pub fn get_account_balance(pool: &dyn GetPoolRef, account: PoolAccount) -> Uint2
     account.shares.checked_multiply_ratio(*pool_balance, *pool_shares).unwrap_or_default()
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, Debug, Default, PartialEq, Eq, JsonSchema)]
+#[cw_serde]
+#[derive(Copy, Default)]
 pub struct PoolAccount {
     pub principle: Uint256,
     pub shares:    Uint256,

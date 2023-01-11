@@ -27,6 +27,7 @@ cw20 = "1"
 cw-storage-plus = "1"
 cosmwasm-std = "1"
 cosmwasm-derive = "1"
+cosmwasm-schema = "1"
 schemars = "0.8"
 serde = { version = "1", default-features = false, features = ["derive"] }
 thiserror = "1"
