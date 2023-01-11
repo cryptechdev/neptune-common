@@ -1,7 +1,7 @@
 use std::{
     fmt::Debug,
     iter::FromIterator,
-    ops::{Add, AddAssign, Div, Mul, Sub, SubAssign},
+    ops::{Add, AddAssign, Div, Mul},
 };
 
 use cosmwasm_schema::cw_serde;
@@ -200,39 +200,6 @@ where
         for rhs_key_val in rhs {
             let lhs = self.get_mut_or_default(&rhs_key_val.0);
             *lhs = lhs.clone() + rhs_key_val.1;
-        }
-    }
-}
-
-impl<K, V> Sub for NeptuneMap<K, V>
-where
-    K: PartialEq + Clone + Debug,
-    V: Sub<Output = V> + Clone + Default,
-{
-    type Output = Self;
-
-    /// Subs the corresponding values from two maps together.
-    /// If a key exists in one map but not the other, the default is used.
-    fn sub(mut self, rhs: Self) -> Self::Output {
-        for rhs_key_val in rhs {
-            let lhs = self.get_mut_or_default(&rhs_key_val.0);
-            *lhs = lhs.clone() - rhs_key_val.1;
-        }
-        self
-    }
-}
-
-impl<K, V> SubAssign for NeptuneMap<K, V>
-where
-    K: PartialEq + Clone + Debug,
-    V: Sub<Output = V> + Clone + Default,
-{
-    /// Subs the corresponding values from two maps together.
-    /// If a key exists in one map but not the other, the default is used.
-    fn sub_assign(&mut self, rhs: Self) {
-        for rhs_key_val in rhs {
-            let lhs = self.get_mut_or_default(&rhs_key_val.0);
-            *lhs = lhs.clone() - rhs_key_val.1;
         }
     }
 }
