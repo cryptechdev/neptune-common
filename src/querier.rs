@@ -3,6 +3,7 @@ use cw20::{BalanceResponse as Cw20BalanceResponse, Cw20QueryMsg, TokenInfoRespon
 
 use crate::{asset::AssetInfo, error::CommonError};
 
+// Query the balance of a coin for a specific account.
 pub fn query_coin_balance(deps: Deps, account_addr: &Addr, denom: String) -> Result<Uint256, CommonError> {
     let balance: BalanceResponse = deps
         .querier
@@ -10,6 +11,7 @@ pub fn query_coin_balance(deps: Deps, account_addr: &Addr, denom: String) -> Res
     Ok(Uint256::from(balance.amount.amount))
 }
 
+/// Queries the balance of a cw20 token for a specific account.
 pub fn query_token_balance(deps: Deps, token_addr: &Addr, account_addr: &Addr) -> Result<Uint256, CommonError> {
     let res: Cw20BalanceResponse = deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
         contract_addr: token_addr.to_string(),
@@ -18,6 +20,7 @@ pub fn query_token_balance(deps: Deps, token_addr: &Addr, account_addr: &Addr) -
     Ok(res.balance.into())
 }
 
+/// Queries the supply of a cw20 token.
 pub fn query_supply(deps: Deps, contract_addr: &Addr) -> Result<Uint256, CommonError> {
     let token_info: TokenInfoResponse = deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
         contract_addr: contract_addr.to_string(),
@@ -27,6 +30,7 @@ pub fn query_supply(deps: Deps, contract_addr: &Addr) -> Result<Uint256, CommonE
     Ok(token_info.total_supply.into())
 }
 
+/// Queries the balance of an asset for a specific account.
 pub fn query_asset_balance(deps: Deps, account: &Addr, asset: &AssetInfo) -> Result<Uint256, CommonError> {
     match asset {
         AssetInfo::NativeToken { denom } => Ok(query_coin_balance(deps, account, denom.clone())?),

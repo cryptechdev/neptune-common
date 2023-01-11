@@ -19,11 +19,6 @@ pub struct SignedDecimal {
 }
 
 impl SignedDecimal {
-    pub fn value(&self) -> Decimal256 {
-        assert!(self.is_positive, "SignedDecimal is negative!");
-        self.value
-    }
-
     pub fn from_uint256(val: Uint256) -> Result<Self, CommonError> {
         Ok(Self {
             value:       Decimal256::from_atomics(val, 0u32).map_err(CommonError::Decimal256RangeExceeded)?,
@@ -32,11 +27,6 @@ impl SignedDecimal {
     }
 
     pub fn abs(&self) -> Self { Self { value: self.value, is_positive: true } }
-
-    pub fn abs_sub(&self, other: &Self) -> Self {
-        let new = *self - *other;
-        new.abs()
-    }
 
     pub fn signum(&self) -> Self {
         match self.is_positive {
