@@ -1,7 +1,7 @@
 use std::{
     fmt::Debug,
     iter::FromIterator,
-    ops::{Add, AddAssign, Div, Mul},
+    ops::{Add, AddAssign, Mul},
 };
 
 use cosmwasm_schema::cw_serde;
@@ -146,26 +146,20 @@ where
 {
     type Output = Self;
 
-    /// multiplies each value with a Decimal256
+    /// multiplies each value in the map with a Decimal256
+    /// ```
+    /// # use neptune_common::neptune_map::NeptuneMap;
+    /// # use cosmwasm_std::{Uint256, Decimal256};
+    /// # use std::str::FromStr;
+    /// let map: NeptuneMap<_, _> =
+    ///     vec![("foo", Uint256::from(2u64)), ("bar", Uint256::from(3u64))].into();
+    /// let decimal = Decimal256::from_str("2.0").unwrap();
+    /// let result = map * decimal;
+    /// assert_eq!(result, vec![("foo", Uint256::from(4u64)), ("bar", Uint256::from(6u64))].into());
+    /// ```
     fn mul(mut self, rhs: Decimal256) -> Self::Output {
         for (_, val) in &mut self {
             *val = val.clone() * rhs
-        }
-        self
-    }
-}
-
-impl<K, V> Div<Decimal256> for NeptuneMap<K, V>
-where
-    K: PartialEq + Clone + Debug,
-    V: Div<Decimal256, Output = V> + Clone,
-{
-    type Output = Self;
-
-    /// Divides each value with a Decimal256
-    fn div(mut self, rhs: Decimal256) -> Self::Output {
-        for (_, val) in &mut self {
-            *val = val.clone() / rhs
         }
         self
     }
@@ -179,7 +173,15 @@ where
     type Output = Self;
 
     /// Adds the corresponding values from two maps together.
+    ///
     /// If a key exists in one map but not the other, the default is used.
+    /// ```
+    /// # use neptune_common::neptune_map::NeptuneMap;
+    /// let this: NeptuneMap<_, _> = vec![("foo", 2), ("bar", 3)].into();
+    /// let that: NeptuneMap<_, _> = vec![("bar", 1), ("baz", 4)].into();
+    /// let sum = this + that;
+    /// assert_eq!(sum, vec![("foo", 2), ("bar", 4), ("baz", 4)].into());
+    /// ```
     fn add(mut self, rhs: Self) -> Self::Output {
         for rhs_key_val in rhs {
             let lhs = self.get_mut_or_default(&rhs_key_val.0);
@@ -195,7 +197,15 @@ where
     V: Add<Output = V> + Clone + Default,
 {
     /// Adds the corresponding values from two maps together.
+    ///
     /// If a key exists in one map but not the other, the default is used.
+    /// ```
+    /// # use neptune_common::neptune_map::NeptuneMap;
+    /// let mut this: NeptuneMap<_, _> = vec![("foo", 2), ("bar", 3)].into();
+    /// let that: NeptuneMap<_, _> = vec![("bar", 1), ("baz", 4)].into();
+    /// this += that;
+    /// assert_eq!(this, vec![("foo", 2), ("bar", 4), ("baz", 4)].into());
+    /// ```
     fn add_assign(&mut self, rhs: Self) {
         for rhs_key_val in rhs {
             let lhs = self.get_mut_or_default(&rhs_key_val.0);
@@ -228,11 +238,19 @@ impl<K, V> KeyVec<K> for NeptuneMap<K, V>
 where
     K: PartialEq + Ord + Clone,
 {
+    /// Adds the corresponding values from two maps together.
+    ///
+    /// If a key exists in one map but not the other, the default is used.
+    /// ```
+    /// # use neptune_common::neptune_map::NeptuneMap;
+    /// # use neptune_common::traits::KeyVec;
+    /// let mut map: NeptuneMap<_, _> = vec![("foo", 2), ("bar", 3)].into();
+    /// let key_vec = map.key_vec();
+    /// assert_eq!(key_vec, vec!["foo", "bar"]);
+    /// ```
     fn key_vec(&self) -> Vec<K> {
-        let mut all = self.iter().map(|(key, _)| key.clone()).collect::<Vec<_>>();
-        all.sort_unstable();
-        all.dedup();
-        all
+        // We don't need to worry about deduping here because the keys are unique
+        self.iter().map(|(key, _)| key.clone()).collect::<Vec<_>>()
     }
 }
 

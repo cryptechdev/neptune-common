@@ -4,13 +4,11 @@
 /// ```
 /// # use cosmwasm_std::{attr, Response, StdResult};
 /// # use neptune_common::debug;
-/// fn test_execute() -> StdResult<Response> {
 ///     let mut attrs = vec![];
 ///     let a = (1u32, 2u32, "Hello World".to_string());
 ///     let b = "data";
 ///     debug!(attrs, a, b); // attrs will be populated with debug information of a, b, ...
-///     Ok(Response::default().add_attributes(attrs)) // Attributes must be manually added to the response
-/// }
+///     let res: Response<()> = Response::default().add_attributes(attrs); // Attributes must be manually added to the response
 /// ```
 #[macro_export]
 macro_rules! debug {
@@ -34,12 +32,13 @@ macro_rules! debug {
 /// ```
 /// # use cosmwasm_std::{attr, Response, StdResult};
 /// # use neptune_common::debug_and_exit;
-/// fn test_execute() -> StdResult<Response> {
-///     let a = (1u32, 2u32, "Hello World".to_string());
-///     let b = "data";
-///     debug_and_exit!(a, b); // Function will exit here and print the debug information of a, b, ...
-///     Ok(Response::default()) // This line will never be reached
-/// }
+/// # fn test_execute() -> StdResult<Response> {
+/// let a = (1u32, 2u32, "Hello World".to_string());
+/// let b = "data";
+/// debug_and_exit!(a, b); // Function will exit here and print the debug information of a, b, ...
+/// Ok(Response::default()) // This line will never be reached
+/// # }
+/// # test_execute().unwrap();
 /// ```
 #[macro_export]
 macro_rules! debug_and_exit {
