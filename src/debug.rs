@@ -4,11 +4,11 @@
 /// ```
 /// # use cosmwasm_std::{attr, Response, StdResult};
 /// # use neptune_common::debug;
-///     let mut attrs = vec![];
-///     let a = (1u32, 2u32, "Hello World".to_string());
-///     let b = "data";
-///     debug!(attrs, a, b); // attrs will be populated with debug information of a, b, ...
-///     let res: Response<()> = Response::default().add_attributes(attrs); // Attributes must be manually added to the response
+/// let mut attrs = vec![];
+/// let a = (1u32, 2u32, "Hello World".to_string());
+/// let b = "data";
+/// debug!(attrs, a, b); // attrs will be populated with debug information of a, b, ...
+/// let res: Response<()> = Response::default().add_attributes(attrs); // Attributes must be manually added to the response
 /// ```
 #[macro_export]
 macro_rules! debug {
