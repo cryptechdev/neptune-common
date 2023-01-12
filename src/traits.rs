@@ -28,30 +28,20 @@ pub trait KeyVec<K> {
 
 impl<T, K> KeyVec<K> for Vec<T>
 where
-    K: PartialEq + Clone,
+    K: Ord + PartialEq + Clone,
     T: KeyVec<K>,
 {
     fn key_vec(&self) -> Vec<K> {
-        let mut key_vec = vec![];
-        for val in self {
-            for key in val.key_vec() {
-                if !key_vec.contains(&key) {
-                    key_vec.push(key.clone());
-                }
-            }
-        }
-        key_vec
+        let mut list = self.iter().flat_map(|x| x.key_vec()).collect::<Vec<_>>();
+        list.sort_unstable();
+        list.dedup();
+        list
     }
 }
 
-pub fn extract_keys<'a, K: 'a + PartialEq + Clone>(vec: Vec<&'a dyn KeyVec<K>>) -> Vec<K> {
-    let mut asset_vec = vec![];
-    for object in vec {
-        for asset in object.key_vec() {
-            if !asset_vec.contains(&asset) {
-                asset_vec.push(asset.clone());
-            }
-        }
-    }
-    asset_vec
+pub fn extract_keys<'a, K: 'a + Ord + PartialEq + Clone>(vec: Vec<&'a dyn KeyVec<K>>) -> Vec<K> {
+    let mut list = vec.into_iter().flat_map(|x| x.key_vec()).collect::<Vec<_>>();
+    list.sort_unstable();
+    list.dedup();
+    list
 }
