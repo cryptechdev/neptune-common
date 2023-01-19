@@ -52,14 +52,14 @@ pub fn add_shares(pool: &mut dyn GetPoolMut, shares: Uint256, account: &mut Pool
     let pool_mut = pool.get_pool_mut();
     let pool_balance = pool_mut.balance;
     let pool_shares = pool_mut.shares;
-    let account_principle = &mut account.principle;
+    let account_principal = &mut account.principal;
     let account_shares = &mut account.shares;
 
     let shares_to_issue = shares;
     let balance_to_issue = shares_to_issue.multiply_ratio(*pool_balance, *pool_shares);
 
     *account_shares += shares_to_issue;
-    *account_principle += balance_to_issue;
+    *account_principal += balance_to_issue;
 
     *pool_shares += shares_to_issue;
     *pool_balance += balance_to_issue;
@@ -74,7 +74,7 @@ pub fn add_amount(pool: &mut dyn GetPoolMut, amount: Uint256, account: &mut Pool
     let pool_mut = pool.get_pool_mut();
     let pool_balance = pool_mut.balance;
     let pool_shares = pool_mut.shares;
-    let account_principle = &mut account.principle;
+    let account_principal = &mut account.principal;
     let account_shares = &mut account.shares;
 
     let shares_to_issue = if pool_balance.is_zero() {
@@ -84,7 +84,7 @@ pub fn add_amount(pool: &mut dyn GetPoolMut, amount: Uint256, account: &mut Pool
     };
 
     *account_shares += shares_to_issue;
-    *account_principle += balance_to_issue;
+    *account_principal += balance_to_issue;
 
     *pool_shares += shares_to_issue;
     *pool_balance += balance_to_issue;
@@ -97,7 +97,7 @@ pub fn remove_shares(pool: &mut dyn GetPoolMut, shares: Uint256, account: &mut P
     let pool_mut = pool.get_pool_mut();
     let pool_balance = pool_mut.balance;
     let pool_shares = pool_mut.shares;
-    let account_principle = &mut account.principle;
+    let account_principal = &mut account.principal;
     let account_shares = &mut account.shares;
 
     let shares_to_remove = if shares > *account_shares {
@@ -109,7 +109,7 @@ pub fn remove_shares(pool: &mut dyn GetPoolMut, shares: Uint256, account: &mut P
     let amount_to_remove = shares_to_remove.multiply_ratio(*pool_balance, *pool_shares);
 
     *account_shares -= shares_to_remove;
-    *account_principle = account_principle.saturating_sub(amount_to_remove);
+    *account_principal = account_principal.saturating_sub(amount_to_remove);
 
     *pool_shares -= shares_to_remove;
     *pool_balance -= amount_to_remove;
@@ -122,7 +122,7 @@ pub fn remove_amount(pool: &mut dyn GetPoolMut, amount: Uint256, account: &mut P
     let pool_mut = pool.get_pool_mut();
     let pool_balance = pool_mut.balance;
     let pool_shares = pool_mut.shares;
-    let account_principle = &mut account.principle;
+    let account_principal = &mut account.principal;
     let account_shares = &mut account.shares;
 
     if pool_balance.is_zero() || pool_shares.is_zero() || account_shares.is_zero() {
@@ -141,7 +141,7 @@ pub fn remove_amount(pool: &mut dyn GetPoolMut, amount: Uint256, account: &mut P
     }
 
     *account_shares -= shares_to_remove;
-    *account_principle = account_principle.saturating_sub(amount_to_remove);
+    *account_principal = account_principal.saturating_sub(amount_to_remove);
 
     *pool_shares -= shares_to_remove;
     *pool_balance -= amount_to_remove;
@@ -174,7 +174,7 @@ pub fn get_account_balance(pool: &dyn GetPoolRef, account: PoolAccount) -> Uint2
 #[cw_serde]
 #[derive(Copy, Default)]
 pub struct PoolAccount {
-    pub principle: Uint256,
+    pub principal: Uint256,
     pub shares:    Uint256,
 }
 
@@ -244,32 +244,32 @@ mod test {
         add_amount(&mut pool, Uint256::from(100u64), &mut account1);
         assert_eq!(pool.balance, Uint256::from(100u64));
         assert_eq!(pool.shares, Uint256::from(100u64));
-        assert_eq!(account1.principle, Uint256::from(100u64));
+        assert_eq!(account1.principal, Uint256::from(100u64));
         assert_eq!(account1.shares, Uint256::from(100u64));
 
         increase_balance(&mut pool, Uint256::from(100u64));
         assert_eq!(pool.balance, Uint256::from(200u64));
         assert_eq!(pool.shares, Uint256::from(100u64));
-        assert_eq!(account1.principle, Uint256::from(100u64));
+        assert_eq!(account1.principal, Uint256::from(100u64));
         assert_eq!(account1.shares, Uint256::from(100u64));
         assert_eq!(get_account_balance(&pool, account1), Uint256::from(200u64));
 
         add_shares(&mut pool, Uint256::from(50u64), &mut account2);
         assert_eq!(pool.balance, Uint256::from(300u64));
         assert_eq!(pool.shares, Uint256::from(150u64));
-        assert_eq!(account2.principle, Uint256::from(100u64));
+        assert_eq!(account2.principal, Uint256::from(100u64));
         assert_eq!(account2.shares, Uint256::from(50u64));
 
         remove_amount(&mut pool, Uint256::from(100u64), &mut account2);
         assert_eq!(pool.balance, Uint256::from(200u64));
         assert_eq!(pool.shares, Uint256::from(100u64));
-        assert_eq!(account2.principle, Uint256::from(0u64));
+        assert_eq!(account2.principal, Uint256::from(0u64));
         assert_eq!(account2.shares, Uint256::from(0u64));
 
         remove_shares(&mut pool, Uint256::from(100u64), &mut account2);
         assert_eq!(pool.balance, Uint256::from(200u64));
         assert_eq!(pool.shares, Uint256::from(100u64));
-        assert_eq!(account2.principle, Uint256::from(0u64));
+        assert_eq!(account2.principal, Uint256::from(0u64));
         assert_eq!(account2.shares, Uint256::from(0u64));
     }
 }
