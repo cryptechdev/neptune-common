@@ -30,6 +30,8 @@ cosmwasm-derive = "1"
 cosmwasm-schema = "1"
 schemars = "0.8"
 serde = { version = "1", default-features = false, features = ["derive"] }
+astroport = { git = "https://github.com/astroport-fi/astroport-core", branch = "main" }
+
 thiserror = "1"
 shrinkwraprs = "0.3"
 neptune-auth = "0.1"

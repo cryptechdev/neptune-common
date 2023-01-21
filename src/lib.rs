@@ -1,4 +1,5 @@
 pub mod asset;
+pub mod astroport;
 pub mod debug;
 pub mod error;
 pub mod math;
