@@ -1,8 +1,12 @@
-use cosmwasm_std::{Deps, Order};
+use cosmwasm_std::{Deps, DepsMut, Order};
 use cw_storage_plus::{Bounder, KeyDeserialize, Map, PrimaryKey};
 use serde::{de::DeserializeOwned, Serialize};
+use std::fmt::Debug;
 
-use crate::{error::CommonError, neptune_map::NeptuneMap};
+use crate::{
+    error::{CommonError, CommonResult},
+    neptune_map::*,
+};
 
 pub const PARAMS_KEY: &str = "params";
 pub const STATE_KEY: &str = "state";
@@ -43,4 +47,53 @@ pub fn read_map_vec<
     vec.into_iter()
         .map(|key| Ok((key, map.load(deps.storage, key)?)))
         .collect::<Result<NeptuneMap<_, _>, CommonError>>()
+}
+
+pub struct Cache<'s, 'k, K, V>
+where
+    for<'a> &'a K: Debug + PartialEq + Eq + PrimaryKey<'a>,
+    K: Clone + Debug + PartialEq + Eq,
+    V: Clone + Serialize + DeserializeOwned,
+{
+    map: NeptuneMap<K, V>,
+    storage: Map<'s, &'k K, V>,
+}
+
+impl<'s, 'k, K, V> Cache<'s, 'k, K, V>
+where
+    for<'a> &'a K: Debug + PartialEq + Eq + PrimaryKey<'a>,
+    K: Clone + Debug + PartialEq + Eq,
+    V: Clone + Serialize + DeserializeOwned,
+{
+    pub fn new(storage: Map<'s, &'k K, V>) -> Self {
+        Self { map: NeptuneMap::new(), storage }
+    }
+    pub fn must_get_mut(&mut self, deps: Deps<'_>, key: &K) -> CommonResult<&mut V> {
+        match self.map.iter().position(|x| &x.0 == key) {
+            Some(index) => Ok(&mut self.map.0[index].1),
+            None => {
+                let value = self.storage.load(deps.storage, key)?;
+                self.map.insert(key.clone(), value);
+                Ok(&mut self.map.last_mut().unwrap().1)
+            }
+        }
+    }
+
+    pub fn must_get(&mut self, deps: Deps<'_>, key: &K) -> CommonResult<V> {
+        match self.map.iter().position(|x| &x.0 == key) {
+            Some(index) => Ok(self.map.0[index].1.clone()),
+            None => {
+                let value = self.storage.load(deps.storage, key)?;
+                self.map.insert(key.clone(), value);
+                Ok(self.map.last_mut().unwrap().1.clone())
+            }
+        }
+    }
+
+    pub fn save(&mut self, deps: DepsMut<'_>) -> CommonResult<()> {
+        for (key, value) in self.map.iter() {
+            self.storage.save(deps.storage, key, value)?;
+        }
+        Ok(())
+    }
 }
