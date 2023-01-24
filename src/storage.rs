@@ -1,4 +1,4 @@
-use cosmwasm_std::{Deps, DepsMut, Order};
+use cosmwasm_std::{Addr, Deps, DepsMut, Order};
 use cw_storage_plus::{Bounder, KeyDeserialize, Map, PrimaryKey};
 use serde::{de::DeserializeOwned, Serialize};
 use std::fmt::Debug;
@@ -49,6 +49,16 @@ pub fn read_map_vec<
         .collect::<Result<NeptuneMap<_, _>, CommonError>>()
 }
 
+pub trait Cacher<'s, 'k, K, V>
+where
+    for<'a> &'a K: Debug + PartialEq + Eq + PrimaryKey<'a>,
+    K: Clone + Debug + PartialEq + Eq,
+    V: Clone + Serialize + DeserializeOwned,
+{
+    fn must_get_mut(&mut self, deps: Deps<'_>, key: &K) -> CommonResult<&mut V>;
+    fn must_get(&mut self, deps: Deps<'_>, key: &K) -> CommonResult<V>;
+}
+
 pub struct Cache<'s, 'k, K, V>
 where
     for<'a> &'a K: Debug + PartialEq + Eq + PrimaryKey<'a>,
@@ -68,7 +78,22 @@ where
     pub fn new(storage: Map<'s, &'k K, V>) -> Self {
         Self { map: NeptuneMap::new(), storage }
     }
-    pub fn must_get_mut(&mut self, deps: Deps<'_>, key: &K) -> CommonResult<&mut V> {
+
+    pub fn save(&mut self, deps: DepsMut<'_>) -> CommonResult<()> {
+        for (key, value) in self.map.iter() {
+            self.storage.save(deps.storage, key, value)?;
+        }
+        Ok(())
+    }
+}
+
+impl<'s, 'k, K, V> Cacher<'s, 'k, K, V> for Cache<'s, 'k, K, V>
+where
+    for<'a> &'a K: Debug + PartialEq + Eq + PrimaryKey<'a>,
+    K: Clone + Debug + PartialEq + Eq,
+    V: Clone + Serialize + DeserializeOwned,
+{
+    fn must_get_mut(&mut self, deps: Deps<'_>, key: &K) -> CommonResult<&mut V> {
         match self.map.iter().position(|x| &x.0 == key) {
             Some(index) => Ok(&mut self.map.0[index].1),
             None => {
@@ -79,7 +104,7 @@ where
         }
     }
 
-    pub fn must_get(&mut self, deps: Deps<'_>, key: &K) -> CommonResult<V> {
+    fn must_get(&mut self, deps: Deps<'_>, key: &K) -> CommonResult<V> {
         match self.map.iter().position(|x| &x.0 == key) {
             Some(index) => Ok(self.map.0[index].1.clone()),
             None => {
@@ -89,11 +114,60 @@ where
             }
         }
     }
+}
+pub struct QueryCache<'s, 'k, K, V>
+where
+    for<'a> &'a K: Debug + PartialEq + Eq + PrimaryKey<'a>,
+    K: Clone + Debug + PartialEq + Eq,
+    V: Clone + Serialize + DeserializeOwned,
+{
+    map: NeptuneMap<K, V>,
+    storage: Map<'s, &'k K, V>,
+    addr: Addr,
+}
 
-    pub fn save(&mut self, deps: DepsMut<'_>) -> CommonResult<()> {
-        for (key, value) in self.map.iter() {
-            self.storage.save(deps.storage, key, value)?;
+impl<'s, 'k, K, V> QueryCache<'s, 'k, K, V>
+where
+    for<'a> &'a K: Debug + PartialEq + Eq + PrimaryKey<'a>,
+    K: Clone + Debug + PartialEq + Eq,
+    V: Clone + Serialize + DeserializeOwned,
+{
+    pub fn new(storage: Map<'s, &'k K, V>, addr: Addr) -> Self {
+        Self { map: NeptuneMap::new(), storage, addr }
+    }
+}
+
+impl<'s, 'k, K, V> Cacher<'s, 'k, K, V> for QueryCache<'s, 'k, K, V>
+where
+    for<'a> &'a K: Debug + PartialEq + Eq + PrimaryKey<'a>,
+    K: Clone + Debug + PartialEq + Eq,
+    V: Clone + Serialize + DeserializeOwned,
+{
+    fn must_get_mut(&mut self, deps: Deps<'_>, key: &K) -> CommonResult<&mut V> {
+        match self.map.iter().position(|x| &x.0 == key) {
+            Some(index) => Ok(&mut self.map.0[index].1),
+            None => {
+                let value = self
+                    .storage
+                    .query(&deps.querier, self.addr.clone(), key)?
+                    .ok_or_else(|| CommonError::KeyNotFound(format!("{:?}", key)))?;
+                self.map.insert(key.clone(), value);
+                Ok(&mut self.map.last_mut().unwrap().1)
+            }
         }
-        Ok(())
+    }
+
+    fn must_get(&mut self, deps: Deps<'_>, key: &K) -> CommonResult<V> {
+        match self.map.iter().position(|x| &x.0 == key) {
+            Some(index) => Ok(self.map.0[index].1.clone()),
+            None => {
+                let value = self
+                    .storage
+                    .query(&deps.querier, self.addr.clone(), key)?
+                    .ok_or_else(|| CommonError::KeyNotFound(format!("{:?}", key)))?;
+                self.map.insert(key.clone(), value);
+                Ok(self.map.last_mut().unwrap().1.clone())
+            }
+        }
     }
 }
