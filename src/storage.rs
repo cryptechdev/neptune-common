@@ -40,7 +40,7 @@ where
     V: Clone + Serialize + DeserializeOwned,
 {
     fn must_get_mut(&mut self, deps: Deps<'_>, key: &K) -> CommonResult<&mut V>;
-    fn must_get(&mut self, deps: Deps<'_>, key: &K) -> CommonResult<V>;
+    fn must_get(&mut self, deps: Deps<'_>, key: &K) -> CommonResult<&V>;
 }
 
 struct CacheInner<V>
@@ -104,14 +104,14 @@ where
     }
 
     // TODO: consider returning &V instead of V.
-    fn must_get(&mut self, deps: Deps<'_>, key: &K) -> CommonResult<V> {
+    fn must_get(&mut self, deps: Deps<'_>, key: &K) -> CommonResult<&V> {
         match self.map.iter().position(|x| &x.0 == key) {
-            Some(index) => Ok(self.map.0[index].1.value.clone()),
+            Some(index) => Ok(&self.map.0[index].1.value),
             None => {
                 let value = self.storage.load(deps.storage, key)?;
                 let inner = CacheInner { value, is_modified: false };
                 self.map.insert(key.clone(), inner);
-                Ok(self.map.last_mut().unwrap().1.value.clone())
+                Ok(&self.map.last().unwrap().1.value)
             }
         }
     }
@@ -159,16 +159,16 @@ where
         }
     }
 
-    fn must_get(&mut self, deps: Deps<'_>, key: &K) -> CommonResult<V> {
+    fn must_get(&mut self, deps: Deps<'_>, key: &K) -> CommonResult<&V> {
         match self.map.iter().position(|x| &x.0 == key) {
-            Some(index) => Ok(self.map.0[index].1.clone()),
+            Some(index) => Ok(&self.map.0[index].1),
             None => {
                 let value = self
                     .storage
                     .query(&deps.querier, self.addr.clone(), key)?
                     .ok_or_else(|| CommonError::KeyNotFound(format!("{:?}", key)))?;
                 self.map.insert(key.clone(), value);
-                Ok(self.map.last_mut().unwrap().1.clone())
+                Ok(&self.map.last().unwrap().1)
             }
         }
     }
