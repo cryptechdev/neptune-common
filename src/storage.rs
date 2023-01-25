@@ -14,14 +14,14 @@ pub const STATE_KEY: &str = "state";
 /// Reads a map from storage is ascending order.
 ///
 /// TODO: Doc Test Here
-pub fn read_map<
-    'a,
-    K: 'static,
-    R: Bounder<'a> + PrimaryKey<'a> + KeyDeserialize<Output = K> + 'a,
+pub fn read_map<'k, K, O, V>(
+    deps: Deps, start_after: Option<K>, limit: Option<u32>, map: Map<'k, K, V>,
+) -> Result<Vec<(O, V)>, CommonError>
+where
+    K: Bounder<'k> + PrimaryKey<'k> + KeyDeserialize<Output = O>,
+    O: 'static,
     V: Serialize + DeserializeOwned,
->(
-    deps: Deps, start_after: Option<R>, limit: Option<u32>, map: Map<'a, R, V>,
-) -> Result<Vec<(K, V)>, CommonError> {
+{
     let start = start_after.map(|key| key.inclusive_bound().unwrap());
     let vec = match limit {
         Some(limit) => map
@@ -31,22 +31,6 @@ pub fn read_map<
         None => map.range(deps.storage, start, None, Order::Ascending).collect::<Result<Vec<_>, _>>()?,
     };
     Ok(vec)
-}
-
-/// Reads a map from storage is ascending order.
-///
-/// TODO: Doc Test Here
-pub fn read_map_vec<
-    'a,
-    // K: 'static,
-    K: Copy + Bounder<'a> + PrimaryKey<'a> + KeyDeserialize<Output = K> + 'a,
-    V: Serialize + DeserializeOwned,
->(
-    deps: Deps, map: Map<'a, K, V>, vec: Vec<K>,
-) -> Result<NeptuneMap<K, V>, CommonError> {
-    vec.into_iter()
-        .map(|key| Ok((key, map.load(deps.storage, key)?)))
-        .collect::<Result<NeptuneMap<_, _>, CommonError>>()
 }
 
 pub trait Cacher<'s, 'k, K, V>
@@ -59,13 +43,21 @@ where
     fn must_get(&mut self, deps: Deps<'_>, key: &K) -> CommonResult<V>;
 }
 
+struct CacheInner<V>
+where
+    V: Clone + Serialize + DeserializeOwned,
+{
+    value: V,
+    is_modified: bool,
+}
+
 pub struct Cache<'s, 'k, K, V>
 where
     for<'a> &'a K: Debug + PartialEq + Eq + PrimaryKey<'a>,
     K: Clone + Debug + PartialEq + Eq,
     V: Clone + Serialize + DeserializeOwned,
 {
-    map: NeptuneMap<K, V>,
+    map: NeptuneMap<K, CacheInner<V>>,
     storage: Map<'s, &'k K, V>,
 }
 
@@ -80,8 +72,10 @@ where
     }
 
     pub fn save(&mut self, deps: DepsMut<'_>) -> CommonResult<()> {
-        for (key, value) in self.map.iter() {
-            self.storage.save(deps.storage, key, value)?;
+        for (key, inner) in self.map.iter() {
+            if inner.is_modified {
+                self.storage.save(deps.storage, key, &inner.value)?;
+            }
         }
         Ok(())
     }
@@ -95,26 +89,34 @@ where
 {
     fn must_get_mut(&mut self, deps: Deps<'_>, key: &K) -> CommonResult<&mut V> {
         match self.map.iter().position(|x| &x.0 == key) {
-            Some(index) => Ok(&mut self.map.0[index].1),
+            Some(index) => {
+                let inner = &mut self.map.0[index].1;
+                inner.is_modified = true;
+                Ok(&mut inner.value)
+            }
             None => {
                 let value = self.storage.load(deps.storage, key)?;
-                self.map.insert(key.clone(), value);
-                Ok(&mut self.map.last_mut().unwrap().1)
+                let inner = CacheInner { value, is_modified: true };
+                self.map.insert(key.clone(), inner);
+                Ok(&mut self.map.last_mut().unwrap().1.value)
             }
         }
     }
 
+    // TODO: consider returning &V instead of V.
     fn must_get(&mut self, deps: Deps<'_>, key: &K) -> CommonResult<V> {
         match self.map.iter().position(|x| &x.0 == key) {
-            Some(index) => Ok(self.map.0[index].1.clone()),
+            Some(index) => Ok(self.map.0[index].1.value.clone()),
             None => {
                 let value = self.storage.load(deps.storage, key)?;
-                self.map.insert(key.clone(), value);
-                Ok(self.map.last_mut().unwrap().1.clone())
+                let inner = CacheInner { value, is_modified: false };
+                self.map.insert(key.clone(), inner);
+                Ok(self.map.last_mut().unwrap().1.value.clone())
             }
         }
     }
 }
+
 pub struct QueryCache<'s, 'k, K, V>
 where
     for<'a> &'a K: Debug + PartialEq + Eq + PrimaryKey<'a>,
