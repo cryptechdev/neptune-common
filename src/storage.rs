@@ -152,7 +152,7 @@ where
                 let value = self
                     .storage
                     .query(&deps.querier, self.addr.clone(), key)?
-                    .ok_or_else(|| CommonError::KeyNotFound(format!("{:?}", key)))?;
+                    .ok_or_else(|| CommonError::KeyNotFound(format!("{key:?}")))?;
                 self.map.insert(key.clone(), value);
                 Ok(&mut self.map.last_mut().unwrap().1)
             }
@@ -166,7 +166,7 @@ where
                 let value = self
                     .storage
                     .query(&deps.querier, self.addr.clone(), key)?
-                    .ok_or_else(|| CommonError::KeyNotFound(format!("{:?}", key)))?;
+                    .ok_or_else(|| CommonError::KeyNotFound(format!("{key:?}")))?;
                 self.map.insert(key.clone(), value);
                 Ok(&self.map.last().unwrap().1)
             }
