@@ -8,35 +8,43 @@ use crate::traits::Zeroed;
 #[derive(Copy, Default)]
 pub struct Pool {
     pub balance: Uint256,
-    pub shares:  Uint256,
+    pub shares: Uint256,
 }
 
 impl GetPoolMut for Pool {
-    fn get_pool_mut(&mut self) -> PoolMut { PoolMut { balance: &mut self.balance, shares: &mut self.shares } }
+    fn get_pool_mut(&mut self) -> PoolMut {
+        PoolMut { balance: &mut self.balance, shares: &mut self.shares }
+    }
 }
 
 impl GetPoolRef for Pool {
-    fn get_pool_ref(&self) -> PoolRef { PoolRef { balance: &self.balance, shares: &self.shares } }
+    fn get_pool_ref(&self) -> PoolRef {
+        PoolRef { balance: &self.balance, shares: &self.shares }
+    }
 }
 
-/// This serves the same purpose as Pool, but can be constructed directly from mutable references.
+/// This serves the same purpose as Pool, but can be constructed directly from immutable references.
 pub struct PoolRef<'a> {
     pub balance: &'a Uint256,
-    pub shares:  &'a Uint256,
+    pub shares: &'a Uint256,
 }
 
-// This serves the same purpose as Pool, but can be constructed directly from immutable references.
+// This serves the same purpose as Pool, but can be constructed directly from mutable references.
 pub struct PoolMut<'a> {
     pub balance: &'a mut Uint256,
-    pub shares:  &'a mut Uint256,
+    pub shares: &'a mut Uint256,
 }
 
 impl GetPoolMut for PoolMut<'_> {
-    fn get_pool_mut(&mut self) -> PoolMut { PoolMut { balance: self.balance, shares: self.shares } }
+    fn get_pool_mut(&mut self) -> PoolMut {
+        PoolMut { balance: self.balance, shares: self.shares }
+    }
 }
 
 impl GetPoolRef for PoolMut<'_> {
-    fn get_pool_ref(&self) -> PoolRef { PoolRef { balance: self.balance, shares: self.shares } }
+    fn get_pool_ref(&self) -> PoolRef {
+        PoolRef { balance: self.balance, shares: self.shares }
+    }
 }
 
 pub trait GetPoolMut {
@@ -175,7 +183,7 @@ pub fn get_account_balance(pool: &dyn GetPoolRef, account: PoolAccount) -> Uint2
 #[derive(Copy, Default)]
 pub struct PoolAccount {
     pub principal: Uint256,
-    pub shares:    Uint256,
+    pub shares: Uint256,
 }
 
 pub struct AddSharesResponse {
@@ -196,7 +204,9 @@ pub struct RemoveAmountResponse {
 }
 
 impl Zeroed for PoolAccount {
-    fn is_zeroed(&self) -> bool { self.shares.is_zero() }
+    fn is_zeroed(&self) -> bool {
+        self.shares.is_zero()
+    }
 
     fn remove_zeroed(&mut self) {}
 }

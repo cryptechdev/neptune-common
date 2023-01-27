@@ -12,8 +12,6 @@ pub const PARAMS_KEY: &str = "params";
 pub const STATE_KEY: &str = "state";
 
 /// Reads a map from storage is ascending order.
-///
-/// TODO: Doc Test Here
 pub fn read_map<'k, K, O, V>(
     deps: Deps, start_after: Option<K>, limit: Option<u32>, map: Map<'k, K, V>,
 ) -> Result<Vec<(O, V)>, CommonError>
@@ -33,6 +31,7 @@ where
     Ok(vec)
 }
 
+/// Trait for types which act as a storage cache with cosmwasm storage plus.
 pub trait Cacher<'s, 'k, K, V>
 where
     for<'a> &'a K: Debug + PartialEq + Eq + PrimaryKey<'a>,
@@ -43,6 +42,7 @@ where
     fn must_get(&mut self, deps: Deps<'_>, key: &K) -> CommonResult<&V>;
 }
 
+/// The inner part of the cache which keeps track of wether the value has been modified.
 struct CacheInner<V>
 where
     V: Clone + Serialize + DeserializeOwned,
@@ -51,6 +51,7 @@ where
     is_modified: bool,
 }
 
+/// A cache which stores values in memory to avoid repeated disk reads/writes.
 pub struct Cache<'s, 'k, K, V>
 where
     for<'a> &'a K: Debug + PartialEq + Eq + PrimaryKey<'a>,
@@ -103,7 +104,6 @@ where
         }
     }
 
-    // TODO: consider returning &V instead of V.
     fn must_get(&mut self, deps: Deps<'_>, key: &K) -> CommonResult<&V> {
         match self.map.iter().position(|x| &x.0 == key) {
             Some(index) => Ok(&self.map.0[index].1.value),
@@ -117,6 +117,8 @@ where
     }
 }
 
+/// A cache which stores values in memory to avoid repeated disk reads/writes.
+/// Values are accessed through a raw query to another contracts storage.
 pub struct QueryCache<'s, 'k, K, V>
 where
     for<'a> &'a K: Debug + PartialEq + Eq + PrimaryKey<'a>,
