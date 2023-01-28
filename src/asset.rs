@@ -35,7 +35,7 @@ impl<'a> PrimaryKey<'a> for &'a AssetInfo {
     type SuperSuffix = Self;
 
     fn key(&self) -> Vec<Key> {
-        // The descriminate is added as a prefix.
+        // The discriminate is added as a prefix.
         match self {
             AssetInfo::Token { contract_addr: addr } => {
                 vec![Key::Val8([TOKEN_DISCRIMINANT]), Key::Ref(addr.as_bytes())]
@@ -75,7 +75,7 @@ impl<'a> KeyDeserialize for &'a AssetInfo {
 
     #[inline(always)]
     fn from_vec(mut value: Vec<u8>) -> StdResult<Self::Output> {
-        // The descriminate is the first byte after the prefix.
+        // The discriminate is the first byte after the prefix.
         // Split off after the 3rd.
         let split = value.split_off(3);
 

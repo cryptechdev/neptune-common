@@ -30,7 +30,7 @@ cosmwasm-derive = "1"
 cosmwasm-schema = "1"
 schemars = "0.8"
 serde = { version = "1", default-features = false, features = ["derive"] }
-astroport = "1.2"
+astroport = "1"
 
 thiserror = "1"
 shrinkwraprs = "0.3"
