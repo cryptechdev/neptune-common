@@ -1,7 +1,8 @@
 use std::{
+    cmp::Ordering,
     convert::{TryFrom, TryInto},
     fmt,
-    ops::{Mul, Neg},
+    ops::{Div, Mul, Neg},
     str::FromStr,
 };
 
@@ -19,21 +20,7 @@ pub struct SignedDecimal {
 }
 
 impl SignedDecimal {
-    pub fn from_uint256(val: Uint256) -> Result<Self, CommonError> {
-        Ok(Self {
-            value:       Decimal256::from_atomics(val, 0u32).map_err(CommonError::Decimal256RangeExceeded)?,
-            is_positive: true,
-        })
-    }
-
     pub fn abs(&self) -> Self { Self { value: self.value, is_positive: true } }
-
-    pub fn signum(&self) -> Self {
-        match self.is_positive {
-            true => Self::one(),
-            false => Self { value: Decimal256::one(), is_positive: false },
-        }
-    }
 
     pub fn is_positive(&self) -> bool { self.is_positive }
 
@@ -316,6 +303,58 @@ fn signed_decimal_test() {
     assert!(small_pos == f64_to_signed_decimal(small_pos_f64));
     assert!(small_neg == f64_to_signed_decimal(small_neg_f64));
     assert!(dec_neg == f64_to_signed_decimal(dec_neg_f64));
+
+    // Test division by zero
+    let num = SignedDecimal::one();
+    let denom = SignedDecimal::zero();
+    assert_eq!(num.div(denom), SignedDecimal::zero());
+
+    // Test try_into
+    {
+        let x = SignedDecimal::one().neg();
+        TryInto::<Decimal256>::try_into(x).expect_err("Should throw error for negatives");
+
+        let y = SignedDecimal::one();
+        let _: Decimal256 = y.try_into().expect("Should be able to convert");
+    }
+
+    // Test cmp
+    {
+        let lhs = SignedDecimal::one().neg();
+        let rhs = SignedDecimal::one();
+        assert_eq!(lhs.cmp(&rhs), Ordering::Less);
+        assert_eq!(rhs.cmp(&lhs), Ordering::Greater);
+        assert_eq!(rhs.cmp(&rhs), Ordering::Equal);
+
+        let x = SignedDecimal::from_str("50").unwrap();
+        let y = SignedDecimal::from_str("10").unwrap();
+        assert_eq!(x.cmp(&y), Ordering::Greater);
+        assert_eq!(y.cmp(&x), Ordering::Less);
+        let z = SignedDecimal::from_str("50").unwrap();
+        assert_eq!(x.cmp(&z), Ordering::Equal);
+    }
+
+    {
+        let x = Decimal256::default();
+        let z = SignedDecimal::from(x);
+        let y = SignedDecimal::default();
+        assert_eq!(z, y);
+    }
+}
+
+#[test]
+fn test_sign_fns() {
+    let mut sd = SignedDecimal::from_str("4.1243").expect("have to be able to SignedDecimal::from_str");
+    assert!(sd.is_positive());
+    assert!(!sd.is_negative());
+
+    sd = sd.neg();
+    assert!(!sd.is_positive());
+    assert!(sd.is_negative());
+
+    sd = sd.abs();
+    assert!(sd.is_positive());
+    assert!(!sd.is_negative());
 }
 
 #[test]
