@@ -22,8 +22,8 @@ pub type AssetMap<T> = NeptuneMap<AssetInfo, T>;
 impl Display for AssetInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Token { contract_addr } => contract_addr.fmt(f),
-            Self::NativeToken { denom } => denom.fmt(f),
+            Self::Token { contract_addr } => write!(f, "{{token:{{contract_addr:{contract_addr}}}"),
+            Self::NativeToken { denom } => write!(f, "{{native_token:{{denom:{denom}}}"),
         }
     }
 }
