@@ -1,12 +1,11 @@
 use std::{
-    cmp::Ordering,
     convert::{TryFrom, TryInto},
     fmt,
-    ops::{Div, Mul, Neg},
+    ops::{Mul, Neg},
     str::FromStr,
 };
 
-use cosmwasm_std::{Decimal256, Uint256};
+use cosmwasm_std::Decimal256;
 use schemars::JsonSchema;
 use serde::{de, ser, Deserialize, Deserializer, Serialize};
 
@@ -15,22 +14,34 @@ use crate::error::CommonError;
 /// Decimal256 with a sign
 #[derive(Clone, Copy, Debug, Eq)]
 pub struct SignedDecimal {
-    value:       Decimal256,
+    value: Decimal256,
     is_positive: bool,
 }
 
 impl SignedDecimal {
-    pub fn abs(&self) -> Self { Self { value: self.value, is_positive: true } }
+    pub fn abs(&self) -> Self {
+        Self { value: self.value, is_positive: true }
+    }
 
-    pub fn is_positive(&self) -> bool { self.is_positive }
+    pub fn is_positive(&self) -> bool {
+        self.is_positive
+    }
 
-    pub fn is_negative(&self) -> bool { !self.is_positive }
+    pub fn is_negative(&self) -> bool {
+        !self.is_positive
+    }
 
-    pub fn one() -> Self { Self { value: Decimal256::one(), is_positive: true } }
+    pub fn one() -> Self {
+        Self { value: Decimal256::one(), is_positive: true }
+    }
 
-    pub fn zero() -> Self { Self { value: Decimal256::zero(), is_positive: true } }
+    pub fn zero() -> Self {
+        Self { value: Decimal256::zero(), is_positive: true }
+    }
 
-    pub fn is_zero(&self) -> bool { self.value.is_zero() }
+    pub fn is_zero(&self) -> bool {
+        self.value.is_zero()
+    }
 }
 
 impl Mul<Decimal256> for SignedDecimal {
@@ -88,13 +99,17 @@ impl std::ops::Add<Self> for SignedDecimal {
 }
 
 impl std::ops::AddAssign<Self> for SignedDecimal {
-    fn add_assign(&mut self, rhs: Self) { *self = *self + rhs; }
+    fn add_assign(&mut self, rhs: Self) {
+        *self = *self + rhs;
+    }
 }
 
 impl std::ops::Sub<Self> for SignedDecimal {
     type Output = Self;
 
-    fn sub(self, rhs: Self) -> Self { self + Self { value: rhs.value, is_positive: !rhs.is_positive } }
+    fn sub(self, rhs: Self) -> Self {
+        self + Self { value: rhs.value, is_positive: !rhs.is_positive }
+    }
 }
 
 impl std::ops::Mul<Self> for SignedDecimal {
@@ -145,11 +160,15 @@ impl std::cmp::PartialOrd for SignedDecimal {
 }
 
 impl std::cmp::Ord for SignedDecimal {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering { self.partial_cmp(other).unwrap() }
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.partial_cmp(other).unwrap()
+    }
 }
 
 impl From<Decimal256> for SignedDecimal {
-    fn from(value: Decimal256) -> Self { Self { value, is_positive: true } }
+    fn from(value: Decimal256) -> Self {
+        Self { value, is_positive: true }
+    }
 }
 
 impl FromStr for SignedDecimal {
@@ -211,17 +230,25 @@ impl<'de> de::Visitor<'de> for SignedDecimalVisitor {
 }
 
 impl JsonSchema for SignedDecimal {
-    fn schema_name() -> String { "SignedDecimal".to_string() }
+    fn schema_name() -> String {
+        "SignedDecimal".to_string()
+    }
 
-    fn json_schema(gen: &mut schemars::gen::SchemaGenerator) -> schemars::schema::Schema { String::json_schema(gen) }
+    fn json_schema(gen: &mut schemars::gen::SchemaGenerator) -> schemars::schema::Schema {
+        String::json_schema(gen)
+    }
 
-    fn is_referenceable() -> bool { true }
+    fn is_referenceable() -> bool {
+        true
+    }
 }
 
 impl TryFrom<&str> for SignedDecimal {
     type Error = CommonError;
 
-    fn try_from(value: &str) -> Result<Self, Self::Error> { Self::from_str(value) }
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        Self::from_str(value)
+    }
 }
 
 impl TryInto<Decimal256> for SignedDecimal {
@@ -236,176 +263,186 @@ impl TryInto<Decimal256> for SignedDecimal {
 }
 
 impl Default for SignedDecimal {
-    fn default() -> Self { Self { value: Decimal256::default(), is_positive: true } }
-}
-
-#[test]
-fn signed_decimal_test() {
-    let big_pos = SignedDecimal::from_str("100").unwrap();
-    let big_neg = SignedDecimal::from_str("-100").unwrap();
-    let small_pos = SignedDecimal::from_str("50").unwrap();
-    let small_neg = SignedDecimal::from_str("-50").unwrap();
-    let dec_neg = SignedDecimal::from_str("-50.50").unwrap();
-
-    let big_pos_f64 = f64::from_str("100").unwrap();
-    let big_neg_f64 = f64::from_str("-100").unwrap();
-    let small_pos_f64 = f64::from_str("50").unwrap();
-    let small_neg_f64 = f64::from_str("-50").unwrap();
-    let dec_neg_f64 = f64::from_str("-50.50").unwrap();
-
-    // Test partial_cmp
-    assert!(big_pos > big_neg);
-    assert!(big_pos > small_neg);
-    assert!(big_pos > small_pos);
-    assert!(big_pos > big_neg);
-    assert!(small_pos > small_neg);
-    assert!(small_pos > big_neg);
-    assert!(small_neg > big_neg);
-
-    // Utility function
-    fn f64_to_signed_decimal(val: f64) -> SignedDecimal { SignedDecimal::from_str(val.to_string().as_str()).unwrap() }
-
-    // Test mul
-    assert!(big_pos * small_pos == f64_to_signed_decimal(big_pos_f64 * small_pos_f64));
-    assert!(big_pos * small_neg == f64_to_signed_decimal(big_pos_f64 * small_neg_f64));
-    assert!(big_pos * big_neg == f64_to_signed_decimal(big_pos_f64 * big_neg_f64));
-    assert!(small_pos * small_neg == f64_to_signed_decimal(small_pos_f64 * small_neg_f64));
-    assert!(small_pos * big_neg == f64_to_signed_decimal(small_pos_f64 * big_neg_f64));
-    assert!(small_neg * big_neg == f64_to_signed_decimal(small_neg_f64 * big_neg_f64));
-
-    // Test div
-    assert!(big_pos / small_pos == f64_to_signed_decimal(big_pos_f64 / small_pos_f64));
-    assert!(big_pos / small_neg == f64_to_signed_decimal(big_pos_f64 / small_neg_f64));
-    assert!(big_pos / big_neg == f64_to_signed_decimal(big_pos_f64 / big_neg_f64));
-    assert!(small_pos / small_neg == f64_to_signed_decimal(small_pos_f64 / small_neg_f64));
-    assert!(small_pos / big_neg == f64_to_signed_decimal(small_pos_f64 / big_neg_f64));
-    assert!(small_neg / big_neg == f64_to_signed_decimal(small_neg_f64 / big_neg_f64));
-
-    // Test add
-    assert!(big_pos + small_pos == f64_to_signed_decimal(big_pos_f64 + small_pos_f64));
-    assert!(big_pos + small_neg == f64_to_signed_decimal(big_pos_f64 + small_neg_f64));
-    assert!(big_pos + big_neg == f64_to_signed_decimal(big_pos_f64 + big_neg_f64));
-    assert!(small_pos + small_neg == f64_to_signed_decimal(small_pos_f64 + small_neg_f64));
-    assert!(small_pos + big_neg == f64_to_signed_decimal(small_pos_f64 + big_neg_f64));
-    assert!(small_neg + big_neg == f64_to_signed_decimal(small_neg_f64 + big_neg_f64));
-
-    // Test sub
-    assert!(big_pos - small_pos == f64_to_signed_decimal(big_pos_f64 - small_pos_f64));
-    assert!(big_pos - small_neg == f64_to_signed_decimal(big_pos_f64 - small_neg_f64));
-    assert!(big_pos - big_neg == f64_to_signed_decimal(big_pos_f64 - big_neg_f64));
-    assert!(small_pos - small_neg == f64_to_signed_decimal(small_pos_f64 - small_neg_f64));
-    assert!(small_pos - big_neg == f64_to_signed_decimal(small_pos_f64 - big_neg_f64));
-    assert!(small_neg - big_neg == f64_to_signed_decimal(small_neg_f64 - big_neg_f64));
-
-    // Test conversion
-    assert!(big_pos == f64_to_signed_decimal(big_pos_f64));
-    assert!(big_neg == f64_to_signed_decimal(big_neg_f64));
-    assert!(small_pos == f64_to_signed_decimal(small_pos_f64));
-    assert!(small_neg == f64_to_signed_decimal(small_neg_f64));
-    assert!(dec_neg == f64_to_signed_decimal(dec_neg_f64));
-
-    // Test division by zero
-    let num = SignedDecimal::one();
-    let denom = SignedDecimal::zero();
-    assert_eq!(num.div(denom), SignedDecimal::zero());
-
-    // Test try_into
-    {
-        let x = SignedDecimal::one().neg();
-        TryInto::<Decimal256>::try_into(x).expect_err("Should throw error for negatives");
-
-        let y = SignedDecimal::one();
-        let _: Decimal256 = y.try_into().expect("Should be able to convert");
-    }
-
-    // Test cmp
-    {
-        let lhs = SignedDecimal::one().neg();
-        let rhs = SignedDecimal::one();
-        assert_eq!(lhs.cmp(&rhs), Ordering::Less);
-        assert_eq!(rhs.cmp(&lhs), Ordering::Greater);
-        assert_eq!(rhs.cmp(&rhs), Ordering::Equal);
-
-        let x = SignedDecimal::from_str("50").unwrap();
-        let y = SignedDecimal::from_str("10").unwrap();
-        assert_eq!(x.cmp(&y), Ordering::Greater);
-        assert_eq!(y.cmp(&x), Ordering::Less);
-        let z = SignedDecimal::from_str("50").unwrap();
-        assert_eq!(x.cmp(&z), Ordering::Equal);
-    }
-
-    {
-        let x = Decimal256::default();
-        let z = SignedDecimal::from(x);
-        let y = SignedDecimal::default();
-        assert_eq!(z, y);
+    fn default() -> Self {
+        Self { value: Decimal256::default(), is_positive: true }
     }
 }
 
-#[test]
-fn test_sign_fns() {
-    let mut sd = SignedDecimal::from_str("4.1243").expect("have to be able to SignedDecimal::from_str");
-    assert!(sd.is_positive());
-    assert!(!sd.is_negative());
+#[cfg(test)]
+mod test {
+    use std::{cmp::Ordering, ops::Div};
 
-    sd = sd.neg();
-    assert!(!sd.is_positive());
-    assert!(sd.is_negative());
+    use super::*;
+    #[test]
+    fn signed_decimal_test() {
+        let big_pos = SignedDecimal::from_str("100").unwrap();
+        let big_neg = SignedDecimal::from_str("-100").unwrap();
+        let small_pos = SignedDecimal::from_str("50").unwrap();
+        let small_neg = SignedDecimal::from_str("-50").unwrap();
+        let dec_neg = SignedDecimal::from_str("-50.50").unwrap();
 
-    sd = sd.abs();
-    assert!(sd.is_positive());
-    assert!(!sd.is_negative());
-}
+        let big_pos_f64 = f64::from_str("100").unwrap();
+        let big_neg_f64 = f64::from_str("-100").unwrap();
+        let small_pos_f64 = f64::from_str("50").unwrap();
+        let small_neg_f64 = f64::from_str("-50").unwrap();
+        let dec_neg_f64 = f64::from_str("-50.50").unwrap();
 
-#[test]
-fn test_zero_is_positive() {
-    {
-        let mut x = SignedDecimal::zero();
-        let y = SignedDecimal::one().neg();
+        // Test partial_cmp
+        assert!(big_pos > big_neg);
+        assert!(big_pos > small_neg);
+        assert!(big_pos > small_pos);
+        assert!(big_pos > big_neg);
+        assert!(small_pos > small_neg);
+        assert!(small_pos > big_neg);
+        assert!(small_neg > big_neg);
 
-        x = x * y;
-        assert!(x.is_positive);
+        // Utility function
+        fn f64_to_signed_decimal(val: f64) -> SignedDecimal {
+            SignedDecimal::from_str(val.to_string().as_str()).unwrap()
+        }
 
-        x = y * x;
-        assert!(x.is_positive);
+        // Test mul
+        assert!(big_pos * small_pos == f64_to_signed_decimal(big_pos_f64 * small_pos_f64));
+        assert!(big_pos * small_neg == f64_to_signed_decimal(big_pos_f64 * small_neg_f64));
+        assert!(big_pos * big_neg == f64_to_signed_decimal(big_pos_f64 * big_neg_f64));
+        assert!(small_pos * small_neg == f64_to_signed_decimal(small_pos_f64 * small_neg_f64));
+        assert!(small_pos * big_neg == f64_to_signed_decimal(small_pos_f64 * big_neg_f64));
+        assert!(small_neg * big_neg == f64_to_signed_decimal(small_neg_f64 * big_neg_f64));
 
-        x = x / y;
-        assert!(x.is_positive);
+        // Test div
+        assert!(big_pos / small_pos == f64_to_signed_decimal(big_pos_f64 / small_pos_f64));
+        assert!(big_pos / small_neg == f64_to_signed_decimal(big_pos_f64 / small_neg_f64));
+        assert!(big_pos / big_neg == f64_to_signed_decimal(big_pos_f64 / big_neg_f64));
+        assert!(small_pos / small_neg == f64_to_signed_decimal(small_pos_f64 / small_neg_f64));
+        assert!(small_pos / big_neg == f64_to_signed_decimal(small_pos_f64 / big_neg_f64));
+        assert!(small_neg / big_neg == f64_to_signed_decimal(small_neg_f64 / big_neg_f64));
 
-        x += y;
-        x = x - y;
-        assert!(x.is_positive);
+        // Test add
+        assert!(big_pos + small_pos == f64_to_signed_decimal(big_pos_f64 + small_pos_f64));
+        assert!(big_pos + small_neg == f64_to_signed_decimal(big_pos_f64 + small_neg_f64));
+        assert!(big_pos + big_neg == f64_to_signed_decimal(big_pos_f64 + big_neg_f64));
+        assert!(small_pos + small_neg == f64_to_signed_decimal(small_pos_f64 + small_neg_f64));
+        assert!(small_pos + big_neg == f64_to_signed_decimal(small_pos_f64 + big_neg_f64));
+        assert!(small_neg + big_neg == f64_to_signed_decimal(small_neg_f64 + big_neg_f64));
 
-        x = x - y;
-        x += y;
-        assert!(x.is_positive);
+        // Test sub
+        assert!(big_pos - small_pos == f64_to_signed_decimal(big_pos_f64 - small_pos_f64));
+        assert!(big_pos - small_neg == f64_to_signed_decimal(big_pos_f64 - small_neg_f64));
+        assert!(big_pos - big_neg == f64_to_signed_decimal(big_pos_f64 - big_neg_f64));
+        assert!(small_pos - small_neg == f64_to_signed_decimal(small_pos_f64 - small_neg_f64));
+        assert!(small_pos - big_neg == f64_to_signed_decimal(small_pos_f64 - big_neg_f64));
+        assert!(small_neg - big_neg == f64_to_signed_decimal(small_neg_f64 - big_neg_f64));
+
+        // Test conversion
+        assert!(big_pos == f64_to_signed_decimal(big_pos_f64));
+        assert!(big_neg == f64_to_signed_decimal(big_neg_f64));
+        assert!(small_pos == f64_to_signed_decimal(small_pos_f64));
+        assert!(small_neg == f64_to_signed_decimal(small_neg_f64));
+        assert!(dec_neg == f64_to_signed_decimal(dec_neg_f64));
+
+        // Test division by zero
+        let num = SignedDecimal::one();
+        let denom = SignedDecimal::zero();
+        assert_eq!(num.div(denom), SignedDecimal::zero());
+
+        // Test try_into
+        {
+            let x = SignedDecimal::one().neg();
+            TryInto::<Decimal256>::try_into(x).expect_err("Should throw error for negatives");
+
+            let y = SignedDecimal::one();
+            let _: Decimal256 = y.try_into().expect("Should be able to convert");
+        }
+
+        // Test cmp
+        {
+            let lhs = SignedDecimal::one().neg();
+            let rhs = SignedDecimal::one();
+            assert_eq!(lhs.cmp(&rhs), Ordering::Less);
+            assert_eq!(rhs.cmp(&lhs), Ordering::Greater);
+            assert_eq!(rhs.cmp(&rhs), Ordering::Equal);
+
+            let x = SignedDecimal::from_str("50").unwrap();
+            let y = SignedDecimal::from_str("10").unwrap();
+            assert_eq!(x.cmp(&y), Ordering::Greater);
+            assert_eq!(y.cmp(&x), Ordering::Less);
+            let z = SignedDecimal::from_str("50").unwrap();
+            assert_eq!(x.cmp(&z), Ordering::Equal);
+        }
+
+        {
+            let x = Decimal256::default();
+            let z = SignedDecimal::from(x);
+            let y = SignedDecimal::default();
+            assert_eq!(z, y);
+        }
     }
-    {
-        let x = SignedDecimal::one() * SignedDecimal::from_str("5.0").unwrap();
-        let y = SignedDecimal::one() * SignedDecimal::from_str("-5.0").unwrap();
 
-        let z = x + y;
-        assert!(z.is_positive);
+    #[test]
+    fn test_sign_fns() {
+        let mut sd = SignedDecimal::from_str("4.1243").expect("have to be able to SignedDecimal::from_str");
+        assert!(sd.is_positive());
+        assert!(!sd.is_negative());
 
-        let z = -x - y;
-        assert!(z.is_positive);
+        sd = sd.neg();
+        assert!(!sd.is_positive());
+        assert!(sd.is_negative());
+
+        sd = sd.abs();
+        assert!(sd.is_positive());
+        assert!(!sd.is_negative());
     }
-    {
-        let x = -SignedDecimal::zero();
-        assert!(x.is_positive);
-    }
-    {
-        let x = SignedDecimal::zero().neg();
-        assert!(x.is_positive);
-    }
-    {
-        let x = SignedDecimal::zero().neg();
-        let y = SignedDecimal::from_str("5.0").unwrap();
 
-        let z = x * y;
-        assert!(z.is_positive);
+    #[test]
+    fn test_zero_is_positive() {
+        {
+            let mut x = SignedDecimal::zero();
+            let y = SignedDecimal::one().neg();
 
-        let z = y * x;
-        assert!(z.is_positive);
+            x = x * y;
+            assert!(x.is_positive);
+
+            x = y * x;
+            assert!(x.is_positive);
+
+            x = x / y;
+            assert!(x.is_positive);
+
+            x += y;
+            x = x - y;
+            assert!(x.is_positive);
+
+            x = x - y;
+            x += y;
+            assert!(x.is_positive);
+        }
+        {
+            let x = SignedDecimal::one() * SignedDecimal::from_str("5.0").unwrap();
+            let y = SignedDecimal::one() * SignedDecimal::from_str("-5.0").unwrap();
+
+            let z = x + y;
+            assert!(z.is_positive);
+
+            let z = -x - y;
+            assert!(z.is_positive);
+        }
+        {
+            let x = -SignedDecimal::zero();
+            assert!(x.is_positive);
+        }
+        {
+            let x = SignedDecimal::zero().neg();
+            assert!(x.is_positive);
+        }
+        {
+            let x = SignedDecimal::zero().neg();
+            let y = SignedDecimal::from_str("5.0").unwrap();
+
+            let z = x * y;
+            assert!(z.is_positive);
+
+            let z = y * x;
+            assert!(z.is_positive);
+        }
     }
 }
