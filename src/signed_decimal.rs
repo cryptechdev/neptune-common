@@ -14,34 +14,29 @@ use crate::error::CommonError;
 /// Decimal256 with a sign
 #[derive(Clone, Copy, Debug, Eq)]
 pub struct SignedDecimal {
-    value: Decimal256,
+    value:       Decimal256,
     is_positive: bool,
 }
 
 impl SignedDecimal {
-    pub fn abs(&self) -> Self {
-        Self { value: self.value, is_positive: true }
+    pub const fn abs(&self) -> Self { Self { value: self.value, is_positive: true } }
+
+    pub const fn signum(&self) -> Self {
+        match self.is_positive {
+            true => Self::one(),
+            false => Self { value: Decimal256::one(), is_positive: false },
+        }
     }
 
-    pub fn is_positive(&self) -> bool {
-        self.is_positive
-    }
+    pub const fn is_positive(&self) -> bool { self.is_positive }
 
-    pub fn is_negative(&self) -> bool {
-        !self.is_positive
-    }
+    pub const fn is_negative(&self) -> bool { !self.is_positive }
 
-    pub fn one() -> Self {
-        Self { value: Decimal256::one(), is_positive: true }
-    }
+    pub const fn one() -> Self { Self { value: Decimal256::one(), is_positive: true } }
 
-    pub fn zero() -> Self {
-        Self { value: Decimal256::zero(), is_positive: true }
-    }
+    pub const fn zero() -> Self { Self { value: Decimal256::zero(), is_positive: true } }
 
-    pub fn is_zero(&self) -> bool {
-        self.value.is_zero()
-    }
+    pub const fn is_zero(&self) -> bool { self.value.is_zero() }
 }
 
 impl Mul<Decimal256> for SignedDecimal {
@@ -99,17 +94,13 @@ impl std::ops::Add<Self> for SignedDecimal {
 }
 
 impl std::ops::AddAssign<Self> for SignedDecimal {
-    fn add_assign(&mut self, rhs: Self) {
-        *self = *self + rhs;
-    }
+    fn add_assign(&mut self, rhs: Self) { *self = *self + rhs; }
 }
 
 impl std::ops::Sub<Self> for SignedDecimal {
     type Output = Self;
 
-    fn sub(self, rhs: Self) -> Self {
-        self + Self { value: rhs.value, is_positive: !rhs.is_positive }
-    }
+    fn sub(self, rhs: Self) -> Self { self + Self { value: rhs.value, is_positive: !rhs.is_positive } }
 }
 
 impl std::ops::Mul<Self> for SignedDecimal {
@@ -160,15 +151,11 @@ impl std::cmp::PartialOrd for SignedDecimal {
 }
 
 impl std::cmp::Ord for SignedDecimal {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.partial_cmp(other).unwrap()
-    }
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering { self.partial_cmp(other).unwrap() }
 }
 
 impl From<Decimal256> for SignedDecimal {
-    fn from(value: Decimal256) -> Self {
-        Self { value, is_positive: true }
-    }
+    fn from(value: Decimal256) -> Self { Self { value, is_positive: true } }
 }
 
 impl FromStr for SignedDecimal {
@@ -230,25 +217,17 @@ impl<'de> de::Visitor<'de> for SignedDecimalVisitor {
 }
 
 impl JsonSchema for SignedDecimal {
-    fn schema_name() -> String {
-        "SignedDecimal".to_string()
-    }
+    fn schema_name() -> String { "SignedDecimal".to_string() }
 
-    fn json_schema(gen: &mut schemars::gen::SchemaGenerator) -> schemars::schema::Schema {
-        String::json_schema(gen)
-    }
+    fn json_schema(gen: &mut schemars::gen::SchemaGenerator) -> schemars::schema::Schema { String::json_schema(gen) }
 
-    fn is_referenceable() -> bool {
-        true
-    }
+    fn is_referenceable() -> bool { true }
 }
 
 impl TryFrom<&str> for SignedDecimal {
     type Error = CommonError;
 
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
-        Self::from_str(value)
-    }
+    fn try_from(value: &str) -> Result<Self, Self::Error> { Self::from_str(value) }
 }
 
 impl TryInto<Decimal256> for SignedDecimal {
@@ -263,9 +242,7 @@ impl TryInto<Decimal256> for SignedDecimal {
 }
 
 impl Default for SignedDecimal {
-    fn default() -> Self {
-        Self { value: Decimal256::default(), is_positive: true }
-    }
+    fn default() -> Self { Self { value: Decimal256::default(), is_positive: true } }
 }
 
 #[cfg(test)]
