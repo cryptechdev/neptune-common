@@ -20,7 +20,7 @@ where
     O: 'static,
     V: Serialize + DeserializeOwned,
 {
-    let start = start_after.map(|key| key.inclusive_bound().unwrap());
+    let start = start_after.map(|key| key.exclusive_bound().unwrap());
     let vec = match limit {
         Some(limit) => map
             .range(deps.storage, start, None, Order::Ascending)
