@@ -70,9 +70,13 @@ impl<'a> Prefixer<'a> for &'a AssetInfo {
 }
 
 impl<'a> Bounder<'a> for &'a AssetInfo {
-    fn inclusive_bound(self) -> Option<Bound<'a, Self>> { Some(Bound::inclusive(self)) }
+    fn inclusive_bound(self) -> Option<Bound<'a, Self>> {
+        Some(Bound::inclusive(self))
+    }
 
-    fn exclusive_bound(self) -> Option<Bound<'a, Self>> { Some(Bound::exclusive(self)) }
+    fn exclusive_bound(self) -> Option<Bound<'a, Self>> {
+        Some(Bound::exclusive(self))
+    }
 }
 
 impl<'a> KeyDeserialize for &'a AssetInfo {
@@ -94,17 +98,21 @@ impl<'a> KeyDeserialize for &'a AssetInfo {
 }
 
 impl KeyVec<Self> for AssetInfo {
-    fn key_vec(&self) -> Vec<Self> { vec![self.clone()] }
+    fn key_vec(&self) -> Vec<Self> {
+        vec![self.clone()]
+    }
 }
 
 #[cw_serde]
 pub struct AssetAmount {
-    pub info:   AssetInfo,
+    pub info: AssetInfo,
     pub amount: Uint256,
 }
 
 impl From<AssetAmount> for (AssetInfo, Uint256) {
-    fn from(val: AssetAmount) -> Self { (val.info, val.amount) }
+    fn from(val: AssetAmount) -> Self {
+        (val.info, val.amount)
+    }
 }
 
 impl From<Coin> for AssetAmount {
@@ -135,7 +143,7 @@ mod test {
     use cosmwasm_std::testing::mock_dependencies;
 
     use super::*;
-    use crate::storage::read_map;
+    use crate::storage::paginate;
 
     #[test]
     fn test_key_serialize_deserialzie() {
@@ -158,7 +166,7 @@ mod test {
         assert_eq!(ASSETS.load(deps.storage, &token_1).unwrap(), "token_1");
         assert_eq!(ASSETS.load(deps.storage, &token_2).unwrap(), "token_2");
 
-        let list = read_map(deps.as_ref(), None, None, ASSETS).unwrap();
+        let list = paginate(deps.as_ref(), None, None, ASSETS).unwrap();
         assert_eq!(list.len(), 4);
         // native tokens have a discriminate of 0 so are sorted first
         assert_eq!(list[0].0, native_token_1);

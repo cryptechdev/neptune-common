@@ -11,8 +11,25 @@ use crate::{
 pub const PARAMS_KEY: &str = "params";
 pub const STATE_KEY: &str = "state";
 
+// pub enum Method<K> {
+//     Paginate { start_after: Option<K>, limit: Option<u32> },
+//     Select { keys: Vec<K> },
+// }
+
+// pub fn read_map<'k, K, O, V>(deps: Deps, method: Method<K>, map: Map<'k, K, V>) -> Result<NeptuneMap<O, V>, CommonError>
+// where
+//     K: Bounder<'k> + PrimaryKey<'k> + KeyDeserialize<Output = O>,
+//     O: 'static,
+//     V: Serialize + DeserializeOwned,
+// {
+//     match method {
+//         Method::Paginate { start_after, limit } => paginate(deps, start_after, limit, map),
+//         Method::Select { keys } => select(deps, keys, map),
+//     }
+// }
+
 /// Reads a map from storage is ascending order.
-pub fn read_map<'k, K, O, V>(
+pub fn paginate<'k, K, O, V>(
     deps: Deps, start_after: Option<K>, limit: Option<u32>, map: Map<'k, K, V>,
 ) -> Result<NeptuneMap<O, V>, CommonError>
 where
@@ -30,6 +47,21 @@ where
     };
     Ok(vec.into())
 }
+
+// pub fn select<'k, K, O, V>(deps: Deps, keys: Vec<K>, map: Map<'k, K, V>) -> Result<NeptuneMap<O, V>, CommonError>
+// where
+//     K: Bounder<'k> + PrimaryKey<'k> + KeyDeserialize<Output = O>,
+//     O: 'static,
+//     V: Serialize + DeserializeOwned,
+// {
+//     keys.into_iter()
+//         .map(|asset| {
+//             let val = map.load(deps.storage, asset.clone())?;
+//             Ok((asset, val))
+//         })
+//         .collect::<CommonResult<NeptuneMap<K, _>>>();
+//     todo!()
+// }
 
 /// Trait for types which act as a storage cache with cosmwasm storage plus.
 pub trait Cacher<'s, 'k, K, V>
