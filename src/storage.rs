@@ -14,7 +14,7 @@ pub const STATE_KEY: &str = "state";
 /// Reads a map from storage is ascending order.
 pub fn read_map<'k, K, O, V>(
     deps: Deps, start_after: Option<K>, limit: Option<u32>, map: Map<'k, K, V>,
-) -> Result<Vec<(O, V)>, CommonError>
+) -> Result<NeptuneMap<O, V>, CommonError>
 where
     K: Bounder<'k> + PrimaryKey<'k> + KeyDeserialize<Output = O>,
     O: 'static,
@@ -28,7 +28,7 @@ where
             .collect::<Result<Vec<_>, _>>()?,
         None => map.range(deps.storage, start, None, Order::Ascending).collect::<Result<Vec<_>, _>>()?,
     };
-    Ok(vec)
+    Ok(vec.into())
 }
 
 /// Trait for types which act as a storage cache with cosmwasm storage plus.
