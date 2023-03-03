@@ -9,16 +9,16 @@ pub enum CommonError {
     #[error("{0}")]
     Generic(String),
 
-    #[error("{0}")]
+    #[error(transparent)]
     Std(#[from] StdError),
 
-    #[error("{0}")]
+    #[error(transparent)]
     Auth(#[from] NeptAuthError),
 
-    #[error("{0}")]
+    #[error(transparent)]
     ConversionOverflowError(#[from] ConversionOverflowError),
 
-    #[error("{0}")]
+    #[error(transparent)]
     Decimal256RangeExceeded(#[from] Decimal256RangeExceeded),
 
     #[error("Key not found: {0}")]
