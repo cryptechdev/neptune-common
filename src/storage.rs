@@ -98,8 +98,8 @@ pub struct CacheInner<V>
 where
     V: Clone + Serialize + DeserializeOwned,
 {
-    pub value: V,
-    pub is_modified: bool,
+    value: V,
+    is_modified: bool,
 }
 
 /// A cache which stores values in memory to avoid repeated disk reads/writes.
@@ -189,10 +189,6 @@ where
 {
     pub fn new(storage: Map<'s, &'k K, V>, addr: Addr) -> Self {
         Self { map: NeptuneMap::new(), storage, addr }
-    }
-
-    pub fn inner(&self) -> &NeptuneMap<K, V> {
-        &self.map
     }
 }
 
