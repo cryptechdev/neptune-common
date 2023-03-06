@@ -94,12 +94,12 @@ where
 }
 
 /// The inner part of the cache which keeps track of wether the value has been modified.
-struct CacheInner<V>
+pub struct CacheInner<V>
 where
     V: Clone + Serialize + DeserializeOwned,
 {
-    value: V,
-    is_modified: bool,
+    pub value: V,
+    pub is_modified: bool,
 }
 
 /// A cache which stores values in memory to avoid repeated disk reads/writes.
@@ -119,7 +119,7 @@ where
     K: Clone + Debug + PartialEq + Eq,
     V: Clone + Serialize + DeserializeOwned,
 {
-    pub fn new(storage: Map<'s, &'k K, V>) -> Self {
+    pub const fn new(storage: Map<'s, &'k K, V>) -> Self {
         Self { map: NeptuneMap::new(), storage }
     }
 
@@ -189,6 +189,10 @@ where
 {
     pub fn new(storage: Map<'s, &'k K, V>, addr: Addr) -> Self {
         Self { map: NeptuneMap::new(), storage, addr }
+    }
+
+    pub fn inner(&self) -> &NeptuneMap<K, V> {
+        &self.map
     }
 }
 
