@@ -68,6 +68,7 @@ where
     Ok(vec.into())
 }
 
+/// Loads a specific set of values from a map.
 pub fn select<'k, K, O, V>(deps: Deps, keys: Vec<K>, map: Map<'k, K, V>) -> Result<NeptuneMap<O, V>, CommonError>
 where
     K: Bounder<'k> + PrimaryKey<'k> + KeyDeserialize<Output = O> + KeyToOutput<Output = O>,
