@@ -3,7 +3,7 @@ use cosmwasm_std::{to_binary, Addr, CosmosMsg, Decimal, Deps, Uint256};
 use crate::{
     asset::{AssetAmount, AssetInfo},
     error::CommonResult,
-    send_asset::{send_funds, SendFundsMsg},
+    send_asset::{send_assets, SendFundsMsg},
 };
 
 /// Sends a swap message to the given pool.
@@ -14,7 +14,7 @@ pub fn msg_to_dex(swap_pool: Addr, offer_asset: SendFundsMsg, offer_amount: Uint
         max_spread: Some(Decimal::percent(50)),
         to: None,
     })?;
-    let msg = send_funds(&swap_pool, offer_amount, offer_asset, swap_msg)?;
+    let msg = send_assets(&swap_pool, offer_amount, offer_asset, swap_msg)?;
     Ok(vec![msg])
 }
 
