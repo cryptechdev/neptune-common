@@ -25,8 +25,8 @@ pub enum CommonError {
     KeyNotFound(String),
 
     #[error("Only one tx is allowed per block")]
-    MultipleTx {},
+    MultipleTx,
 
     #[error("Missing Cw20HookMg")]
-    MissingHookMsg {},
+    MissingHookMsg,
 }
