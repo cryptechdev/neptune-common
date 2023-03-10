@@ -84,7 +84,7 @@ where
 }
 
 /// Trait for types which act as a storage cache with cosmwasm storage plus.
-pub trait Cacher<'s, 'k, K, V>
+pub trait Cacher<K, V>
 where
     for<'a> &'a K: Debug + PartialEq + Eq + PrimaryKey<'a>,
     K: Clone + Debug + PartialEq + Eq,
@@ -134,7 +134,7 @@ where
     }
 }
 
-impl<'s, 'k, K, V> Cacher<'s, 'k, K, V> for Cache<'s, 'k, K, V>
+impl<'s, 'k, K, V> Cacher<K, V> for Cache<'s, 'k, K, V>
 where
     for<'a> &'a K: Debug + PartialEq + Eq + PrimaryKey<'a>,
     K: Clone + Debug + PartialEq + Eq,
@@ -193,7 +193,7 @@ where
     }
 }
 
-impl<'s, 'k, K, V> Cacher<'s, 'k, K, V> for QueryCache<'s, 'k, K, V>
+impl<'s, 'k, K, V> Cacher<K, V> for QueryCache<'s, 'k, K, V>
 where
     for<'a> &'a K: Debug + PartialEq + Eq + PrimaryKey<'a>,
     K: Clone + Debug + PartialEq + Eq,
