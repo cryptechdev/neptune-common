@@ -1,7 +1,8 @@
+use std::fmt::Debug;
+
 use cosmwasm_std::{Addr, Deps, DepsMut, Order};
 use cw_storage_plus::{Bounder, KeyDeserialize, Map, PrimaryKey};
 use serde::{de::DeserializeOwned, Serialize};
-use std::fmt::Debug;
 
 use crate::{
     asset::AssetInfo,
@@ -24,16 +25,14 @@ pub trait KeyToOutput {
 
 impl KeyToOutput for &Addr {
     type Output = Addr;
-    fn to_output(self) -> Self::Output {
-        self.clone()
-    }
+
+    fn to_output(self) -> Self::Output { self.clone() }
 }
 
 impl KeyToOutput for &AssetInfo {
     type Output = AssetInfo;
-    fn to_output(self) -> Self::Output {
-        self.clone()
-    }
+
+    fn to_output(self) -> Self::Output { self.clone() }
 }
 
 pub fn read_map<'k, K, O, V>(deps: Deps, method: Method<K>, map: Map<'k, K, V>) -> Result<NeptuneMap<O, V>, CommonError>
@@ -99,7 +98,7 @@ pub struct CacheInner<V>
 where
     V: Clone + Serialize + DeserializeOwned,
 {
-    value: V,
+    value:       V,
     is_modified: bool,
 }
 
@@ -110,7 +109,7 @@ where
     K: Clone + Debug + PartialEq + Eq,
     V: Clone + Serialize + DeserializeOwned,
 {
-    map: NeptuneMap<K, CacheInner<V>>,
+    map:     NeptuneMap<K, CacheInner<V>>,
     storage: Map<'s, &'k K, V>,
 }
 
@@ -120,9 +119,7 @@ where
     K: Clone + Debug + PartialEq + Eq,
     V: Clone + Serialize + DeserializeOwned,
 {
-    pub const fn new(storage: Map<'s, &'k K, V>) -> Self {
-        Self { map: NeptuneMap::new(), storage }
-    }
+    pub const fn new(storage: Map<'s, &'k K, V>) -> Self { Self { map: NeptuneMap::new(), storage } }
 
     pub fn save(&mut self, deps: DepsMut<'_>) -> CommonResult<()> {
         for (key, inner) in self.map.iter() {
@@ -177,9 +174,9 @@ where
     K: Clone + Debug + PartialEq + Eq,
     V: Clone + Serialize + DeserializeOwned,
 {
-    map: NeptuneMap<K, V>,
+    map:     NeptuneMap<K, V>,
     storage: Map<'s, &'k K, V>,
-    addr: Addr,
+    addr:    Addr,
 }
 
 impl<'s, 'k, K, V> QueryCache<'s, 'k, K, V>
@@ -188,9 +185,7 @@ where
     K: Clone + Debug + PartialEq + Eq,
     V: Clone + Serialize + DeserializeOwned,
 {
-    pub fn new(storage: Map<'s, &'k K, V>, addr: Addr) -> Self {
-        Self { map: NeptuneMap::new(), storage, addr }
-    }
+    pub fn new(storage: Map<'s, &'k K, V>, addr: Addr) -> Self { Self { map: NeptuneMap::new(), storage, addr } }
 }
 
 impl<'s, 'k, K, V> Cacher<K, V> for QueryCache<'s, 'k, K, V>

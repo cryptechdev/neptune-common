@@ -9,10 +9,10 @@ use crate::{
 /// Sends a swap message to the given pool.
 pub fn msg_to_dex(swap_pool: Addr, offer_asset: SendFundsMsg, offer_amount: Uint256) -> CommonResult<Vec<CosmosMsg>> {
     let swap_msg = to_binary(&astroport::pair::ExecuteMsg::Swap {
-        offer_asset: AssetAmount { info: offer_asset.clone(), amount: offer_amount }.try_into()?,
+        offer_asset:  AssetAmount { info: offer_asset.clone(), amount: offer_amount }.try_into()?,
         belief_price: None,
-        max_spread: Some(Decimal::percent(50)),
-        to: None,
+        max_spread:   Some(Decimal::percent(50)),
+        to:           None,
     })?;
     let msg = send_assets(&swap_pool, offer_amount, offer_asset, swap_msg)?;
     Ok(vec![msg])

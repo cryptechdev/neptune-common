@@ -23,9 +23,7 @@ impl<K, V> NeptuneMap<K, V>
 where
     K: PartialEq + Clone + Debug,
 {
-    pub const fn new() -> Self {
-        Self(Vec::new())
-    }
+    pub const fn new() -> Self { Self(Vec::new()) }
 
     pub fn insert(&mut self, key: K, value: V) -> Option<V> {
         match self.get_mut(&key) {
@@ -37,9 +35,7 @@ where
         }
     }
 
-    pub fn contains_key(&self, key: &K) -> bool {
-        self.get(key).is_some()
-    }
+    pub fn contains_key(&self, key: &K) -> bool { self.get(key).is_some() }
 
     pub fn get(&self, key: &K) -> Option<&V> {
         match self.0.iter().position(|x| &x.0 == key) {
@@ -115,42 +111,32 @@ where
 }
 
 impl<K, V> Default for NeptuneMap<K, V> {
-    fn default() -> Self {
-        Self(Vec::new())
-    }
+    fn default() -> Self { Self(Vec::new()) }
 }
 
 impl<K, V> FromIterator<(K, V)> for NeptuneMap<K, V> {
-    fn from_iter<T: IntoIterator<Item = (K, V)>>(iter: T) -> Self {
-        Vec::<(K, V)>::from_iter(iter).into()
-    }
+    fn from_iter<T: IntoIterator<Item = (K, V)>>(iter: T) -> Self { Vec::<(K, V)>::from_iter(iter).into() }
 }
 
 impl<K, V> IntoIterator for NeptuneMap<K, V> {
     type IntoIter = <Vec<(K, V)> as IntoIterator>::IntoIter;
     type Item = (K, V);
 
-    fn into_iter(self) -> Self::IntoIter {
-        self.0.into_iter()
-    }
+    fn into_iter(self) -> Self::IntoIter { self.0.into_iter() }
 }
 
 impl<'a, K, V> IntoIterator for &'a NeptuneMap<K, V> {
     type IntoIter = <&'a Vec<(K, V)> as IntoIterator>::IntoIter;
     type Item = &'a (K, V);
 
-    fn into_iter(self) -> Self::IntoIter {
-        self.0.iter()
-    }
+    fn into_iter(self) -> Self::IntoIter { self.0.iter() }
 }
 
 impl<'a, K, V> IntoIterator for &'a mut NeptuneMap<K, V> {
     type IntoIter = <&'a mut Vec<(K, V)> as IntoIterator>::IntoIter;
     type Item = &'a mut (K, V);
 
-    fn into_iter(self) -> Self::IntoIter {
-        self.0.iter_mut()
-    }
+    fn into_iter(self) -> Self::IntoIter { self.0.iter_mut() }
 }
 
 impl<K, V> Mul<Decimal256> for NeptuneMap<K, V>
@@ -229,24 +215,18 @@ where
 }
 
 impl<K, V> From<Vec<(K, V)>> for NeptuneMap<K, V> {
-    fn from(object: Vec<(K, V)>) -> Self {
-        Self(object)
-    }
+    fn from(object: Vec<(K, V)>) -> Self { Self(object) }
 }
 
 impl<K, V> From<(K, V)> for NeptuneMap<K, V> {
-    fn from(object: (K, V)) -> Self {
-        Self(vec![object])
-    }
+    fn from(object: (K, V)) -> Self { Self(vec![object]) }
 }
 
 impl<K, V> Zeroed for NeptuneMap<K, V>
 where
     V: Zeroed,
 {
-    fn is_zeroed(&self) -> bool {
-        self.iter().all(|x| x.1.is_zeroed())
-    }
+    fn is_zeroed(&self) -> bool { self.iter().all(|x| x.1.is_zeroed()) }
 
     fn remove_zeroed(&mut self) {
         self.iter_mut().for_each(|x| x.1.remove_zeroed());
