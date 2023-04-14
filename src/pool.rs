@@ -12,15 +12,11 @@ pub struct Pool {
 }
 
 impl GetPoolMut for Pool {
-    fn get_pool_mut(&mut self) -> PoolMut {
-        PoolMut { balance: &mut self.balance, shares: &mut self.shares }
-    }
+    fn get_pool_mut(&mut self) -> PoolMut { PoolMut { balance: &mut self.balance, shares: &mut self.shares } }
 }
 
 impl GetPoolRef for Pool {
-    fn get_pool_ref(&self) -> PoolRef {
-        PoolRef { balance: &self.balance, shares: &self.shares }
-    }
+    fn get_pool_ref(&self) -> PoolRef { PoolRef { balance: &self.balance, shares: &self.shares } }
 }
 
 /// This serves the same purpose as Pool, but can be constructed directly from immutable references.
@@ -36,15 +32,11 @@ pub struct PoolMut<'a> {
 }
 
 impl GetPoolMut for PoolMut<'_> {
-    fn get_pool_mut(&mut self) -> PoolMut {
-        PoolMut { balance: self.balance, shares: self.shares }
-    }
+    fn get_pool_mut(&mut self) -> PoolMut { PoolMut { balance: self.balance, shares: self.shares } }
 }
 
 impl GetPoolRef for PoolMut<'_> {
-    fn get_pool_ref(&self) -> PoolRef {
-        PoolRef { balance: self.balance, shares: self.shares }
-    }
+    fn get_pool_ref(&self) -> PoolRef { PoolRef { balance: self.balance, shares: self.shares } }
 }
 
 pub trait GetPoolMut {
@@ -204,9 +196,7 @@ pub struct RemoveAmountResponse {
 }
 
 impl Zeroed for PoolAccount {
-    fn is_zeroed(&self) -> bool {
-        self.shares.is_zero()
-    }
+    fn is_zeroed(&self) -> bool { self.shares.is_zero() }
 
     fn remove_zeroed(&mut self) {}
 }

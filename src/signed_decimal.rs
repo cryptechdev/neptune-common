@@ -14,7 +14,7 @@ use crate::error::CommonError;
 /// Decimal256 with a sign
 #[derive(Clone, Copy, Debug, Eq)]
 pub struct SignedDecimal {
-    value:       Decimal256,
+    value: Decimal256,
     is_positive: bool,
 }
 

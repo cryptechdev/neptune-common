@@ -16,18 +16,14 @@
 macro_rules! warn {
     ($attrs:ident, $variant:expr) => {{
         fn f() {}
-        fn type_name_of<T>(_: T) -> &'static str {
-            std::any::type_name::<T>()
-        }
+        fn type_name_of<T>(_: T) -> &'static str { std::any::type_name::<T>() }
         let name = type_name_of(f);
         let msg = format!("{} In function: {}", $variant, &name[..name.len() - 3]);
         $attrs.push(cosmwasm_std::attr("neptune_warning", msg))
     }};
     ($variant:expr) => {{
         fn f() {}
-        fn type_name_of<T>(_: T) -> &'static str {
-            std::any::type_name::<T>()
-        }
+        fn type_name_of<T>(_: T) -> &'static str { std::any::type_name::<T>() }
         let name = type_name_of(f);
         let msg = format!("{} In function: {}", $variant, &name[..name.len() - 3]);
         attr("neptune_warning", msg)
