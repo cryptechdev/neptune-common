@@ -82,11 +82,12 @@ impl<'a> Bounder<'a> for &'a AssetInfo {
 impl<'a> KeyDeserialize for &'a AssetInfo {
     type Output = AssetInfo;
 
+    const KEY_LEN: u16 = 2;
+
     #[inline(always)]
     fn from_vec(mut value: Vec<u8>) -> StdResult<Self::Output> {
         // The discriminate is the first byte after the length prefix.
         // Split off after the 3rd.
-        println!("value (AssetInfo): {:?}", value);
         let split = value.split_off(3);
 
         // Pop off the last byte (3rd) in value which is the discriminate.
@@ -141,7 +142,7 @@ impl From<&Coin> for AssetAmount {
 
 #[cfg(test)]
 mod test {
-    use cosmwasm_std::{testing::mock_dependencies, Order};
+    use cosmwasm_std::testing::mock_dependencies;
 
     use super::*;
     use crate::storage::paginate;
@@ -169,87 +170,10 @@ mod test {
 
         let list = paginate(deps.as_ref(), None, None, ASSETS).unwrap();
         assert_eq!(list.len(), 4);
-        println!("list: {:?}", list);
         // native tokens have a discriminate of 0 so are sorted first
-        // assert_eq!(list[0].0, native_token_1);
-        // assert_eq!(list[1].0, native_token_2);
-        // assert_eq!(list[2].0, token_1);
-        // assert_eq!(list[3].0, token_2);
-    }
-
-    #[test]
-    fn test_tuple_key_serialize_deserialzie() {
-        let mut owned_deps = mock_dependencies();
-        let deps = owned_deps.as_mut();
-        pub const ASSET_TUPLE: cw_storage_plus::Map<(&AssetInfo, &AssetInfo), String> =
-            cw_storage_plus::Map::new("asset_tuple");
-
-        let native_token_1 = AssetInfo::NativeToken { denom: "utest1".into() };
-        let native_token_2 = AssetInfo::NativeToken { denom: "utest2".into() };
-        let token_1 = AssetInfo::Token { contract_addr: Addr::unchecked("my_address1") };
-        let token_2 = AssetInfo::Token { contract_addr: Addr::unchecked("my_address2") };
-
-        ASSET_TUPLE.save(deps.storage, (&token_1, &token_2), &"token_1,token_2".into()).unwrap();
-        ASSET_TUPLE
-            .save(deps.storage, (&native_token_1, &native_token_2), &"native_token_1,native_token_2".into())
-            .unwrap();
-
-        assert_eq!(ASSET_TUPLE.load(deps.storage, (&token_1, &token_2)).unwrap(), "token_1,token_2");
-        assert_eq!(
-            ASSET_TUPLE.load(deps.storage, (&native_token_1, &native_token_2)).unwrap(),
-            "native_token_1,native_token_2"
-        );
-
-        // let list = paginate(deps.as_ref(), None, None, ASSET_TUPLE).unwrap();
-        // let list = ASSET_TUPLE
-        //     .range_raw(deps.storage, None, None, Order::Ascending)
-        //     // .range(deps.storage, None, None, Order::Ascending)
-        //     .collect::<Result<Vec<_>, _>>()
-        //     .unwrap();
-        let list = ASSET_TUPLE
-            .range(deps.storage, None, None, Order::Ascending)
-            .collect::<Result<Vec<_>, _>>()
-            .unwrap();
-        // assert_eq!(list.len(), 4);
-        // native tokens have a discriminate of 0 so are sorted first
-        // assert_eq!(list[0].0, native_token_1);
-        // assert_eq!(list[1].0, native_token_2);
-        // assert_eq!(list[2].0, token_1);
-        // assert_eq!(list[3].0, token_2);
-    }
-
-    #[test]
-    fn test_tuple_tuple_key_serialize_deserialzie() {
-        let mut owned_deps = mock_dependencies();
-        let deps = owned_deps.as_mut();
-        pub const ASSET_TUPLE: cw_storage_plus::Map<((String, String), (String, String)), String> =
-            cw_storage_plus::Map::new("asset_tuple");
-
-        let a = String::from("a");
-        let b = String::from("a");
-        let c = String::from("a");
-        let d = String::from("a");
-
-        ASSET_TUPLE.save(deps.storage, ((a, b), (c, d)), &"abcd".to_string()).unwrap();
-
-        let list = ASSET_TUPLE
-            .range(deps.storage, None, None, Order::Ascending)
-            .collect::<Result<Vec<_>, _>>()
-            .unwrap();
-        // let list = ASSET_TUPLE
-        //     .range_raw(deps.storage, None, None, Order::Ascending)
-        //     // .range(deps.storage, None, None, Order::Ascending)
-        //     .collect::<Result<Vec<_>, _>>()
-        //     .unwrap();
-        // let list = ASSET_TUPLE
-        //     .range(deps.storage, None, None, Order::Ascending)
-        //     .collect::<Result<Vec<_>, _>>()
-        //     .unwrap();
-        // assert_eq!(list.len(), 4);
-        // native tokens have a discriminate of 0 so are sorted first
-        // assert_eq!(list[0].0, native_token_1);
-        // assert_eq!(list[1].0, native_token_2);
-        // assert_eq!(list[2].0, token_1);
-        // assert_eq!(list[3].0, token_2);
+        assert_eq!(list[0].0, native_token_1);
+        assert_eq!(list[1].0, native_token_2);
+        assert_eq!(list[2].0, token_1);
+        assert_eq!(list[3].0, token_2);
     }
 }

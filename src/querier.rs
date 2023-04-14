@@ -15,7 +15,7 @@ pub fn query_coin_balance(deps: Deps, account_addr: &Addr, denom: String) -> Res
 pub fn query_token_balance(deps: Deps, token_addr: &Addr, account_addr: &Addr) -> Result<Uint256, CommonError> {
     let res: Cw20BalanceResponse = deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
         contract_addr: token_addr.to_string(),
-        msg:           to_binary(&Cw20QueryMsg::Balance { address: account_addr.to_string() })?,
+        msg: to_binary(&Cw20QueryMsg::Balance { address: account_addr.to_string() })?,
     }))?;
     Ok(res.balance.into())
 }
@@ -24,7 +24,7 @@ pub fn query_token_balance(deps: Deps, token_addr: &Addr, account_addr: &Addr) -
 pub fn query_supply(deps: Deps, contract_addr: &Addr) -> Result<Uint256, CommonError> {
     let token_info: TokenInfoResponse = deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
         contract_addr: contract_addr.to_string(),
-        msg:           to_binary(&Cw20QueryMsg::TokenInfo {})?,
+        msg: to_binary(&Cw20QueryMsg::TokenInfo {})?,
     }))?;
 
     Ok(token_info.total_supply.into())
