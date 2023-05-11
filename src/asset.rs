@@ -82,7 +82,7 @@ impl<'a> Bounder<'a> for &'a AssetInfo {
 impl<'a> KeyDeserialize for &'a AssetInfo {
     type Output = AssetInfo;
 
-    const KEY_LEN: u16 = 2;
+    const KEY_ELEMS: u16 = 2;
 
     #[inline(always)]
     fn from_vec(mut value: Vec<u8>) -> StdResult<Self::Output> {

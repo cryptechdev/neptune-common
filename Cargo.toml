@@ -24,7 +24,7 @@ library = []
 
 [dependencies]
 cw20 = "1" 
-cw-storage-plus = { git = "https://github.com/ewoolsey/cw-storage-plus.git" }
+cw-storage-plus = { git = "https://github.com/cosmwasm/cw-storage-plus.git" }
 cosmwasm-std = "1"
 cosmwasm-derive = "1"
 cosmwasm-schema = "1"
