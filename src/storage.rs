@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use cosmwasm_std::{Addr, Deps, DepsMut, Order};
+use cosmwasm_std::{Addr, Deps, DepsMut, Order, CustomQuery};
 use cw_storage_plus::{Bounder, KeyDeserialize, Map, PrimaryKey};
 use serde::{de::DeserializeOwned, Serialize};
 
@@ -35,7 +35,7 @@ impl KeyToOutput for &AssetInfo {
     fn to_output(self) -> Self::Output { self.clone() }
 }
 
-pub fn read_map<'k, K, O, V>(deps: Deps, method: Method<K>, map: Map<'k, K, V>) -> Result<NeptuneMap<O, V>, CommonError>
+pub fn read_map<'k, K, O, V, C>(deps: Deps<'_, impl CustomQuery>, method: Method<K>, map: Map<'k, K, V>) -> Result<NeptuneMap<O, V>, CommonError>
 where
     K: Bounder<'k> + PrimaryKey<'k> + KeyDeserialize<Output = O> + KeyToOutput<Output = O>,
     O: 'static,
@@ -49,7 +49,7 @@ where
 
 /// Reads a map from storage is ascending order.
 pub fn paginate<'k, K, O, V>(
-    deps: Deps, start_after: Option<K>, limit: Option<u32>, map: Map<'k, K, V>,
+    deps: Deps<'_, impl CustomQuery>, start_after: Option<K>, limit: Option<u32>, map: Map<'k, K, V>,
 ) -> Result<NeptuneMap<O, V>, CommonError>
 where
     K: Bounder<'k> + PrimaryKey<'k> + KeyDeserialize<Output = O>,
@@ -68,7 +68,7 @@ where
 }
 
 /// Loads a specific set of values from a map.
-pub fn select<'k, K, O, V>(deps: Deps, keys: Vec<K>, map: Map<'k, K, V>) -> Result<NeptuneMap<O, V>, CommonError>
+pub fn select<'k, K, O, V>(deps: Deps<'_, impl CustomQuery>, keys: Vec<K>, map: Map<'k, K, V>) -> Result<NeptuneMap<O, V>, CommonError>
 where
     K: Bounder<'k> + PrimaryKey<'k> + KeyDeserialize<Output = O> + KeyToOutput<Output = O>,
     O: 'static,
@@ -89,8 +89,8 @@ where
     K: Clone + Debug + PartialEq + Eq,
     V: Clone + Serialize + DeserializeOwned,
 {
-    fn must_get_mut(&mut self, deps: Deps<'_>, key: &K) -> CommonResult<&mut V>;
-    fn must_get(&mut self, deps: Deps<'_>, key: &K) -> CommonResult<&V>;
+    fn must_get_mut(&mut self, deps: Deps<'_, impl CustomQuery>, key: &K) -> CommonResult<&mut V>;
+    fn must_get(&mut self, deps: Deps<'_, impl CustomQuery>, key: &K) -> CommonResult<&V>;
 }
 
 /// The inner part of the cache which keeps track of wether the value has been modified.
@@ -121,7 +121,7 @@ where
 {
     pub const fn new(storage: Map<'s, &'k K, V>) -> Self { Self { map: NeptuneMap::new(), storage } }
 
-    pub fn save(&mut self, deps: DepsMut<'_>) -> CommonResult<()> {
+    pub fn save(&mut self, deps: DepsMut<'_, impl CustomQuery>) -> CommonResult<()> {
         for (key, inner) in self.map.iter() {
             if inner.is_modified {
                 self.storage.save(deps.storage, key, &inner.value)?;
@@ -137,7 +137,7 @@ where
     K: Clone + Debug + PartialEq + Eq,
     V: Clone + Serialize + DeserializeOwned,
 {
-    fn must_get_mut(&mut self, deps: Deps<'_>, key: &K) -> CommonResult<&mut V> {
+    fn must_get_mut(&mut self, deps: Deps<'_, impl CustomQuery>, key: &K) -> CommonResult<&mut V> {
         match self.map.iter().position(|x| &x.0 == key) {
             Some(index) => {
                 let inner = &mut self.map.0[index].1;
@@ -153,7 +153,7 @@ where
         }
     }
 
-    fn must_get(&mut self, deps: Deps<'_>, key: &K) -> CommonResult<&V> {
+    fn must_get(&mut self, deps: Deps<'_, impl CustomQuery>, key: &K) -> CommonResult<&V> {
         match self.map.iter().position(|x| &x.0 == key) {
             Some(index) => Ok(&self.map.0[index].1.value),
             None => {
@@ -194,7 +194,7 @@ where
     K: Clone + Debug + PartialEq + Eq,
     V: Clone + Serialize + DeserializeOwned,
 {
-    fn must_get_mut(&mut self, deps: Deps<'_>, key: &K) -> CommonResult<&mut V> {
+    fn must_get_mut(&mut self, deps: Deps<'_, impl CustomQuery>, key: &K) -> CommonResult<&mut V> {
         match self.map.iter().position(|x| &x.0 == key) {
             Some(index) => Ok(&mut self.map.0[index].1),
             None => {
@@ -208,7 +208,7 @@ where
         }
     }
 
-    fn must_get(&mut self, deps: Deps<'_>, key: &K) -> CommonResult<&V> {
+    fn must_get(&mut self, deps: Deps<'_, impl CustomQuery>, key: &K) -> CommonResult<&V> {
         match self.map.iter().position(|x| &x.0 == key) {
             Some(index) => Ok(&self.map.0[index].1),
             None => {

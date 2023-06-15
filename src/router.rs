@@ -1,5 +1,5 @@
 // pub fn router_swap<E: Serialize+DeserializeOwned+From<BaseExecuteMsg>>(
-//     deps: Deps,
+//     deps: Deps<impl CustomQuery>,
 //     env: &Env,
 //     offer_asset_info: AssetInfo,
 //     ask_asset_info: AssetInfo,
@@ -51,7 +51,7 @@
 // }
 
 // // pub fn query_best_route(
-// //     deps: Deps,
+// //     deps: Deps<impl CustomQuery>,
 // //     offer_asset_info: AssetInfo,
 // //     ask_asset_info: AssetInfo,
 // //     offer_amount: Uint256,
@@ -90,7 +90,7 @@
 // // }
 
 // pub fn query_router_sim(
-//     deps: Deps,
+//     deps: Deps<impl CustomQuery>,
 //     offer_asset_info: AssetInfo,
 //     ask_asset_info: AssetInfo,
 //     offer_amount: Uint256
@@ -114,7 +114,7 @@
 // }
 
 // pub fn query_lp_token_simulation(
-//     deps: Deps,
+//     deps: Deps<impl CustomQuery>,
 //     pool_addr: &Addr,
 //     token_addr: &Addr,
 //     amount: Uint256
@@ -135,7 +135,7 @@
 // }
 
 // pub fn query_lp_coin_simulation(
-//     deps: Deps,
+//     deps: Deps<impl CustomQuery>,
 //     pool_addr: &Addr,
 //     offer_asset: AssetInfo,
 //     amount: Uint256
@@ -154,7 +154,7 @@
 // }
 
 // pub fn query_reverse_token_sim(
-//     deps: Deps,
+//     deps: Deps<impl CustomQuery>,
 //     pool_addr: Addr,
 //     token_addr: Addr,
 //     ask_amount: Uint256
@@ -185,7 +185,7 @@
 // }
 
 // pub fn query_reverse_coin_sim(
-//     deps: Deps,
+//     deps: Deps<impl CustomQuery>,
 //     pool_addr: Addr,
 //     ask_asset: AssetInfo,
 //     ask_amount: Uint256

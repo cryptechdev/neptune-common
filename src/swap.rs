@@ -1,4 +1,5 @@
-use cosmwasm_std::{to_binary, Addr, CosmosMsg, Decimal, Deps, Uint256};
+use astroport::pair::SimulationResponse;
+use cosmwasm_std::{to_binary, Addr, CosmosMsg, Decimal, Deps, Uint256, CustomQuery, QueryRequest, WasmQuery};
 
 use crate::{
     asset::{AssetAmount, AssetInfo},
@@ -20,16 +21,21 @@ pub fn msg_to_dex(swap_pool: Addr, offer_asset: SendFundsMsg, offer_amount: Uint
 
 /// queries a pool and simulates a swap.
 pub fn query_sim_pool(
-    deps: Deps, pool_addr: Addr, offer_asset: AssetInfo, offer_amount: Uint256,
+    deps: Deps<impl CustomQuery>, pool_addr: Addr, offer_asset: AssetInfo, offer_amount: Uint256,
 ) -> CommonResult<Uint256> {
     if offer_amount.is_zero() {
         return Ok(Uint256::zero());
     }
-    Ok(astroport::querier::simulate(
-        &deps.querier,
-        pool_addr,
-        &AssetAmount { info: offer_asset, amount: offer_amount }.try_into()?,
-    )?
-    .return_amount
-    .into())
+
+    let res: SimulationResponse = deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+        contract_addr: pool_addr.to_string(),
+        msg: to_binary(&astroport::pair::QueryMsg::Simulation {
+            offer_asset: astroport::asset::Asset {
+                info: offer_asset.into(),
+                amount: offer_amount.try_into()?,
+            }
+        })?,
+    }))?;
+
+    Ok(res.return_amount.into())
 }
