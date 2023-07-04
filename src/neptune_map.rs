@@ -5,7 +5,7 @@ use std::{
 };
 
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::Decimal256;
+use cosmwasm_std::{Decimal256};
 use shrinkwraprs::Shrinkwrap;
 
 use crate::{
@@ -162,6 +162,40 @@ where
             *val = val.clone() * rhs
         }
         self
+    }
+}
+
+impl<K, V> Add<(K, V)> for NeptuneMap<K, V>
+where
+    K: PartialEq + Clone + Debug,
+    V: AddAssign + Clone + Default,
+{
+    type Output = Self;
+
+    /// multiplies each value in the map with a Decimal256
+    /// ```
+    /// # use neptune_common::neptune_map::NeptuneMap;
+    /// # use cosmwasm_std::{Uint256, Decimal256};
+    /// # use std::str::FromStr;
+    /// let map: NeptuneMap<_, _> =
+    ///     vec![("foo", Uint256::from(2u64)), ("bar", Uint256::from(3u64))].into();
+    /// let other = ("foo", Uint256::from(8u64));
+    /// let result = map + other;
+    /// assert_eq!(result, vec![("foo", Uint256::from(10u64)), ("bar", Uint256::from(3u64))].into());
+    /// ```
+    fn add(mut self, rhs: (K, V)) -> Self::Output {
+        *self.get_mut_or_default(&rhs.0) += rhs.1;
+        self
+    }
+}
+
+impl<K, V> AddAssign<(K, V)> for NeptuneMap<K, V>
+where
+    K: PartialEq + Clone + Debug,
+    V: AddAssign + Clone + Default,
+{
+    fn add_assign(&mut self, rhs: (K, V)) {
+        *self.get_mut_or_default(&rhs.0) += rhs.1;
     }
 }
 
