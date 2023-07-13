@@ -120,6 +120,13 @@ where
     V: Clone + Serialize + DeserializeOwned,
 {
     pub const fn new(storage: Map<'s, &'k K, V>) -> Self { Self { map: NeptuneMap::new(), storage } }
+    
+    /// Caution when using, assumes values are unmodified upon creation of the Cache object.
+    pub fn new_from(storage: Map<'s, &'k K, V>, map: NeptuneMap<K, V>) -> Self { 
+        Self { map: map.into_iter().map(|(k, v)|{
+            (k, CacheInner{ value: v, is_modified: false })    
+        }).collect(), storage } 
+    }
 
     pub fn save(&mut self, deps: DepsMut<'_, impl CustomQuery>) -> CommonResult<()> {
         for (key, inner) in self.map.iter() {
