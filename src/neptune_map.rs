@@ -5,7 +5,7 @@ use std::{
 };
 
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Decimal256};
+use cosmwasm_std::Decimal256;
 use shrinkwraprs::Shrinkwrap;
 
 use crate::{
