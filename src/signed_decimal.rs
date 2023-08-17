@@ -136,22 +136,24 @@ impl std::cmp::PartialEq for SignedDecimal {
 
 impl std::cmp::PartialOrd for SignedDecimal {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        if self.is_positive == other.is_positive {
-            if self.is_positive {
-                self.value.partial_cmp(&other.value)
-            } else {
-                other.value.partial_cmp(&self.value)
-            }
-        } else if self.is_positive {
-            Some(std::cmp::Ordering::Greater)
-        } else {
-            Some(std::cmp::Ordering::Less)
-        }
+        Some(self.cmp(other))
     }
 }
 
 impl std::cmp::Ord for SignedDecimal {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering { self.partial_cmp(other).unwrap() }
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        if self.is_positive == other.is_positive {
+            if self.is_positive {
+                self.value.cmp(&other.value)
+            } else {
+                other.value.cmp(&self.value)
+            }
+        } else if self.is_positive {
+            std::cmp::Ordering::Greater
+        } else {
+            std::cmp::Ordering::Less
+        }
+    }
 }
 
 impl From<Decimal256> for SignedDecimal {
