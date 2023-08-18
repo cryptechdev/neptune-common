@@ -28,6 +28,12 @@ impl AssetInfo {
     }
 }
 
+impl From<Addr> for AssetInfo {
+    fn from(contract_addr: Addr) -> Self {
+        AssetInfo::Token { contract_addr }
+    }
+}
+
 impl Display for AssetInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
