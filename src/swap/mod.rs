@@ -8,7 +8,7 @@ use cosmwasm_std::{Deps, Uint256, CosmosMsg, Env, Decimal256};
 
 use crate::{asset::AssetInfo, query_wrapper::QueryWrapper, error::{NeptuneResult, NeptuneError}, msg_wrapper::MsgWrapper};
 
-use self::{liquidity_pool::LiquidityPool, order_book::OrderBook};
+use self::liquidity_pool::LiquidityPool;
 
 pub const EXCHANGES: cw_storage_plus::Map<(&AssetInfo, &AssetInfo), Exchange> =
     cw_storage_plus::Map::new("exchanges");
@@ -96,6 +96,7 @@ impl Swap for cw_storage_plus::Map<'static, (&AssetInfo, &AssetInfo), Exchange> 
     ) -> NeptuneResult<Vec<CosmosMsg<MsgWrapper>>> {
         match get_exchange_type(deps, self, [offer_asset, ask_asset])? {
             Exchange::LiquidityPool(liquidity_pool) => liquidity_pool.swap(deps, env, offer_asset, ask_asset, offer_amount),
+            #[cfg(feature = "injective")] 
             Exchange::OrderBook(order_book) => order_book.swap(deps, env, offer_asset, ask_asset, offer_amount),
         }
     }
@@ -105,6 +106,7 @@ impl Swap for cw_storage_plus::Map<'static, (&AssetInfo, &AssetInfo), Exchange> 
     ) -> NeptuneResult<Vec<CosmosMsg<MsgWrapper>>> {
         match get_exchange_type(deps, self, [offer_asset, ask_asset])? {
             Exchange::LiquidityPool(liquidity_pool) => liquidity_pool.swap_ask(deps, env, offer_asset, ask_asset, ask_amount),
+            #[cfg(feature = "injective")] 
             Exchange::OrderBook(order_book) => order_book.swap_ask(deps, env, offer_asset, ask_asset, ask_amount),
         }
     }
@@ -114,6 +116,7 @@ impl Swap for cw_storage_plus::Map<'static, (&AssetInfo, &AssetInfo), Exchange> 
     ) -> NeptuneResult<Uint256> {
         match get_exchange_type(deps, self, [offer_asset, ask_asset])? {
             Exchange::LiquidityPool(liquidity_pool) => liquidity_pool.query_sim(deps, offer_asset, ask_asset, offer_amount),
+            #[cfg(feature = "injective")] 
             Exchange::OrderBook(order_book) => order_book.query_sim(deps, offer_asset, ask_asset, offer_amount)
         }
     }
@@ -123,6 +126,7 @@ impl Swap for cw_storage_plus::Map<'static, (&AssetInfo, &AssetInfo), Exchange> 
     ) -> NeptuneResult<Uint256> {
         match get_exchange_type(deps, self, [offer_asset, ask_asset])? {
             Exchange::LiquidityPool(liquidity_pool) => liquidity_pool.query_reverse_sim(deps, offer_asset, ask_asset, ask_amount),
+            #[cfg(feature = "injective")] 
             Exchange::OrderBook(order_book) => order_book.query_reverse_sim(deps, offer_asset, ask_asset, ask_amount),
         }
     }
@@ -132,6 +136,7 @@ impl Swap for cw_storage_plus::Map<'static, (&AssetInfo, &AssetInfo), Exchange> 
     ) -> NeptuneResult<Decimal256> {
         match get_exchange_type(deps, self, [offer_asset, ask_asset])? {
             Exchange::LiquidityPool(liquidity_pool) => liquidity_pool.query_swap_ratio(deps, offer_asset, ask_asset, offer_amount),
+            #[cfg(feature = "injective")] 
             Exchange::OrderBook(order_book) => order_book.query_swap_ratio(deps, offer_asset, ask_asset, offer_amount),
         }
     }
@@ -141,6 +146,7 @@ impl Swap for cw_storage_plus::Map<'static, (&AssetInfo, &AssetInfo), Exchange> 
     ) -> NeptuneResult<Decimal256> {
         match get_exchange_type(deps, self, [offer_asset, ask_asset])? {
             Exchange::LiquidityPool(liquidity_pool) => liquidity_pool.query_reverse_swap_ratio(deps, offer_asset, ask_asset, ask_amount),
+            #[cfg(feature = "injective")] 
             Exchange::OrderBook(order_book) => order_book.query_reverse_swap_ratio(deps, offer_asset, ask_asset, ask_amount),
         }
     }

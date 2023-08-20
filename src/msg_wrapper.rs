@@ -1,4 +1,4 @@
-#[cfg(feature = "generic")]
+#[cfg(not(feature = "injective"))]
 pub type MsgWrapper = cosmwasm_std::Empty;
 
 #[cfg(feature = "injective")]
