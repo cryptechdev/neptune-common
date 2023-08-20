@@ -17,7 +17,7 @@ pub const EXCHANGES: cw_storage_plus::Map<(&AssetInfo, &AssetInfo), Exchange> =
 pub enum Exchange {
     LiquidityPool(LiquidityPool),
     #[cfg(feature = "injective")]
-    OrderBook(OrderBook)
+    OrderBook(order_book::OrderBook)
 }
 
 fn get_exchange_type(
@@ -30,27 +30,6 @@ fn get_exchange_type(
         .may_load(deps.storage, (assets[0], assets[1]))?
         .ok_or_else(|| NeptuneError::PoolNotFound([assets[0].clone(), assets[1].clone()]))
 }
-
-// pub fn get_exchange(
-//     deps: Deps<QueryWrapper>, 
-//     exchanges: &cw_storage_plus::Map<(&AssetInfo, &AssetInfo), Exchange>, 
-//     hub_asset: AssetInfo, 
-//     assets: Vec<AssetInfo>
-// ) -> NeptuneMap<[AssetInfo; 2], Exchange> {
-//     assets
-//         .iter()
-//         .filter_map(|x| {
-//             if x != &hub_asset {
-//                 let mut key = [hub_asset.clone(), x.clone()];
-//                 key.sort_unstable();
-//                 let addr = exchanges.load(deps.storage, (&key[0], &key[1])).unwrap();
-//                 Some((key, addr))
-//             } else {
-//                 None
-//             }
-//         })
-//         .collect::<NeptuneMap<_, _>>()
-// }
 
 pub trait Swap {
     /// Creates a message to swap assets
