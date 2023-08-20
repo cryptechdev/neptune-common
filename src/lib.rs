@@ -13,3 +13,6 @@ pub mod swap;
 pub mod traits;
 pub mod utilities;
 pub mod warn;
+pub mod query_wrapper;
+pub mod msg_wrapper;
+pub mod injective;

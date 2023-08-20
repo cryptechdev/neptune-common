@@ -136,15 +136,9 @@ impl TryInto<Coin> for AssetAmount {
     }
 }
 
-impl From<&Coin> for AssetAmount {
-    fn from(coin: &Coin) -> Self {
-        Self { info: AssetInfo::NativeToken { denom: coin.denom.clone() }, amount: coin.amount.into() }
-    }
-}
-
 #[cfg(test)]
 mod test {
-    use cosmwasm_std::testing::mock_dependencies;
+    use cosmwasm_std::{testing::mock_dependencies, Uint128};
 
     use super::*;
     use crate::storage::paginate;
@@ -177,5 +171,26 @@ mod test {
         assert_eq!(list[1].0, native_token_2);
         assert_eq!(list[2].0, token_1);
         assert_eq!(list[3].0, token_2);
+    }
+
+    #[test]
+    fn test_as_str() {
+        let string = "test".to_string();
+        let native = AssetInfo::NativeToken { denom: string.clone() };
+        let token = AssetInfo::Token { contract_addr: Addr::unchecked(string.clone()) };
+        assert_eq!(string.as_str(), native.as_str());
+        assert_eq!(string.as_str(), token.as_str());
+    }
+
+    #[test]
+    fn test_coin_conversion() {
+        let coin = Coin { denom: "test".to_string(), amount: Uint128::from(0u64) };
+        let asset_amount: AssetAmount = coin.clone().into();
+        let res: Coin = asset_amount.try_into().unwrap();
+        assert_eq!(coin, res);
+
+        let asset_amount = AssetAmount{ info: AssetInfo::Token { contract_addr: Addr::unchecked("test") }, amount: 0u64.into() };
+        let res: Result<Coin, _> = asset_amount.try_into();
+        assert!(res.is_err())
     }
 }

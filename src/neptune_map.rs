@@ -9,7 +9,7 @@ use cosmwasm_std::Decimal256;
 use shrinkwraprs::Shrinkwrap;
 
 use crate::{
-    error::{CommonError, CommonResult},
+    error::{NeptuneError, NeptuneResult},
     traits::{KeyVec, Zeroed},
 };
 
@@ -51,12 +51,12 @@ where
         }
     }
 
-    pub fn must_get(&self, key: &K) -> CommonResult<&V> {
-        self.get(key).ok_or_else(|| CommonError::KeyNotFound(format!("{key:?}")))
+    pub fn must_get(&self, key: &K) -> NeptuneResult<&V> {
+        self.get(key).ok_or_else(|| NeptuneError::KeyNotFound(format!("{key:?}")))
     }
 
-    pub fn must_get_mut(&mut self, key: &K) -> CommonResult<&mut V> {
-        self.get_mut(key).ok_or_else(|| CommonError::KeyNotFound(format!("{key:?}")))
+    pub fn must_get_mut(&mut self, key: &K) -> NeptuneResult<&mut V> {
+        self.get_mut(key).ok_or_else(|| NeptuneError::KeyNotFound(format!("{key:?}")))
     }
 
     pub fn get_mut_or_default<'a>(&'a mut self, key: &K) -> &'a mut V
@@ -82,7 +82,7 @@ where
     /// let values = quantity.mul_all(&prices).unwrap();
     /// assert_eq!(values, vec![("cars", 4.0), ("bikes", 3.0)].into());
     /// ```
-    pub fn mul_all<U>(self, rhs: &NeptuneMap<K, U>) -> CommonResult<NeptuneMap<K, <V as Mul<U>>::Output>>
+    pub fn mul_all<U>(self, rhs: &NeptuneMap<K, U>) -> NeptuneResult<NeptuneMap<K, <V as Mul<U>>::Output>>
     where
         V: Mul<U>,
         U: Clone,

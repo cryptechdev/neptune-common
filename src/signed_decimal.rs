@@ -9,7 +9,7 @@ use cosmwasm_std::Decimal256;
 use schemars::JsonSchema;
 use serde::{de, ser, Deserialize, Deserializer, Serialize};
 
-use crate::error::CommonError;
+use crate::error::NeptuneError;
 
 /// Decimal256 with a sign
 #[derive(Clone, Copy, Debug, Eq)]
@@ -161,7 +161,7 @@ impl From<Decimal256> for SignedDecimal {
 }
 
 impl FromStr for SignedDecimal {
-    type Err = CommonError;
+    type Err = NeptuneError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let sign;
@@ -227,17 +227,17 @@ impl JsonSchema for SignedDecimal {
 }
 
 impl TryFrom<&str> for SignedDecimal {
-    type Error = CommonError;
+    type Error = NeptuneError;
 
     fn try_from(value: &str) -> Result<Self, Self::Error> { Self::from_str(value) }
 }
 
 impl TryInto<Decimal256> for SignedDecimal {
-    type Error = CommonError;
+    type Error = NeptuneError;
 
     fn try_into(self) -> Result<Decimal256, Self::Error> {
         if !self.is_positive && !self.value.is_zero() {
-            return Err(CommonError::Generic("Cannot convert negative SignedDecimal to Decimal256".into()));
+            return Err(NeptuneError::Generic("Cannot convert negative SignedDecimal to Decimal256".into()));
         }
         Ok(self.value)
     }

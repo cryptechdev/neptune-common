@@ -6,7 +6,7 @@ use serde::{de::DeserializeOwned, Serialize};
 
 use crate::{
     asset::AssetInfo,
-    error::{CommonError, CommonResult},
+    error::{NeptuneError, NeptuneResult},
     neptune_map::*,
 };
 
@@ -35,7 +35,7 @@ impl KeyToOutput for &AssetInfo {
     fn to_output(self) -> Self::Output { self.clone() }
 }
 
-pub fn read_map<'k, K, O, V, C>(deps: Deps<'_, impl CustomQuery>, method: Method<K>, map: Map<'k, K, V>) -> Result<NeptuneMap<O, V>, CommonError>
+pub fn read_map<'k, K, O, V, C>(deps: Deps<'_, impl CustomQuery>, method: Method<K>, map: Map<'k, K, V>) -> Result<NeptuneMap<O, V>, NeptuneError>
 where
     K: Bounder<'k> + PrimaryKey<'k> + KeyDeserialize<Output = O> + KeyToOutput<Output = O>,
     O: 'static,
@@ -50,7 +50,7 @@ where
 /// Reads a map from storage is ascending order.
 pub fn paginate<'k, K, O, V>(
     deps: Deps<'_, impl CustomQuery>, start_after: Option<K>, limit: Option<u32>, map: Map<'k, K, V>,
-) -> Result<NeptuneMap<O, V>, CommonError>
+) -> Result<NeptuneMap<O, V>, NeptuneError>
 where
     K: Bounder<'k> + PrimaryKey<'k> + KeyDeserialize<Output = O>,
     O: 'static,
@@ -68,7 +68,7 @@ where
 }
 
 /// Loads a specific set of values from a map.
-pub fn select<'k, K, O, V>(deps: Deps<'_, impl CustomQuery>, keys: Vec<K>, map: Map<'k, K, V>) -> Result<NeptuneMap<O, V>, CommonError>
+pub fn select<'k, K, O, V>(deps: Deps<'_, impl CustomQuery>, keys: Vec<K>, map: Map<'k, K, V>) -> Result<NeptuneMap<O, V>, NeptuneError>
 where
     K: Bounder<'k> + PrimaryKey<'k> + KeyDeserialize<Output = O> + KeyToOutput<Output = O>,
     O: 'static,
@@ -79,7 +79,7 @@ where
             let value = map.load(deps.storage, asset.clone())?;
             Ok((asset.to_output(), value))
         })
-        .collect::<CommonResult<NeptuneMap<O, _>>>()
+        .collect::<NeptuneResult<NeptuneMap<O, _>>>()
 }
 
 /// Trait for types which act as a storage cache with cosmwasm storage plus.
@@ -89,8 +89,8 @@ where
     K: Clone + Debug + PartialEq + Eq,
     V: Clone + Serialize + DeserializeOwned,
 {
-    fn must_get_mut(&mut self, deps: Deps<'_, impl CustomQuery>, key: &K) -> CommonResult<&mut V>;
-    fn must_get(&mut self, deps: Deps<'_, impl CustomQuery>, key: &K) -> CommonResult<&V>;
+    fn must_get_mut(&mut self, deps: Deps<'_, impl CustomQuery>, key: &K) -> NeptuneResult<&mut V>;
+    fn must_get(&mut self, deps: Deps<'_, impl CustomQuery>, key: &K) -> NeptuneResult<&V>;
 }
 
 /// The inner part of the cache which keeps track of wether the value has been modified.
@@ -128,7 +128,7 @@ where
         }).collect(), storage } 
     }
 
-    pub fn save(&mut self, deps: DepsMut<'_, impl CustomQuery>) -> CommonResult<()> {
+    pub fn save(&mut self, deps: DepsMut<'_, impl CustomQuery>) -> NeptuneResult<()> {
         for (key, inner) in self.map.iter() {
             if inner.is_modified {
                 self.storage.save(deps.storage, key, &inner.value)?;
@@ -144,7 +144,7 @@ where
     K: Clone + Debug + PartialEq + Eq,
     V: Clone + Serialize + DeserializeOwned,
 {
-    fn must_get_mut(&mut self, deps: Deps<'_, impl CustomQuery>, key: &K) -> CommonResult<&mut V> {
+    fn must_get_mut(&mut self, deps: Deps<'_, impl CustomQuery>, key: &K) -> NeptuneResult<&mut V> {
         match self.map.iter().position(|x| &x.0 == key) {
             Some(index) => {
                 let inner = &mut self.map.0[index].1;
@@ -160,7 +160,7 @@ where
         }
     }
 
-    fn must_get(&mut self, deps: Deps<'_, impl CustomQuery>, key: &K) -> CommonResult<&V> {
+    fn must_get(&mut self, deps: Deps<'_, impl CustomQuery>, key: &K) -> NeptuneResult<&V> {
         match self.map.iter().position(|x| &x.0 == key) {
             Some(index) => Ok(&self.map.0[index].1.value),
             None => {
@@ -201,28 +201,28 @@ where
     K: Clone + Debug + PartialEq + Eq,
     V: Clone + Serialize + DeserializeOwned,
 {
-    fn must_get_mut(&mut self, deps: Deps<'_, impl CustomQuery>, key: &K) -> CommonResult<&mut V> {
+    fn must_get_mut(&mut self, deps: Deps<'_, impl CustomQuery>, key: &K) -> NeptuneResult<&mut V> {
         match self.map.iter().position(|x| &x.0 == key) {
             Some(index) => Ok(&mut self.map.0[index].1),
             None => {
                 let value = self
                     .storage
                     .query(&deps.querier, self.addr.clone(), key)?
-                    .ok_or_else(|| CommonError::KeyNotFound(format!("{key:?}")))?;
+                    .ok_or_else(|| NeptuneError::KeyNotFound(format!("{key:?}")))?;
                 self.map.insert(key.clone(), value);
                 Ok(&mut self.map.last_mut().unwrap().1)
             }
         }
     }
 
-    fn must_get(&mut self, deps: Deps<'_, impl CustomQuery>, key: &K) -> CommonResult<&V> {
+    fn must_get(&mut self, deps: Deps<'_, impl CustomQuery>, key: &K) -> NeptuneResult<&V> {
         match self.map.iter().position(|x| &x.0 == key) {
             Some(index) => Ok(&self.map.0[index].1),
             None => {
                 let value = self
                     .storage
                     .query(&deps.querier, self.addr.clone(), key)?
-                    .ok_or_else(|| CommonError::KeyNotFound(format!("{key:?}")))?;
+                    .ok_or_else(|| NeptuneError::KeyNotFound(format!("{key:?}")))?;
                 self.map.insert(key.clone(), value);
                 Ok(&self.map.last().unwrap().1)
             }
