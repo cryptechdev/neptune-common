@@ -8,10 +8,11 @@ use crate::{neptune_map::NeptuneMap, traits::KeyVec};
 
 /// AssetInfo can represent either a native token or a token in cosmwasm.
 #[cw_serde]
+#[repr(u8)]
 #[derive(Eq, PartialOrd, Ord)]
 pub enum AssetInfo {
-    Token { contract_addr: Addr },
-    NativeToken { denom: String },
+    NativeToken { denom: String } = 0,
+    Token { contract_addr: Addr } = 1,
 }
 
 const NATIVE_TOKEN_DISCRIMINANT: u8 = 0;
@@ -90,6 +91,8 @@ impl<'a> KeyDeserialize for &'a AssetInfo {
 
     const KEY_ELEMS: u16 = 2;
 
+    /// See: https://github.com/xd009642/tarpaulin/issues/1192    
+    #[cfg(not(tarpaulin_include))]
     #[inline(always)]
     fn from_vec(mut value: Vec<u8>) -> StdResult<Self::Output> {
         // The discriminate is the first byte after the length prefix.
@@ -149,11 +152,12 @@ mod test {
         let deps = owned_deps.as_mut();
         pub const ASSETS: cw_storage_plus::Map<&AssetInfo, String> = cw_storage_plus::Map::new("assets");
 
-        let native_token_1 = AssetInfo::NativeToken { denom: "utest1".into() };
-        let native_token_2 = AssetInfo::NativeToken { denom: "utest2".into() };
         let token_1 = AssetInfo::Token { contract_addr: Addr::unchecked("my_address1") };
         let token_2 = AssetInfo::Token { contract_addr: Addr::unchecked("my_address2") };
+        let native_token_1 = AssetInfo::NativeToken { denom: "utest1".into() };
+        let native_token_2 = AssetInfo::NativeToken { denom: "utest2".into() };
 
+        // Add the assets out of order.
         ASSETS.save(deps.storage, &token_1, &"token_1".into()).unwrap();
         ASSETS.save(deps.storage, &token_2, &"token_2".into()).unwrap();
         ASSETS.save(deps.storage, &native_token_1, &"native_token_1".into()).unwrap();
@@ -165,13 +169,30 @@ mod test {
         assert_eq!(ASSETS.load(deps.storage, &token_2).unwrap(), "token_2");
 
         let list = paginate(deps.as_ref(), None, None, ASSETS).unwrap();
+        let mut sorted = list.clone();
+        sorted.sort();
+        assert_eq!(list, sorted);
         assert_eq!(list.len(), 4);
 
-        // native tokens have a discriminate of 0 so are sorted first
+        // Native tokens have a discriminate of 0 so are sorted first.
         assert_eq!(list[0].0, native_token_1);
         assert_eq!(list[1].0, native_token_2);
         assert_eq!(list[2].0, token_1);
         assert_eq!(list[3].0, token_2);
+
+        // Test the bounder and prefixer impl.
+        let list = paginate(deps.as_ref(), Some(&native_token_1), Some(2), ASSETS).unwrap();
+        let mut sorted = list.clone();
+        sorted.sort();
+        assert_eq!(list, sorted);
+        assert_eq!(list.len(), 2);
+        assert_eq!(
+            list, 
+            vec![
+                (native_token_2, "native_token_2".to_string()),
+                (token_1, "token_1".to_string())
+            ].into()
+        )
     }
 
     #[test]

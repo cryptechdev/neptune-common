@@ -35,7 +35,7 @@ impl KeyToOutput for &AssetInfo {
     fn to_output(self) -> Self::Output { self.clone() }
 }
 
-pub fn read_map<'k, K, O, V, C>(deps: Deps<'_, impl CustomQuery>, method: Method<K>, map: Map<'k, K, V>) -> Result<NeptuneMap<O, V>, NeptuneError>
+pub fn read_map<'k, K, O, V>(deps: Deps<'_, impl CustomQuery>, method: Method<K>, map: Map<'k, K, V>) -> Result<NeptuneMap<O, V>, NeptuneError>
 where
     K: Bounder<'k> + PrimaryKey<'k> + KeyDeserialize<Output = O> + KeyToOutput<Output = O>,
     O: 'static,
@@ -227,5 +227,38 @@ where
                 Ok(&self.map.last().unwrap().1)
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use cosmwasm_std::testing::mock_dependencies;
+
+    use crate::asset::AssetMap;
+
+    use super::*;
+
+    #[test]
+    fn test_read_map() {
+        let mut owned_deps = mock_dependencies();
+        let deps = owned_deps.as_mut();
+        pub const ASSETS: cw_storage_plus::Map<&AssetInfo, String> = cw_storage_plus::Map::new("assets");
+
+        let token_1 = AssetInfo::Token { contract_addr: Addr::unchecked("my_address1") };
+        let token_2 = AssetInfo::Token { contract_addr: Addr::unchecked("my_address2") };
+        let native_token_1 = AssetInfo::NativeToken { denom: "utest1".into() };
+        let native_token_2 = AssetInfo::NativeToken { denom: "utest2".into() };
+
+        // Add the assets out of order.
+        ASSETS.save(deps.storage, &token_1, &"token_1".into()).unwrap();
+        ASSETS.save(deps.storage, &token_2, &"token_2".into()).unwrap();
+        ASSETS.save(deps.storage, &native_token_1, &"native_token_1".into()).unwrap();
+        ASSETS.save(deps.storage, &native_token_2, &"native_token_2".into()).unwrap();
+
+        let res: AssetMap<String> = read_map(deps.as_ref(), Method::Select { keys: vec![&token_1] }, ASSETS).unwrap();
+        assert_eq!(res, (token_1, "token_1".to_string()).into());
+
+        let res: AssetMap<String> = read_map(deps.as_ref(), Method::Paginate { start_after: None, limit: Some(1) } , ASSETS).unwrap();
+        assert_eq!(res, (native_token_1, "native_token_1".to_string()).into());
     }
 }
