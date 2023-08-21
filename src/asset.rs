@@ -166,6 +166,7 @@ mod test {
 
         let list = paginate(deps.as_ref(), None, None, ASSETS).unwrap();
         assert_eq!(list.len(), 4);
+
         // native tokens have a discriminate of 0 so are sorted first
         assert_eq!(list[0].0, native_token_1);
         assert_eq!(list[1].0, native_token_2);
@@ -190,7 +191,10 @@ mod test {
         assert_eq!(coin, res);
 
         let asset_amount = AssetAmount{ info: AssetInfo::Token { contract_addr: Addr::unchecked("test") }, amount: 0u64.into() };
-        let res: Result<Coin, _> = asset_amount.try_into();
-        assert!(res.is_err())
+        let res: Result<Coin, _> = asset_amount.clone().try_into();
+        assert!(res.is_err());
+
+        let tuple: (AssetInfo, Uint256) = asset_amount.into();
+        assert_eq!(tuple, (AssetInfo::Token { contract_addr: Addr::unchecked("test".to_string()) }, 0u64.into()))
     }
 }
