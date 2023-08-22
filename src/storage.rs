@@ -13,8 +13,13 @@ pub const PARAMS_KEY: &str = "params";
 pub const STATE_KEY: &str = "state";
 
 pub enum Method<K> {
-    Paginate { start_after: Option<K>, limit: Option<u32> },
-    Select { keys: Vec<K> },
+    Paginate {
+        start_after: Option<K>,
+        limit: Option<u32>,
+    },
+    Select {
+        keys: Vec<K>,
+    },
 }
 
 pub trait KeyToOutput {
@@ -36,7 +41,11 @@ impl KeyToOutput for &AssetInfo {
     }
 }
 
-pub fn read_map<'k, K, O, V>(deps: Deps, method: Method<K>, map: Map<'k, K, V>) -> Result<NeptuneMap<O, V>, CommonError>
+pub fn read_map<'k, K, O, V>(
+    deps: Deps,
+    method: Method<K>,
+    map: Map<'k, K, V>,
+) -> Result<NeptuneMap<O, V>, CommonError>
 where
     K: Bounder<'k> + PrimaryKey<'k> + KeyDeserialize<Output = O> + KeyToOutput<Output = O>,
     O: 'static,
@@ -50,7 +59,10 @@ where
 
 /// Reads a map from storage is ascending order.
 pub fn paginate<'k, K, O, V>(
-    deps: Deps, start_after: Option<K>, limit: Option<u32>, map: Map<'k, K, V>,
+    deps: Deps,
+    start_after: Option<K>,
+    limit: Option<u32>,
+    map: Map<'k, K, V>,
 ) -> Result<NeptuneMap<O, V>, CommonError>
 where
     K: Bounder<'k> + PrimaryKey<'k> + KeyDeserialize<Output = O>,
@@ -63,13 +75,19 @@ where
             .range(deps.storage, start, None, Order::Ascending)
             .take(limit as usize)
             .collect::<Result<Vec<_>, _>>()?,
-        None => map.range(deps.storage, start, None, Order::Ascending).collect::<Result<Vec<_>, _>>()?,
+        None => map
+            .range(deps.storage, start, None, Order::Ascending)
+            .collect::<Result<Vec<_>, _>>()?,
     };
     Ok(vec.into())
 }
 
 /// Loads a specific set of values from a map.
-pub fn select<'k, K, O, V>(deps: Deps, keys: Vec<K>, map: Map<'k, K, V>) -> Result<NeptuneMap<O, V>, CommonError>
+pub fn select<'k, K, O, V>(
+    deps: Deps,
+    keys: Vec<K>,
+    map: Map<'k, K, V>,
+) -> Result<NeptuneMap<O, V>, CommonError>
 where
     K: Bounder<'k> + PrimaryKey<'k> + KeyDeserialize<Output = O> + KeyToOutput<Output = O>,
     O: 'static,
@@ -121,7 +139,10 @@ where
     V: Clone + Serialize + DeserializeOwned,
 {
     pub const fn new(storage: Map<'s, &'k K, V>) -> Self {
-        Self { map: NeptuneMap::new(), storage }
+        Self {
+            map: NeptuneMap::new(),
+            storage,
+        }
     }
 
     pub fn save(&mut self, deps: DepsMut<'_>) -> CommonResult<()> {
@@ -149,7 +170,10 @@ where
             }
             None => {
                 let value = self.storage.load(deps.storage, key)?;
-                let inner = CacheInner { value, is_modified: true };
+                let inner = CacheInner {
+                    value,
+                    is_modified: true,
+                };
                 self.map.insert(key.clone(), inner);
                 Ok(&mut self.map.last_mut().unwrap().1.value)
             }
@@ -161,7 +185,10 @@ where
             Some(index) => Ok(&self.map.0[index].1.value),
             None => {
                 let value = self.storage.load(deps.storage, key)?;
-                let inner = CacheInner { value, is_modified: false };
+                let inner = CacheInner {
+                    value,
+                    is_modified: false,
+                };
                 self.map.insert(key.clone(), inner);
                 Ok(&self.map.last().unwrap().1.value)
             }
@@ -189,7 +216,11 @@ where
     V: Clone + Serialize + DeserializeOwned,
 {
     pub fn new(storage: Map<'s, &'k K, V>, addr: Addr) -> Self {
-        Self { map: NeptuneMap::new(), storage, addr }
+        Self {
+            map: NeptuneMap::new(),
+            storage,
+            addr,
+        }
     }
 }
 

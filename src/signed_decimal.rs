@@ -14,29 +14,53 @@ use crate::error::CommonError;
 /// Decimal256 with a sign
 #[derive(Clone, Copy, Debug, Eq)]
 pub struct SignedDecimal {
-    value:       Decimal256,
+    value: Decimal256,
     is_positive: bool,
 }
 
 impl SignedDecimal {
-    pub const fn abs(&self) -> Self { Self { value: self.value, is_positive: true } }
+    pub const fn abs(&self) -> Self {
+        Self {
+            value: self.value,
+            is_positive: true,
+        }
+    }
 
     pub const fn signum(&self) -> Self {
         match self.is_positive {
             true => Self::one(),
-            false => Self { value: Decimal256::one(), is_positive: false },
+            false => Self {
+                value: Decimal256::one(),
+                is_positive: false,
+            },
         }
     }
 
-    pub const fn is_positive(&self) -> bool { self.is_positive }
+    pub const fn is_positive(&self) -> bool {
+        self.is_positive
+    }
 
-    pub const fn is_negative(&self) -> bool { !self.is_positive }
+    pub const fn is_negative(&self) -> bool {
+        !self.is_positive
+    }
 
-    pub const fn one() -> Self { Self { value: Decimal256::one(), is_positive: true } }
+    pub const fn one() -> Self {
+        Self {
+            value: Decimal256::one(),
+            is_positive: true,
+        }
+    }
 
-    pub const fn zero() -> Self { Self { value: Decimal256::zero(), is_positive: true } }
+    pub const fn zero() -> Self {
+        Self {
+            value: Decimal256::zero(),
+            is_positive: true,
+        }
+    }
 
-    pub const fn is_zero(&self) -> bool { self.value.is_zero() }
+    pub const fn is_zero(&self) -> bool {
+        self.value.is_zero()
+    }
 }
 
 impl Mul<Decimal256> for SignedDecimal {
@@ -55,7 +79,10 @@ impl Neg for SignedDecimal {
         if self.is_zero() {
             return self;
         }
-        Self { value: self.value, is_positive: !self.is_positive }
+        Self {
+            value: self.value,
+            is_positive: !self.is_positive,
+        }
     }
 }
 
@@ -94,13 +121,20 @@ impl std::ops::Add<Self> for SignedDecimal {
 }
 
 impl std::ops::AddAssign<Self> for SignedDecimal {
-    fn add_assign(&mut self, rhs: Self) { *self = *self + rhs; }
+    fn add_assign(&mut self, rhs: Self) {
+        *self = *self + rhs;
+    }
 }
 
 impl std::ops::Sub<Self> for SignedDecimal {
     type Output = Self;
 
-    fn sub(self, rhs: Self) -> Self { self + Self { value: rhs.value, is_positive: !rhs.is_positive } }
+    fn sub(self, rhs: Self) -> Self {
+        self + Self {
+            value: rhs.value,
+            is_positive: !rhs.is_positive,
+        }
+    }
 }
 
 impl std::ops::Mul<Self> for SignedDecimal {
@@ -108,7 +142,10 @@ impl std::ops::Mul<Self> for SignedDecimal {
 
     fn mul(self, rhs: Self) -> Self {
         let value = self.value * rhs.value;
-        Self { value, is_positive: self.is_positive == rhs.is_positive || value.is_zero() }
+        Self {
+            value,
+            is_positive: self.is_positive == rhs.is_positive || value.is_zero(),
+        }
     }
 }
 
@@ -121,7 +158,10 @@ impl std::ops::Div<Self> for SignedDecimal {
         } else {
             self.value / rhs.value
         };
-        Self { value, is_positive: self.is_positive == rhs.is_positive || value.is_zero() }
+        Self {
+            value,
+            is_positive: self.is_positive == rhs.is_positive || value.is_zero(),
+        }
     }
 }
 
@@ -151,11 +191,18 @@ impl std::cmp::PartialOrd for SignedDecimal {
 }
 
 impl std::cmp::Ord for SignedDecimal {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering { self.partial_cmp(other).unwrap() }
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.partial_cmp(other).unwrap()
+    }
 }
 
 impl From<Decimal256> for SignedDecimal {
-    fn from(value: Decimal256) -> Self { Self { value, is_positive: true } }
+    fn from(value: Decimal256) -> Self {
+        Self {
+            value,
+            is_positive: true,
+        }
+    }
 }
 
 impl FromStr for SignedDecimal {
@@ -172,7 +219,10 @@ impl FromStr for SignedDecimal {
             sign = true;
             val_str = s;
         }
-        Ok(Self { value: Decimal256::from_str(val_str)?, is_positive: sign })
+        Ok(Self {
+            value: Decimal256::from_str(val_str)?,
+            is_positive: sign,
+        })
     }
 }
 
@@ -211,23 +261,33 @@ impl<'de> de::Visitor<'de> for SignedDecimalVisitor {
     {
         match Self::Value::from_str(v) {
             Ok(d) => Ok(d),
-            Err(e) => Err(E::custom(format!("Error parsing signed_decimal '{v}': {e}"))),
+            Err(e) => Err(E::custom(format!(
+                "Error parsing signed_decimal '{v}': {e}"
+            ))),
         }
     }
 }
 
 impl JsonSchema for SignedDecimal {
-    fn schema_name() -> String { "SignedDecimal".to_string() }
+    fn schema_name() -> String {
+        "SignedDecimal".to_string()
+    }
 
-    fn json_schema(gen: &mut schemars::gen::SchemaGenerator) -> schemars::schema::Schema { String::json_schema(gen) }
+    fn json_schema(gen: &mut schemars::gen::SchemaGenerator) -> schemars::schema::Schema {
+        String::json_schema(gen)
+    }
 
-    fn is_referenceable() -> bool { true }
+    fn is_referenceable() -> bool {
+        true
+    }
 }
 
 impl TryFrom<&str> for SignedDecimal {
     type Error = CommonError;
 
-    fn try_from(value: &str) -> Result<Self, Self::Error> { Self::from_str(value) }
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        Self::from_str(value)
+    }
 }
 
 impl TryInto<Decimal256> for SignedDecimal {
@@ -235,14 +295,21 @@ impl TryInto<Decimal256> for SignedDecimal {
 
     fn try_into(self) -> Result<Decimal256, Self::Error> {
         if !self.is_positive && !self.value.is_zero() {
-            return Err(CommonError::Generic("Cannot convert negative SignedDecimal to Decimal256".into()));
+            return Err(CommonError::Generic(
+                "Cannot convert negative SignedDecimal to Decimal256".into(),
+            ));
         }
         Ok(self.value)
     }
 }
 
 impl Default for SignedDecimal {
-    fn default() -> Self { Self { value: Decimal256::default(), is_positive: true } }
+    fn default() -> Self {
+        Self {
+            value: Decimal256::default(),
+            is_positive: true,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -357,7 +424,8 @@ mod test {
 
     #[test]
     fn test_sign_fns() {
-        let mut sd = SignedDecimal::from_str("4.1243").expect("have to be able to SignedDecimal::from_str");
+        let mut sd =
+            SignedDecimal::from_str("4.1243").expect("have to be able to SignedDecimal::from_str");
         assert!(sd.is_positive());
         assert!(!sd.is_negative());
 

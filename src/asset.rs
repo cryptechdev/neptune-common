@@ -31,8 +31,12 @@ impl AssetInfo {
 impl Display for AssetInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Token { contract_addr } => write!(f, "{{\"token\":{{\"contract_addr\":\"{contract_addr}\"}}}}"),
-            Self::NativeToken { denom } => write!(f, "{{\"native_token\":{{\"denom\":\"{denom}\"}}}}"),
+            Self::Token { contract_addr } => {
+                write!(f, "{{\"token\":{{\"contract_addr\":\"{contract_addr}\"}}}}")
+            }
+            Self::NativeToken { denom } => {
+                write!(f, "{{\"native_token\":{{\"denom\":\"{denom}\"}}}}")
+            }
         }
     }
 }
@@ -46,11 +50,16 @@ impl<'a> PrimaryKey<'a> for &'a AssetInfo {
     fn key(&self) -> Vec<Key> {
         // The discriminate is added as a prefix.
         match self {
-            AssetInfo::Token { contract_addr: addr } => {
+            AssetInfo::Token {
+                contract_addr: addr,
+            } => {
                 vec![Key::Val8([TOKEN_DISCRIMINANT]), Key::Ref(addr.as_bytes())]
             }
             AssetInfo::NativeToken { denom } => {
-                vec![Key::Val8([NATIVE_TOKEN_DISCRIMINANT]), Key::Ref(denom.as_bytes())]
+                vec![
+                    Key::Val8([NATIVE_TOKEN_DISCRIMINANT]),
+                    Key::Ref(denom.as_bytes()),
+                ]
             }
         }
     }
@@ -59,11 +68,16 @@ impl<'a> PrimaryKey<'a> for &'a AssetInfo {
 impl<'a> Prefixer<'a> for &'a AssetInfo {
     fn prefix(&self) -> Vec<Key> {
         match self {
-            AssetInfo::Token { contract_addr: addr } => {
+            AssetInfo::Token {
+                contract_addr: addr,
+            } => {
                 vec![Key::Val8([TOKEN_DISCRIMINANT]), Key::Ref(addr.as_bytes())]
             }
             AssetInfo::NativeToken { denom } => {
-                vec![Key::Val8([NATIVE_TOKEN_DISCRIMINANT]), Key::Ref(denom.as_bytes())]
+                vec![
+                    Key::Val8([NATIVE_TOKEN_DISCRIMINANT]),
+                    Key::Ref(denom.as_bytes()),
+                ]
             }
         }
     }
@@ -90,9 +104,15 @@ impl<'a> KeyDeserialize for &'a AssetInfo {
 
         // Pop off the last byte (3rd) in value which is the discriminate.
         match value.pop().unwrap() {
-            TOKEN_DISCRIMINANT => Ok(AssetInfo::Token { contract_addr: Addr::from_vec(split)? }),
-            NATIVE_TOKEN_DISCRIMINANT => Ok(AssetInfo::NativeToken { denom: String::from_vec(split)? }),
-            _ => Err(StdError::GenericErr { msg: "Failed deserializing.".into() }),
+            TOKEN_DISCRIMINANT => Ok(AssetInfo::Token {
+                contract_addr: Addr::from_vec(split)?,
+            }),
+            NATIVE_TOKEN_DISCRIMINANT => Ok(AssetInfo::NativeToken {
+                denom: String::from_vec(split)?,
+            }),
+            _ => Err(StdError::GenericErr {
+                msg: "Failed deserializing.".into(),
+            }),
         }
     }
 }
@@ -117,7 +137,10 @@ impl From<AssetAmount> for (AssetInfo, Uint256) {
 
 impl From<Coin> for AssetAmount {
     fn from(coin: Coin) -> Self {
-        Self { info: AssetInfo::NativeToken { denom: coin.denom }, amount: coin.amount.into() }
+        Self {
+            info: AssetInfo::NativeToken { denom: coin.denom },
+            amount: coin.amount.into(),
+        }
     }
 }
 
@@ -126,15 +149,25 @@ impl TryInto<Coin> for AssetAmount {
 
     fn try_into(self) -> Result<Coin, Self::Error> {
         match self.info {
-            AssetInfo::Token { .. } => Err(StdError::GenericErr { msg: "Cannot convert to AssetAmount".into() }),
-            AssetInfo::NativeToken { denom } => Ok(Coin { denom, amount: self.amount.try_into().unwrap() }),
+            AssetInfo::Token { .. } => Err(StdError::GenericErr {
+                msg: "Cannot convert to AssetAmount".into(),
+            }),
+            AssetInfo::NativeToken { denom } => Ok(Coin {
+                denom,
+                amount: self.amount.try_into().unwrap(),
+            }),
         }
     }
 }
 
 impl From<&Coin> for AssetAmount {
     fn from(coin: &Coin) -> Self {
-        Self { info: AssetInfo::NativeToken { denom: coin.denom.clone() }, amount: coin.amount.into() }
+        Self {
+            info: AssetInfo::NativeToken {
+                denom: coin.denom.clone(),
+            },
+            amount: coin.amount.into(),
+        }
     }
 }
 
@@ -149,20 +182,43 @@ mod test {
     fn test_key_serialize_deserialzie() {
         let mut owned_deps = mock_dependencies();
         let deps = owned_deps.as_mut();
-        pub const ASSETS: cw_storage_plus::Map<&AssetInfo, String> = cw_storage_plus::Map::new("assets");
+        pub const ASSETS: cw_storage_plus::Map<&AssetInfo, String> =
+            cw_storage_plus::Map::new("assets");
 
-        let native_token_1 = AssetInfo::NativeToken { denom: "utest1".into() };
-        let native_token_2 = AssetInfo::NativeToken { denom: "utest2".into() };
-        let token_1 = AssetInfo::Token { contract_addr: Addr::unchecked("my_address1") };
-        let token_2 = AssetInfo::Token { contract_addr: Addr::unchecked("my_address2") };
+        let native_token_1 = AssetInfo::NativeToken {
+            denom: "utest1".into(),
+        };
+        let native_token_2 = AssetInfo::NativeToken {
+            denom: "utest2".into(),
+        };
+        let token_1 = AssetInfo::Token {
+            contract_addr: Addr::unchecked("my_address1"),
+        };
+        let token_2 = AssetInfo::Token {
+            contract_addr: Addr::unchecked("my_address2"),
+        };
 
-        ASSETS.save(deps.storage, &token_1, &"token_1".into()).unwrap();
-        ASSETS.save(deps.storage, &token_2, &"token_2".into()).unwrap();
-        ASSETS.save(deps.storage, &native_token_1, &"native_token_1".into()).unwrap();
-        ASSETS.save(deps.storage, &native_token_2, &"native_token_2".into()).unwrap();
+        ASSETS
+            .save(deps.storage, &token_1, &"token_1".into())
+            .unwrap();
+        ASSETS
+            .save(deps.storage, &token_2, &"token_2".into())
+            .unwrap();
+        ASSETS
+            .save(deps.storage, &native_token_1, &"native_token_1".into())
+            .unwrap();
+        ASSETS
+            .save(deps.storage, &native_token_2, &"native_token_2".into())
+            .unwrap();
 
-        assert_eq!(ASSETS.load(deps.storage, &native_token_1).unwrap(), "native_token_1");
-        assert_eq!(ASSETS.load(deps.storage, &native_token_2).unwrap(), "native_token_2");
+        assert_eq!(
+            ASSETS.load(deps.storage, &native_token_1).unwrap(),
+            "native_token_1"
+        );
+        assert_eq!(
+            ASSETS.load(deps.storage, &native_token_2).unwrap(),
+            "native_token_2"
+        );
         assert_eq!(ASSETS.load(deps.storage, &token_1).unwrap(), "token_1");
         assert_eq!(ASSETS.load(deps.storage, &token_2).unwrap(), "token_2");
 
