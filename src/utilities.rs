@@ -13,7 +13,10 @@ use crate::error::{NeptuneError, NeptuneResult};
 /// assert!(assert_no_multiple_tx(&mut last_tx_height, 1).is_ok());
 /// assert!(assert_no_multiple_tx(&mut last_tx_height, 1).is_err());
 /// ```
-pub fn assert_no_multiple_tx(last_tx_height: &mut u64, current_block_height: u64) -> NeptuneResult<()> {
+pub fn assert_no_multiple_tx(
+    last_tx_height: &mut u64,
+    current_block_height: u64,
+) -> NeptuneResult<()> {
     if *last_tx_height == current_block_height {
         Err(NeptuneError::MultipleTx {})
     } else {
@@ -23,7 +26,10 @@ pub fn assert_no_multiple_tx(last_tx_height: &mut u64, current_block_height: u64
 }
 
 /// Sends a message to the contract itself.
-pub fn msg_to_self<ExecuteMsg: Serialize + DeserializeOwned, M>(env: &Env, msg: &ExecuteMsg) -> NeptuneResult<CosmosMsg<M>> {
+pub fn msg_to_self<ExecuteMsg: Serialize + DeserializeOwned, M>(
+    env: &Env,
+    msg: &ExecuteMsg,
+) -> NeptuneResult<CosmosMsg<M>> {
     Ok(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
         funds: vec![],

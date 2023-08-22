@@ -1,8 +1,15 @@
-use astroport::pair::{SimulationResponse, ReverseSimulationResponse};
-use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, CosmosMsg, Deps, Uint128, Uint256, QuerierWrapper, StdResult, to_binary, Decimal, QueryRequest, WasmQuery, Env};
 use crate::{
-    asset::{AssetAmount, AssetInfo}, send_asset::{SendFundsMsg, send_assets}, error::NeptuneResult, query_wrapper::QueryWrapper, msg_wrapper::MsgWrapper,
+    asset::{AssetAmount, AssetInfo},
+    error::NeptuneResult,
+    msg_wrapper::MsgWrapper,
+    query_wrapper::QueryWrapper,
+    send_asset::{send_assets, SendFundsMsg},
+};
+use astroport::pair::{ReverseSimulationResponse, SimulationResponse};
+use cosmwasm_schema::cw_serde;
+use cosmwasm_std::{
+    to_binary, Addr, CosmosMsg, Decimal, Deps, Env, QuerierWrapper, QueryRequest, StdResult,
+    Uint128, Uint256, WasmQuery,
 };
 
 use super::Swap;
@@ -14,19 +21,28 @@ pub struct LiquidityPool {
 
 impl Swap for LiquidityPool {
     fn swap(
-        &self, deps: Deps<QueryWrapper>, _env: &Env, offer_asset: &AssetInfo, _ask_asset: &AssetInfo, offer_amount: Uint256,
+        &self,
+        deps: Deps<QueryWrapper>,
+        _env: &Env,
+        offer_asset: &AssetInfo,
+        _ask_asset: &AssetInfo,
+        offer_amount: Uint256,
     ) -> NeptuneResult<Vec<CosmosMsg<MsgWrapper>>> {
-        let return_amount = query_sim_pool(deps, self.addr.clone(), offer_asset.clone(), offer_amount)?;
+        let return_amount =
+            query_sim_pool(deps, self.addr.clone(), offer_asset.clone(), offer_amount)?;
         if return_amount == Uint256::zero() {
             return Ok(vec![]);
         }
         msg_to_dex(self.addr.clone(), offer_asset.clone(), offer_amount)
     }
 
-
     /// sends a query for a swap simulation
     fn query_sim(
-        &self, deps: Deps<QueryWrapper>, offer_asset: &AssetInfo, _ask_asset: &AssetInfo, offer_amount: Uint256,
+        &self,
+        deps: Deps<QueryWrapper>,
+        offer_asset: &AssetInfo,
+        _ask_asset: &AssetInfo,
+        offer_amount: Uint256,
     ) -> NeptuneResult<Uint256> {
         if offer_amount.is_zero() {
             return Ok(Uint256::zero());
@@ -34,14 +50,22 @@ impl Swap for LiquidityPool {
         Ok(simulate(
             &deps.querier,
             self.addr.clone(),
-            &AssetAmount { info: offer_asset.clone(), amount: offer_amount }.try_into()?,
+            &AssetAmount {
+                info: offer_asset.clone(),
+                amount: offer_amount,
+            }
+            .try_into()?,
         )?
         .return_amount
         .into())
     }
 
     fn query_reverse_sim(
-        &self, deps: Deps<QueryWrapper>, _offer_asset: &AssetInfo, ask_asset: &AssetInfo, ask_amount: Uint256,
+        &self,
+        deps: Deps<QueryWrapper>,
+        _offer_asset: &AssetInfo,
+        ask_asset: &AssetInfo,
+        ask_amount: Uint256,
     ) -> NeptuneResult<Uint256> {
         if ask_amount.is_zero() {
             return Ok(Uint256::zero());
@@ -49,7 +73,11 @@ impl Swap for LiquidityPool {
         let offer_amount = reverse_simulate(
             &deps.querier,
             self.addr.clone(),
-            &AssetAmount { info: ask_asset.clone(), amount: ask_amount + Uint256::one() }.try_into()?,
+            &AssetAmount {
+                info: ask_asset.clone(),
+                amount: ask_amount + Uint256::one(),
+            }
+            .try_into()?,
         )?
         .offer_amount
             + Uint128::one(); // We always add 1 here to avoid rounding errors
@@ -84,9 +112,17 @@ fn reverse_simulate(
 }
 
 /// Sends a swap message to the given pool.
-fn msg_to_dex(swap_pool: Addr, offer_asset: SendFundsMsg, offer_amount: Uint256) -> NeptuneResult<Vec<CosmosMsg<MsgWrapper>>> {
+fn msg_to_dex(
+    swap_pool: Addr,
+    offer_asset: SendFundsMsg,
+    offer_amount: Uint256,
+) -> NeptuneResult<Vec<CosmosMsg<MsgWrapper>>> {
     let swap_msg = to_binary(&astroport::pair::ExecuteMsg::Swap {
-        offer_asset: AssetAmount { info: offer_asset.clone(), amount: offer_amount }.try_into()?,
+        offer_asset: AssetAmount {
+            info: offer_asset.clone(),
+            amount: offer_amount,
+        }
+        .try_into()?,
         belief_price: None,
         max_spread: Some(Decimal::percent(50)),
         to: None,
@@ -97,7 +133,10 @@ fn msg_to_dex(swap_pool: Addr, offer_asset: SendFundsMsg, offer_amount: Uint256)
 
 /// queries a pool and simulates a swap.
 fn query_sim_pool(
-    deps: Deps<QueryWrapper>, pool_addr: Addr, offer_asset: AssetInfo, offer_amount: Uint256,
+    deps: Deps<QueryWrapper>,
+    pool_addr: Addr,
+    offer_asset: AssetInfo,
+    offer_amount: Uint256,
 ) -> NeptuneResult<Uint256> {
     if offer_amount.is_zero() {
         return Ok(Uint256::zero());
@@ -109,7 +148,7 @@ fn query_sim_pool(
             offer_asset: astroport::asset::Asset {
                 info: offer_asset.into(),
                 amount: offer_amount.try_into()?,
-            }
+            },
         })?,
     }))?;
 

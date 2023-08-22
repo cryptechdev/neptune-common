@@ -16,7 +16,9 @@ pub trait Zeroed {
 }
 
 impl Zeroed for Uint256 {
-    fn is_zeroed(&self) -> bool { self.is_zero() }
+    fn is_zeroed(&self) -> bool {
+        self.is_zero()
+    }
 
     fn remove_zeroed(&mut self) {}
 }
@@ -40,7 +42,10 @@ where
 }
 
 pub fn extract_keys<'a, K: 'a + Ord + PartialEq + Clone>(vec: Vec<&'a dyn KeyVec<K>>) -> Vec<K> {
-    let mut list = vec.into_iter().flat_map(|x| x.key_vec()).collect::<Vec<_>>();
+    let mut list = vec
+        .into_iter()
+        .flat_map(|x| x.key_vec())
+        .collect::<Vec<_>>();
     list.sort_unstable();
     list.dedup();
     list

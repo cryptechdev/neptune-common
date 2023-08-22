@@ -1,4 +1,4 @@
-use cosmwasm_std::{Decimal256, Uint256, Uint512, StdResult};
+use cosmwasm_std::{Decimal256, StdResult, Uint256, Uint512};
 
 /// Division that returns zero if the denominator is zero.
 /// ```
@@ -19,7 +19,7 @@ pub fn div_or_zero(num: Uint256, denom: Uint256) -> Decimal256 {
 /// # fn test_checked_div() {
 /// assert_eq!(
 ///     checked_div(
-///         Uint256::from(1500u64), 
+///         Uint256::from(1500u64),
 ///         Decimal256::from_ratio(3u64, 2u64)
 ///     ),
 ///     Ok(Uint256::from(1000u64))
@@ -27,20 +27,17 @@ pub fn div_or_zero(num: Uint256, denom: Uint256) -> Decimal256 {
 /// # }
 /// ```
 pub fn checked_div(numerator: Uint256, denominator: Decimal256) -> StdResult<Uint256> {
-    Ok(
-        numerator
-            .full_mul(Decimal256::one().atomics())
-            .checked_div(Uint512::from(denominator.atomics()))?
-            .try_into()?
-    )
+    Ok(numerator
+        .full_mul(Decimal256::one().atomics())
+        .checked_div(Uint512::from(denominator.atomics()))?
+        .try_into()?)
 }
 
 #[cfg(test)]
 mod tests {
-    use std::str::FromStr;
     use super::*;
-    use cosmwasm_std::{Uint256, Decimal256};
-
+    use cosmwasm_std::{Decimal256, Uint256};
+    use std::str::FromStr;
 
     #[test]
     fn test_checked_div_precision() {

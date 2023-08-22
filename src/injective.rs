@@ -1,10 +1,13 @@
-use std::str::FromStr;
 use cosmwasm_std::{Decimal256, Uint256};
 use injective_math::FPDecimal;
+use std::str::FromStr;
 
 pub fn into_fp_decimal(value: Decimal256) -> FPDecimal {
     let atomics = value.atomics().to_be_bytes();
-    FPDecimal { num: atomics.into(), sign: 1 }
+    FPDecimal {
+        num: atomics.into(),
+        sign: 1,
+    }
 }
 
 pub fn into_decimal_256(value: FPDecimal) -> Decimal256 {

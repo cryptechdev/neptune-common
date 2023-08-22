@@ -1,4 +1,6 @@
-use cosmwasm_std::{ConversionOverflowError, Decimal256RangeExceeded, StdError, CheckedFromRatioError};
+use cosmwasm_std::{
+    CheckedFromRatioError, ConversionOverflowError, Decimal256RangeExceeded, StdError,
+};
 use neptune_auth::error::NeptAuthError;
 use thiserror::Error;
 
@@ -25,7 +27,7 @@ pub enum NeptuneError {
 
     #[error(transparent)]
     CheckedFromRatio(#[from] CheckedFromRatioError),
-    
+
     #[error("liquidity pool not found {0:?}")]
     PoolNotFound([AssetInfo; 2]),
 
