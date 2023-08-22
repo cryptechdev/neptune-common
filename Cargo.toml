@@ -4,7 +4,6 @@ version = "0.1.0"
 authors = [
     "Eric Woolsey<eric@cryptech.dev>",
     "Francisco Inacio<cisco@cryptech.dev>",
-    "Ihor Farion<Ihor@cryptech.dev>",
     "Cryptech Developments Ltd."
 ]
 edition = "2021"
@@ -21,13 +20,16 @@ crate-type = ["cdylib", "rlib"]
 [features]
 backtraces = ["cosmwasm-std/backtraces"]
 library = []
+injective = []
 
 [dependencies]
 cw20 = "1" 
-cw-storage-plus = "1"
+cw-storage-plus = { git = "https://github.com/cosmwasm/cw-storage-plus.git" }
 cosmwasm-std = "1"
 cosmwasm-derive = "1"
 cosmwasm-schema = "1"
+injective-cosmwasm = { git = "https://github.com/cryptechdev/cw-injective.git", branch = "eric/dev" }
+injective-math = { git = "https://github.com/cryptechdev/cw-injective.git", branch = "eric/dev" }
 schemars = "0.8"
 serde = { version = "1", default-features = false, features = ["derive"] }
 astroport = "1"

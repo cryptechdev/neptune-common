@@ -9,7 +9,7 @@ use cosmwasm_std::Decimal256;
 use schemars::JsonSchema;
 use serde::{de, ser, Deserialize, Deserializer, Serialize};
 
-use crate::error::CommonError;
+use crate::error::NeptuneError;
 
 /// Decimal256 with a sign
 #[derive(Clone, Copy, Debug, Eq)]
@@ -176,23 +176,23 @@ impl std::cmp::PartialEq for SignedDecimal {
 
 impl std::cmp::PartialOrd for SignedDecimal {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        if self.is_positive == other.is_positive {
-            if self.is_positive {
-                self.value.partial_cmp(&other.value)
-            } else {
-                other.value.partial_cmp(&self.value)
-            }
-        } else if self.is_positive {
-            Some(std::cmp::Ordering::Greater)
-        } else {
-            Some(std::cmp::Ordering::Less)
-        }
+        Some(self.cmp(other))
     }
 }
 
 impl std::cmp::Ord for SignedDecimal {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.partial_cmp(other).unwrap()
+        if self.is_positive == other.is_positive {
+            if self.is_positive {
+                self.value.cmp(&other.value)
+            } else {
+                other.value.cmp(&self.value)
+            }
+        } else if self.is_positive {
+            std::cmp::Ordering::Greater
+        } else {
+            std::cmp::Ordering::Less
+        }
     }
 }
 
@@ -206,7 +206,7 @@ impl From<Decimal256> for SignedDecimal {
 }
 
 impl FromStr for SignedDecimal {
-    type Err = CommonError;
+    type Err = NeptuneError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let sign;
@@ -283,7 +283,7 @@ impl JsonSchema for SignedDecimal {
 }
 
 impl TryFrom<&str> for SignedDecimal {
-    type Error = CommonError;
+    type Error = NeptuneError;
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         Self::from_str(value)
@@ -291,11 +291,11 @@ impl TryFrom<&str> for SignedDecimal {
 }
 
 impl TryInto<Decimal256> for SignedDecimal {
-    type Error = CommonError;
+    type Error = NeptuneError;
 
     fn try_into(self) -> Result<Decimal256, Self::Error> {
         if !self.is_positive && !self.value.is_zero() {
-            return Err(CommonError::Generic(
+            return Err(NeptuneError::Generic(
                 "Cannot convert negative SignedDecimal to Decimal256".into(),
             ));
         }
