@@ -1,11 +1,15 @@
-use cosmwasm_std::{ConversionOverflowError, Decimal256RangeExceeded, StdError};
+use cosmwasm_std::{
+    CheckedFromRatioError, ConversionOverflowError, Decimal256RangeExceeded, StdError,
+};
 use neptune_auth::error::NeptAuthError;
 use thiserror::Error;
 
-pub type CommonResult<T> = core::result::Result<T, CommonError>;
+use crate::asset::AssetInfo;
+
+pub type NeptuneResult<T> = core::result::Result<T, NeptuneError>;
 
 #[derive(Error, Debug, PartialEq)]
-pub enum CommonError {
+pub enum NeptuneError {
     #[error("{0}")]
     Generic(String),
 
@@ -16,10 +20,19 @@ pub enum CommonError {
     Auth(#[from] NeptAuthError),
 
     #[error(transparent)]
-    ConversionOverflowError(#[from] ConversionOverflowError),
+    ConversionOverflow(#[from] ConversionOverflowError),
 
     #[error(transparent)]
     Decimal256RangeExceeded(#[from] Decimal256RangeExceeded),
+
+    #[error(transparent)]
+    CheckedFromRatio(#[from] CheckedFromRatioError),
+
+    #[error("liquidity pool not found {0:?}")]
+    PoolNotFound([AssetInfo; 2]),
+
+    #[error("Insufficient liquidity to execute swap")]
+    InsufficientLiquidity,
 
     #[error("Key not found: {0}")]
     KeyNotFound(String),

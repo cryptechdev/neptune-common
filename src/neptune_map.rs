@@ -9,7 +9,7 @@ use cosmwasm_std::Decimal256;
 use shrinkwraprs::Shrinkwrap;
 
 use crate::{
-    error::{CommonError, CommonResult},
+    error::{NeptuneError, NeptuneResult},
     traits::{KeyVec, Zeroed},
 };
 
@@ -55,14 +55,14 @@ where
         }
     }
 
-    pub fn must_get(&self, key: &K) -> CommonResult<&V> {
+    pub fn must_get(&self, key: &K) -> NeptuneResult<&V> {
         self.get(key)
-            .ok_or_else(|| CommonError::KeyNotFound(format!("{key:?}")))
+            .ok_or_else(|| NeptuneError::KeyNotFound(format!("{key:?}")))
     }
 
-    pub fn must_get_mut(&mut self, key: &K) -> CommonResult<&mut V> {
+    pub fn must_get_mut(&mut self, key: &K) -> NeptuneResult<&mut V> {
         self.get_mut(key)
-            .ok_or_else(|| CommonError::KeyNotFound(format!("{key:?}")))
+            .ok_or_else(|| NeptuneError::KeyNotFound(format!("{key:?}")))
     }
 
     pub fn get_mut_or_default<'a>(&'a mut self, key: &K) -> &'a mut V
@@ -91,7 +91,7 @@ where
     pub fn mul_all<U>(
         self,
         rhs: &NeptuneMap<K, U>,
-    ) -> CommonResult<NeptuneMap<K, <V as Mul<U>>::Output>>
+    ) -> NeptuneResult<NeptuneMap<K, <V as Mul<U>>::Output>>
     where
         V: Mul<U>,
         U: Clone,
@@ -182,6 +182,40 @@ where
             *val = val.clone() * rhs
         }
         self
+    }
+}
+
+impl<K, V> Add<(K, V)> for NeptuneMap<K, V>
+where
+    K: PartialEq + Clone + Debug,
+    V: AddAssign + Clone + Default,
+{
+    type Output = Self;
+
+    /// multiplies each value in the map with a Decimal256
+    /// ```
+    /// # use neptune_common::neptune_map::NeptuneMap;
+    /// # use cosmwasm_std::{Uint256, Decimal256};
+    /// # use std::str::FromStr;
+    /// let map: NeptuneMap<_, _> =
+    ///     vec![("foo", Uint256::from(2u64)), ("bar", Uint256::from(3u64))].into();
+    /// let other = ("foo", Uint256::from(8u64));
+    /// let result = map + other;
+    /// assert_eq!(result, vec![("foo", Uint256::from(10u64)), ("bar", Uint256::from(3u64))].into());
+    /// ```
+    fn add(mut self, rhs: (K, V)) -> Self::Output {
+        *self.get_mut_or_default(&rhs.0) += rhs.1;
+        self
+    }
+}
+
+impl<K, V> AddAssign<(K, V)> for NeptuneMap<K, V>
+where
+    K: PartialEq + Clone + Debug,
+    V: AddAssign + Clone + Default,
+{
+    fn add_assign(&mut self, rhs: (K, V)) {
+        *self.get_mut_or_default(&rhs.0) += rhs.1;
     }
 }
 

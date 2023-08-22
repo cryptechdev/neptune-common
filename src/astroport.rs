@@ -1,6 +1,6 @@
 use crate::{
     asset::{AssetAmount, AssetInfo},
-    error::CommonError,
+    error::NeptuneError,
 };
 
 impl From<AssetInfo> for astroport::asset::AssetInfo {
@@ -15,7 +15,7 @@ impl From<AssetInfo> for astroport::asset::AssetInfo {
 }
 
 impl TryFrom<AssetAmount> for astroport::asset::Asset {
-    type Error = CommonError;
+    type Error = NeptuneError;
 
     fn try_from(value: AssetAmount) -> Result<Self, Self::Error> {
         Ok(Self {
