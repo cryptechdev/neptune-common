@@ -313,7 +313,7 @@ impl Default for SignedDecimal {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use std::{cmp::Ordering, ops::Div};
 
     use super::*;

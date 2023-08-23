@@ -172,7 +172,7 @@ impl TryInto<Coin> for AssetAmount {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use cosmwasm_std::{testing::mock_dependencies, Uint128};
 
     use super::*;
