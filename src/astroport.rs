@@ -14,6 +14,17 @@ impl From<AssetInfo> for astroport::asset::AssetInfo {
     }
 }
 
+impl From<astroport::asset::AssetInfo> for AssetInfo {
+    fn from(value: astroport::asset::AssetInfo) -> Self {
+        match value {
+            astroport::asset::AssetInfo::Token { contract_addr } => {
+                AssetInfo::Token { contract_addr }
+            }
+            astroport::asset::AssetInfo::NativeToken { denom } => AssetInfo::NativeToken { denom },
+        }
+    }
+}
+
 impl TryFrom<AssetAmount> for astroport::asset::Asset {
     type Error = NeptuneError;
 
