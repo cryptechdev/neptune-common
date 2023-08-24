@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = [
     "Eric Woolsey<eric@cryptech.dev>",
     "Francisco Inacio<cisco@cryptech.dev>",
-    "Cryptech Developments Ltd."
+    "Cryptech Developments Ltd.",
 ]
 edition = "2021"
 description = "The common data, interfaces and functionality used across the Neptune Finance smart contracts"
@@ -23,7 +23,7 @@ library = []
 injective = []
 
 [dependencies]
-cw20 = "1" 
+cw20 = "1"
 cw-storage-plus = { git = "https://github.com/cosmwasm/cw-storage-plus.git" }
 cosmwasm-std = "1"
 cosmwasm-derive = "1"
@@ -32,7 +32,7 @@ injective-cosmwasm = { git = "https://github.com/cryptechdev/cw-injective.git", 
 injective-math = { git = "https://github.com/cryptechdev/cw-injective.git", branch = "eric/dev" }
 schemars = "0.8"
 serde = { version = "1", default-features = false, features = ["derive"] }
-astroport = "1"
+astroport = { git = "https://github.com/astroport-fi/astroport-core.git", tag = "v3.3.2" }
 
 thiserror = "1"
 shrinkwraprs = "0.3"

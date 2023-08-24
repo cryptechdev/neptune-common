@@ -94,6 +94,7 @@ fn simulate(
         pool_addr,
         &astroport::pair::QueryMsg::Simulation {
             offer_asset: offer_asset.clone(),
+            ask_asset_info: None,
         },
     )
 }
@@ -107,6 +108,7 @@ fn reverse_simulate(
         pool_addr,
         &astroport::pair::QueryMsg::ReverseSimulation {
             ask_asset: ask_asset.clone(),
+            offer_asset_info: None,
         },
     )
 }
@@ -126,6 +128,7 @@ fn msg_to_dex(
         belief_price: None,
         max_spread: Some(Decimal::percent(50)),
         to: None,
+        ask_asset_info: None,
     })?;
     let msg = send_assets(&swap_pool, offer_amount, offer_asset, swap_msg)?;
     Ok(vec![msg])
@@ -149,6 +152,7 @@ fn query_sim_pool(
                 info: offer_asset.into(),
                 amount: offer_amount.try_into()?,
             },
+            ask_asset_info: None,
         })?,
     }))?;
 
