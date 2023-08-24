@@ -20,22 +20,29 @@ crate-type = ["cdylib", "rlib"]
 [features]
 backtraces = ["cosmwasm-std/backtraces"]
 library = []
-injective = []
+injective = ["dep:injective-cosmwasm", "dep:injective-math"]
 
 [dependencies]
 cw20 = "1"
-cw-storage-plus = { git = "https://github.com/cosmwasm/cw-storage-plus.git" }
 cosmwasm-std = "1"
 cosmwasm-derive = "1"
 cosmwasm-schema = "1"
-injective-cosmwasm = { git = "https://github.com/cryptechdev/cw-injective.git", branch = "eric/dev" }
-injective-math = { git = "https://github.com/cryptechdev/cw-injective.git", branch = "eric/dev" }
 schemars = "0.8"
 serde = { version = "1", default-features = false, features = ["derive"] }
-astroport = { git = "https://github.com/astroport-fi/astroport-core.git", tag = "v3.3.2" }
 thiserror = "1"
 shrinkwraprs = "0.3"
 neptune-auth = "0.1"
+
+# See: https://github.com/CosmWasm/cw-storage-plus/pull/34
+#      https://github.com/CosmWasm/cw-storage-plus/milestone/2
+cw-storage-plus = { git = "https://github.com/cosmwasm/cw-storage-plus.git" }
+
+# See: https://github.com/astroport-fi/astroport-core/issues/376
+astroport = { git = "https://github.com/astroport-fi/astroport-core.git", tag = "v3.3.2" }
+
+# Optional Deps for Injective.
+injective-cosmwasm = { git = "https://github.com/cryptechdev/cw-injective.git", branch = "eric/dev", optional = true }
+injective-math = { git = "https://github.com/cryptechdev/cw-injective.git", branch = "eric/dev", optional = true }
 
 [dev-dependencies]
 rand = "0.8"
