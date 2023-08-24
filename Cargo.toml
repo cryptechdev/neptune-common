@@ -33,7 +33,6 @@ injective-math = { git = "https://github.com/cryptechdev/cw-injective.git", bran
 schemars = "0.8"
 serde = { version = "1", default-features = false, features = ["derive"] }
 astroport = { git = "https://github.com/astroport-fi/astroport-core.git", tag = "v3.3.2" }
-
 thiserror = "1"
 shrinkwraprs = "0.3"
 neptune-auth = "0.1"
