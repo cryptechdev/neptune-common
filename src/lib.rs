@@ -2,7 +2,6 @@ pub mod asset;
 pub mod astroport;
 pub mod debug;
 pub mod error;
-pub mod injective;
 pub mod math;
 pub mod msg_wrapper;
 pub mod neptune_map;
@@ -16,3 +15,6 @@ pub mod swap;
 pub mod traits;
 pub mod utilities;
 pub mod warn;
+
+#[cfg(feature = "injective")]
+pub mod injective;
