@@ -324,7 +324,7 @@ mod tests {
             .unwrap();
 
         let res: AssetMap<String> = read_map(
-            deps.as_ref(),
+            deps.storage,
             Method::Select {
                 keys: vec![&token_1],
             },
@@ -334,7 +334,7 @@ mod tests {
         assert_eq!(res, (token_1, "token_1".to_string()).into());
 
         let res: AssetMap<String> = read_map(
-            deps.as_ref(),
+            deps.storage,
             Method::Paginate {
                 start_after: None,
                 limit: Some(1),

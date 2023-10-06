@@ -223,7 +223,7 @@ mod tests {
         assert_eq!(ASSETS.load(deps.storage, &token_1).unwrap(), "token_1");
         assert_eq!(ASSETS.load(deps.storage, &token_2).unwrap(), "token_2");
 
-        let list = paginate(deps.as_ref(), None, None, ASSETS).unwrap();
+        let list = paginate(deps.storage, None, None, ASSETS).unwrap();
         let mut sorted = list.clone();
         sorted.sort();
         assert_eq!(list, sorted);
@@ -236,7 +236,7 @@ mod tests {
         assert_eq!(list[3].0, token_2);
 
         // Test the bounder and prefixer impl.
-        let list = paginate(deps.as_ref(), Some(&native_token_1), Some(2), ASSETS).unwrap();
+        let list = paginate(deps.storage, Some(&native_token_1), Some(2), ASSETS).unwrap();
         let mut sorted = list.clone();
         sorted.sort();
         assert_eq!(list, sorted);
