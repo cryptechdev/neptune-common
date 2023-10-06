@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use cosmwasm_std::{Addr, CustomQuery, Deps, DepsMut, Order};
+use cosmwasm_std::{Addr, CustomQuery, Deps, DepsMut, Order, Storage};
 use cw_storage_plus::{Bounder, KeyDeserialize, Map, PrimaryKey};
 use serde::{de::DeserializeOwned, Serialize};
 
@@ -45,7 +45,7 @@ impl KeyToOutput for &AssetInfo {
 }
 
 pub fn read_map<'k, K, O, V>(
-    deps: Deps<'_, impl CustomQuery>,
+    storage: &dyn Storage,
     method: Method<K>,
     map: Map<'k, K, V>,
 ) -> Result<NeptuneMap<O, V>, NeptuneError>
@@ -55,14 +55,14 @@ where
     V: Serialize + DeserializeOwned,
 {
     match method {
-        Method::Paginate { start_after, limit } => paginate(deps, start_after, limit, map),
-        Method::Select { keys } => select(deps, keys, map),
+        Method::Paginate { start_after, limit } => paginate(storage, start_after, limit, map),
+        Method::Select { keys } => select(storage, keys, map),
     }
 }
 
 /// Reads a map from storage is ascending order.
 pub fn paginate<'k, K, O, V>(
-    deps: Deps<'_, impl CustomQuery>,
+    storage: &dyn Storage,
     start_after: Option<K>,
     limit: Option<u32>,
     map: Map<'k, K, V>,
@@ -75,11 +75,11 @@ where
     let start = start_after.map(|key| key.exclusive_bound().unwrap());
     let vec = match limit {
         Some(limit) => map
-            .range(deps.storage, start, None, Order::Ascending)
+            .range(storage, start, None, Order::Ascending)
             .take(limit as usize)
             .collect::<Result<Vec<_>, _>>()?,
         None => map
-            .range(deps.storage, start, None, Order::Ascending)
+            .range(storage, start, None, Order::Ascending)
             .collect::<Result<Vec<_>, _>>()?,
     };
     Ok(vec.into())
@@ -87,7 +87,7 @@ where
 
 /// Loads a specific set of values from a map.
 pub fn select<'k, K, O, V>(
-    deps: Deps<'_, impl CustomQuery>,
+    storage: &dyn Storage,
     keys: Vec<K>,
     map: Map<'k, K, V>,
 ) -> Result<NeptuneMap<O, V>, NeptuneError>
@@ -98,7 +98,7 @@ where
 {
     keys.into_iter()
         .map(|asset| {
-            let value = map.load(deps.storage, asset.clone())?;
+            let value = map.load(storage, asset.clone())?;
             Ok((asset.to_output(), value))
         })
         .collect::<NeptuneResult<NeptuneMap<O, _>>>()
