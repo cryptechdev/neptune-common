@@ -22,8 +22,8 @@ pub fn query_coin_balance(
 /// Queries the balance of a cw20 token for a specific account.
 pub fn query_token_balance(
     querier: QuerierWrapper<impl CustomQuery>,
-    token_addr: &Addr,
     account_addr: &Addr,
+    token_addr: &Addr,
 ) -> Result<Uint256, NeptuneError> {
     let res: Cw20BalanceResponse = querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
         contract_addr: token_addr.to_string(),
@@ -58,7 +58,7 @@ pub fn query_asset_balance(
             Ok(query_coin_balance(querier, account, denom.clone())?)
         }
         AssetInfo::Token { contract_addr } => {
-            Ok(query_token_balance(querier, contract_addr, account)?)
+            Ok(query_token_balance(querier, account, contract_addr)?)
         }
     }
 }
