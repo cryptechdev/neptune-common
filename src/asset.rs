@@ -37,14 +37,11 @@ impl From<Addr> for AssetInfo {
 
 impl Display for AssetInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Token { contract_addr } => {
-                write!(f, "{{\"token\":{{\"contract_addr\":\"{contract_addr}\"}}}}")
-            }
-            Self::NativeToken { denom } => {
-                write!(f, "{{\"native_token\":{{\"denom\":\"{denom}\"}}}}")
-            }
-        }
+        f.write_str(
+            serde_json_wasm::to_string(self)
+                .map_err(|_| core::fmt::Error)?
+                .as_str(),
+        )
     }
 }
 
