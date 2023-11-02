@@ -75,6 +75,16 @@ pub trait Swap {
         ask_amount: Uint256,
     ) -> NeptuneResult<Uint256>;
 
+    /// Returns the volume of the largest swap where the ratio
+    /// of offer to ask is less than ratio.
+    fn query_ask_amount_at_price(
+        &self,
+        deps: Deps<QueryWrapper>,
+        offer_asset: &AssetInfo,
+        ask_asset: &AssetInfo,
+        max_ratio: Decimal256,
+    ) -> NeptuneResult<Uint256>;
+
     /// Uses a swap simulation to calculate the ratio of offer to ask.
     fn query_swap_ratio(
         &self,
@@ -170,6 +180,24 @@ impl Swap for cw_storage_plus::Map<'static, (&AssetInfo, &AssetInfo), Exchange> 
             #[cfg(feature = "injective")]
             Exchange::OrderBook(order_book) => {
                 order_book.query_reverse_sim(deps, offer_asset, ask_asset, ask_amount)
+            }
+        }
+    }
+
+    fn query_ask_amount_at_price(
+        &self,
+        deps: Deps<QueryWrapper>,
+        offer_asset: &AssetInfo,
+        ask_asset: &AssetInfo,
+        max_ratio: Decimal256,
+    ) -> NeptuneResult<Uint256> {
+        match get_exchange_type(deps, self, [offer_asset, ask_asset])? {
+            Exchange::LiquidityPool(liquidity_pool) => {
+                liquidity_pool.query_ask_amount_at_price(deps, offer_asset, ask_asset, max_ratio)
+            }
+            #[cfg(feature = "injective")]
+            Exchange::OrderBook(order_book) => {
+                order_book.query_ask_amount_at_price(deps, offer_asset, ask_asset, max_ratio)
             }
         }
     }

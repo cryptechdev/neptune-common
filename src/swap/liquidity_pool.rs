@@ -1,15 +1,15 @@
 use crate::{
     asset::{AssetAmount, AssetInfo},
-    error::NeptuneResult,
+    error::{NeptuneError, NeptuneResult},
     msg_wrapper::MsgWrapper,
     query_wrapper::QueryWrapper,
     send_asset::{send_assets, SendFundsMsg},
 };
-use astroport::pair::{ReverseSimulationResponse, SimulationResponse};
+use astroport::pair::{PoolResponse, ReverseSimulationResponse, SimulationResponse};
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{
-    to_binary, Addr, CosmosMsg, Decimal, Deps, Env, QuerierWrapper, QueryRequest, StdResult,
-    Uint128, Uint256, WasmQuery,
+    to_binary, Addr, CosmosMsg, Decimal, Decimal256, Deps, Env, Fraction, Isqrt, QuerierWrapper,
+    QueryRequest, StdResult, Uint128, Uint256, WasmQuery,
 };
 
 use super::Swap;
@@ -82,6 +82,35 @@ impl Swap for LiquidityPool {
         .offer_amount
             + Uint128::one(); // We always add 1 here to avoid rounding errors
         Ok(offer_amount.into())
+    }
+
+    /// This function assumes constant product
+    fn query_ask_amount_at_price(
+        &self,
+        deps: Deps<QueryWrapper>,
+        offer_asset: &AssetInfo,
+        ask_asset: &AssetInfo,
+        max_ratio: Decimal256,
+    ) -> NeptuneResult<Uint256> {
+        let res: PoolResponse = deps
+            .querier
+            .query_wasm_smart(&self.addr, &astroport::pair::QueryMsg::Pool {})?;
+        let offer_balance = res
+            .assets
+            .iter()
+            .find(|x| &Into::<AssetInfo>::into(x.info.clone()) == offer_asset)
+            .ok_or(NeptuneError::InvalidPool)?
+            .amount;
+        let ask_balance = res
+            .assets
+            .iter()
+            .find(|x| &Into::<AssetInfo>::into(x.info.clone()) == ask_asset)
+            .ok_or(NeptuneError::InvalidPool)?
+            .amount;
+        let mul = offer_balance.full_mul(ask_balance);
+        let frac = mul * max_ratio.inv().unwrap();
+        let sqrt = frac.isqrt();
+        Ok(Uint256::from(ask_balance).saturating_sub(sqrt))
     }
 }
 

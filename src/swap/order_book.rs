@@ -6,7 +6,7 @@ use crate::{
     query_wrapper::QueryWrapper,
 };
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{CosmosMsg, Decimal256, Deps, Env, QueryRequest, Uint256};
+use cosmwasm_std::{CosmosMsg, Decimal256, Deps, Env, Fraction, QueryRequest, Uint256};
 use injective_cosmwasm::{
     exchange::response::QueryOrderbookResponse, get_default_subaccount_id_for_checked_address,
     InjectiveMsg, InjectiveQuery, InjectiveRoute, MarketId, MarketMidPriceAndTOBResponse,
@@ -183,6 +183,42 @@ impl Swap for OrderBook {
         Ok(into_uint_256(offer_amount.int()))
     }
 
+    fn query_ask_amount_at_price(
+        &self,
+        deps: Deps<QueryWrapper>,
+        offer_asset: &AssetInfo,
+        _ask_asset: &AssetInfo,
+        max_ratio: Decimal256,
+    ) -> NeptuneResult<Uint256> {
+        let AssetInfo::NativeToken { denom: offer_denom } = offer_asset else {
+            return Err(NeptuneError::Generic(
+                "Only native tokens are supported".to_string(),
+            ));
+        };
+        let spot_market = query_spot_market(deps, self.market_id.clone())?;
+        let order_book = query_spot_market_order_book(
+            deps,
+            self.market_id.clone(),
+            0,
+            OrderSide::Unspecified,
+            None,
+            None,
+        )?;
+        let fee_rate = query_total_fees(deps, &spot_market);
+
+        let ask_amount = if offer_denom == &spot_market.quote_denom {
+            let price = into_fp_decimal(max_ratio);
+            get_buy_quantity_at_price(&spot_market, &order_book, price)?
+        } else if offer_denom == &spot_market.base_denom {
+            let price = into_fp_decimal(max_ratio.inv().unwrap());
+            get_sell_ask_amount_at_price(&spot_market, fee_rate, &order_book, price)?
+        } else {
+            return Err(NeptuneError::Generic("Invalid offer asset".to_string()));
+        };
+
+        Ok(into_uint_256(ask_amount.int()))
+    }
+
     /// Uses a swap simulation to calculate the ratio of offer to ask.
     fn query_reverse_swap_ratio(
         &self,
@@ -297,6 +333,48 @@ fn get_buy_quantity(
         }
     }
     quantity = tick_round_down(quantity, spot_market.min_quantity_tick_size);
+    Ok(quantity)
+}
+
+/// returns the quantity of the ask asset (rounded down)
+/// that can be bought for less that `price`.
+fn get_buy_quantity_at_price(
+    spot_market: &SpotMarket,
+    order_book: &QueryOrderbookResponse,
+    price: FPDecimal, // quote
+) -> NeptuneResult<FPDecimal> {
+    let mut quantity = FPDecimal::zero(); // base
+    for sell_order in &order_book.sells_price_level {
+        let sell_order_quantity = sell_order.q;
+        let sell_order_price = sell_order.p;
+        if sell_order_price > price {
+            break;
+        }
+        quantity += sell_order_quantity;
+    }
+    quantity = tick_round_down(quantity, spot_market.min_quantity_tick_size);
+    Ok(quantity)
+}
+
+/// Returns the quantity of the offer asset (rounded up)
+/// that can be sold for more than `price`.
+fn get_sell_ask_amount_at_price(
+    spot_market: &SpotMarket,
+    fee_rate: FPDecimal,
+    order_book: &QueryOrderbookResponse,
+    price: FPDecimal, // quote
+) -> NeptuneResult<FPDecimal> {
+    let mut quantity = FPDecimal::zero(); // base
+    for buy_order in &order_book.buys_price_level {
+        let buy_order_quantity = buy_order.q;
+        let buy_order_price = buy_order.p;
+        if buy_order_price < price {
+            break;
+        }
+        let buy_order_base_amount = apply_fee(buy_order_quantity * buy_order_price, fee_rate);
+        quantity += buy_order_base_amount;
+    }
+    let quantity = tick_round_down(quantity, spot_market.min_quantity_tick_size);
     Ok(quantity)
 }
 

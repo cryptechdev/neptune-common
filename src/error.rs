@@ -42,4 +42,7 @@ pub enum NeptuneError {
 
     #[error("Missing Cw20HookMg")]
     MissingHookMsg,
+
+    #[error("Invalid pool")]
+    InvalidPool,
 }
