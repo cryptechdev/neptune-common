@@ -1,4 +1,4 @@
-use cosmwasm_std::{to_binary, CosmosMsg, Env, WasmMsg};
+use cosmwasm_std::{to_json_binary, CosmosMsg, Env, WasmMsg};
 use serde::{de::DeserializeOwned, Serialize};
 
 use crate::error::{NeptuneError, NeptuneResult};
@@ -33,6 +33,6 @@ pub fn msg_to_self<ExecuteMsg: Serialize + DeserializeOwned, M>(
     Ok(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
         funds: vec![],
-        msg: to_binary(&msg)?,
+        msg: to_json_binary(&msg)?,
     }))
 }

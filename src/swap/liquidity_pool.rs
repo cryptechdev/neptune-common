@@ -8,8 +8,8 @@ use crate::{
 use astroport::pair::{PoolResponse, ReverseSimulationResponse, SimulationResponse};
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{
-    to_binary, Addr, CosmosMsg, Decimal, Decimal256, Deps, Env, Fraction, Isqrt, QuerierWrapper,
-    QueryRequest, StdResult, Uint128, Uint256, WasmQuery,
+    to_json_binary, Addr, CosmosMsg, Decimal, Decimal256, Deps, Env, Fraction, Isqrt,
+    QuerierWrapper, QueryRequest, StdResult, Uint128, Uint256, WasmQuery,
 };
 
 use super::Swap;
@@ -148,7 +148,7 @@ fn msg_to_dex(
     offer_asset: SendFundsMsg,
     offer_amount: Uint256,
 ) -> NeptuneResult<Vec<CosmosMsg<MsgWrapper>>> {
-    let swap_msg = to_binary(&astroport::pair::ExecuteMsg::Swap {
+    let swap_msg = to_json_binary(&astroport::pair::ExecuteMsg::Swap {
         offer_asset: AssetAmount {
             info: offer_asset.clone(),
             amount: offer_amount,
@@ -176,7 +176,7 @@ fn query_sim_pool(
 
     let res: SimulationResponse = deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
         contract_addr: pool_addr.to_string(),
-        msg: to_binary(&astroport::pair::QueryMsg::Simulation {
+        msg: to_json_binary(&astroport::pair::QueryMsg::Simulation {
             offer_asset: astroport::asset::Asset {
                 info: offer_asset.into(),
                 amount: offer_amount.try_into()?,

@@ -1,5 +1,5 @@
 use cosmwasm_std::{
-    to_binary, Addr, BalanceResponse, BankQuery, CustomQuery, QuerierWrapper, QueryRequest,
+    to_json_binary, Addr, BalanceResponse, BankQuery, CustomQuery, QuerierWrapper, QueryRequest,
     Uint256, WasmQuery,
 };
 use cw20::{BalanceResponse as Cw20BalanceResponse, Cw20QueryMsg, TokenInfoResponse};
@@ -27,7 +27,7 @@ pub fn query_token_balance(
 ) -> Result<Uint256, NeptuneError> {
     let res: Cw20BalanceResponse = querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
         contract_addr: token_addr.to_string(),
-        msg: to_binary(&Cw20QueryMsg::Balance {
+        msg: to_json_binary(&Cw20QueryMsg::Balance {
             address: account_addr.to_string(),
         })?,
     }))?;
@@ -41,7 +41,7 @@ pub fn query_supply(
 ) -> Result<Uint256, NeptuneError> {
     let token_info: TokenInfoResponse = querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
         contract_addr: contract_addr.to_string(),
-        msg: to_binary(&Cw20QueryMsg::TokenInfo {})?,
+        msg: to_json_binary(&Cw20QueryMsg::TokenInfo {})?,
     }))?;
 
     Ok(token_info.total_supply.into())
