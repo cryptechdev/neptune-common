@@ -70,9 +70,7 @@ impl Swap for OrderBook {
             return Ok(Uint256::zero());
         }
         let AssetInfo::NativeToken { denom: offer_denom } = offer_asset else {
-            return Err(NeptuneError::Generic(
-                "Only native tokens are supported".to_string(),
-            ));
+            return Err(NeptuneError::InvalidAsset);
         };
         let spot_market = query_spot_market(deps, self.market_id.clone())?;
         let order_book = query_spot_market_order_book(
@@ -317,7 +315,7 @@ fn get_buy_quantity(
     offer_amount: FPDecimal, // quote
 ) -> NeptuneResult<FPDecimal> {
     let mut remaining_offer_amount = offer_amount; // quote
-    let mut quantity = FPDecimal::zero(); // base
+    let mut quantity = FPDecimal::ZERO; // base
     for sell_order in &order_book.sells_price_level {
         let sell_order_quantity = sell_order.q;
         let sell_order_price = sell_order.p;
@@ -328,7 +326,7 @@ fn get_buy_quantity(
         } else {
             // `sell_order_price` cannot be zero, no need to check.
             quantity +=
-                (remaining_offer_amount / ((FPDecimal::one() + fee_rate) * sell_order_price)).int();
+                (remaining_offer_amount / ((FPDecimal::ONE + fee_rate) * sell_order_price)).int();
             break;
         }
     }
@@ -343,7 +341,7 @@ fn get_buy_quantity_at_price(
     order_book: &QueryOrderbookResponse,
     price: FPDecimal, // quote
 ) -> NeptuneResult<FPDecimal> {
-    let mut quantity = FPDecimal::zero(); // base
+    let mut quantity = FPDecimal::ZERO; // base
     for sell_order in &order_book.sells_price_level {
         let sell_order_quantity = sell_order.q;
         let sell_order_price = sell_order.p;
@@ -364,7 +362,7 @@ fn get_sell_ask_amount_at_price(
     order_book: &QueryOrderbookResponse,
     price: FPDecimal, // quote
 ) -> NeptuneResult<FPDecimal> {
-    let mut quantity = FPDecimal::zero(); // base
+    let mut quantity = FPDecimal::ZERO; // base
     for buy_order in &order_book.buys_price_level {
         let buy_order_quantity = buy_order.q;
         let buy_order_price = buy_order.p;
@@ -388,7 +386,7 @@ fn get_sell_quantity(
     ask_amount: FPDecimal, // quote
 ) -> NeptuneResult<FPDecimal> {
     let mut remaining_ask_amount = ask_amount; // quote
-    let mut quantity = FPDecimal::zero(); // base
+    let mut quantity = FPDecimal::ZERO; // base
     for buy_order in &order_book.buys_price_level {
         let buy_order_quantity = buy_order.q;
         let buy_order_price = buy_order.p;
@@ -399,8 +397,8 @@ fn get_sell_quantity(
         } else {
             // `buy_order_price` cannot be zero, no need to check.
             quantity +=
-                (remaining_ask_amount / ((FPDecimal::one() + fee_rate) * buy_order_price)).int();
-            remaining_ask_amount = FPDecimal::zero();
+                (remaining_ask_amount / ((FPDecimal::ONE + fee_rate) * buy_order_price)).int();
+            remaining_ask_amount = FPDecimal::ZERO;
             break;
         }
     }
@@ -420,14 +418,14 @@ fn get_buy_offer_amount(
     quantity: FPDecimal, // quote
 ) -> NeptuneResult<FPDecimal> {
     let quantity = tick_round_up(quantity, spot_market.min_quantity_tick_size);
-    let mut offer_amount = FPDecimal::zero();
+    let mut offer_amount = FPDecimal::ZERO;
     let mut remaining_quantity = quantity;
     for sell_order in &order_book.sells_price_level {
         let sell_order_quantity = sell_order.q;
         let sell_order_price = sell_order.p;
         if sell_order_quantity > remaining_quantity {
             offer_amount += apply_fee(remaining_quantity * sell_order_price, fee_rate);
-            remaining_quantity = FPDecimal::zero();
+            remaining_quantity = FPDecimal::ZERO;
             break;
         } else {
             offer_amount += apply_fee(sell_order_quantity * sell_order_price, fee_rate);
@@ -449,18 +447,18 @@ fn get_sell_ask_amount(
     quantity: FPDecimal, // quote
 ) -> NeptuneResult<FPDecimal> {
     let quantity = tick_round_down(quantity, spot_market.min_quantity_tick_size);
-    let mut ask_amount = FPDecimal::zero();
+    let mut ask_amount = FPDecimal::ZERO;
     let mut remaining_quantity = quantity;
     for buy_order in &order_book.buys_price_level {
         let buy_order_quantity = buy_order.q;
         let buy_order_price = buy_order.p;
         if buy_order_quantity > remaining_quantity {
             ask_amount +=
-                ((remaining_quantity * buy_order_price) / (FPDecimal::one() + fee_rate)).int();
+                ((remaining_quantity * buy_order_price) / (FPDecimal::ONE + fee_rate)).int();
             break;
         } else {
             ask_amount +=
-                ((buy_order_quantity * buy_order_price) / (FPDecimal::one() + fee_rate)).int();
+                ((buy_order_quantity * buy_order_price) / (FPDecimal::ONE + fee_rate)).int();
             remaining_quantity -= buy_order_quantity;
         }
     }
@@ -484,7 +482,7 @@ fn buy(
     }
 
     let expected_offer_amount_less_fees =
-        (expected_offer_amount / (FPDecimal::one() + fee_rate)).int();
+        (expected_offer_amount / (FPDecimal::ONE + fee_rate)).int();
     let price = expected_offer_amount_less_fees / quantity;
     let price = tick_round_up(price, spot_market.min_price_tick_size);
 
@@ -495,6 +493,8 @@ fn buy(
         fee_recipient: Some(env.contract.address.clone()),
         price,
         quantity,
+        // TODO
+        cid: None,
     };
 
     let order = SpotOrder {
@@ -533,6 +533,7 @@ fn sell(
         fee_recipient: Some(env.contract.address.clone()),
         price,
         quantity,
+        cid: None,
     };
 
     let order = SpotOrder {
@@ -567,7 +568,10 @@ pub fn query_spot_market_mid_price_and_tob(
     Ok(deps.querier.query(&query_request)?)
 }
 
-fn query_spot_market(deps: Deps<QueryWrapper>, market_id: MarketId) -> NeptuneResult<SpotMarket> {
+pub fn query_spot_market(
+    deps: Deps<QueryWrapper>,
+    market_id: MarketId,
+) -> NeptuneResult<SpotMarket> {
     let wrapper = QueryWrapper {
         route: InjectiveRoute::Exchange,
         query_data: InjectiveQuery::SpotMarket { market_id },
@@ -632,11 +636,11 @@ fn query_total_fees(deps: Deps<QueryWrapper>, spot_market: &SpotMarket) -> FPDec
 }
 
 fn apply_fee(value: FPDecimal, fee: FPDecimal) -> FPDecimal {
-    let res = value.int() * (FPDecimal::one() + fee);
+    let res = value.int() * (FPDecimal::ONE + fee);
     if res.is_int() {
         res
     } else {
-        (res + FPDecimal::one()).int()
+        (res + FPDecimal::ONE).int()
     }
 }
 
@@ -645,7 +649,7 @@ pub fn tick_round_up(value: FPDecimal, tick_size: FPDecimal) -> FPDecimal {
     let tick_num = if tick_num.is_int() {
         tick_num
     } else {
-        (tick_num + FPDecimal::one()).int() // no ceiling function
+        (tick_num + FPDecimal::ONE).int() // no ceiling function
     };
     tick_num * tick_size
 }

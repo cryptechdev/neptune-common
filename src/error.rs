@@ -34,6 +34,9 @@ pub enum NeptuneError {
     #[error("Insufficient liquidity to execute swap")]
     InsufficientLiquidity,
 
+    #[error("Invalid asset")]
+    InvalidAsset,
+
     #[error("Key not found: {0}")]
     KeyNotFound(String),
 

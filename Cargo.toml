@@ -42,8 +42,8 @@ cw-storage-plus = { git = "https://github.com/cosmwasm/cw-storage-plus.git" }
 astroport = { git = "https://github.com/astroport-fi/astroport-core.git", tag = "v3.3.2" }
 
 # Optional Deps for Injective.
-injective-cosmwasm = { git = "https://github.com/cryptechdev/cw-injective.git", branch = "eric/dev", optional = true }
-injective-math = { git = "https://github.com/cryptechdev/cw-injective.git", branch = "eric/dev", optional = true }
+injective-cosmwasm = { version = "0.2", optional = true }
+injective-math = { version = "0.2", optional = true }
 
 [dev-dependencies]
 rand = "0.8"
