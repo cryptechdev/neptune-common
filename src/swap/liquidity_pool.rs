@@ -1,6 +1,6 @@
 use crate::{
     asset::{AssetAmount, AssetInfo},
-    error::{NeptuneError, NeptuneResult},
+    error::NeptuneResult,
     msg_wrapper::MsgWrapper,
     query_wrapper::QueryWrapper,
     send_asset::{send_assets, SendFundsMsg},
@@ -12,7 +12,7 @@ use cosmwasm_std::{
     QuerierWrapper, QueryRequest, StdResult, Uint128, Uint256, WasmQuery,
 };
 
-use super::Swap;
+use super::{error::SwapError, Swap};
 
 #[cw_serde]
 pub struct LiquidityPool {
@@ -99,13 +99,13 @@ impl Swap for LiquidityPool {
             .assets
             .iter()
             .find(|x| &Into::<AssetInfo>::into(x.info.clone()) == offer_asset)
-            .ok_or(NeptuneError::InvalidPool)?
+            .ok_or(SwapError::InvalidPool)?
             .amount;
         let ask_balance = res
             .assets
             .iter()
             .find(|x| &Into::<AssetInfo>::into(x.info.clone()) == ask_asset)
-            .ok_or(NeptuneError::InvalidPool)?
+            .ok_or(SwapError::InvalidPool)?
             .amount;
         let mul = offer_balance.full_mul(ask_balance);
         let frac = mul * max_ratio.inv().unwrap();

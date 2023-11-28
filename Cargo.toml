@@ -1,6 +1,6 @@
 [package]
 name = "neptune-common"
-version = "0.1.0"
+version = "1.0.0"
 authors = [
     "Eric Woolsey<eric@cryptech.dev>",
     "Francisco Inacio<cisco@cryptech.dev>",
@@ -20,6 +20,7 @@ crate-type = ["cdylib", "rlib"]
 [features]
 backtraces = ["cosmwasm-std/backtraces"]
 injective = ["dep:injective-cosmwasm", "dep:injective-math"]
+swap = ["dep:astroport"]
 
 [dependencies]
 cw20 = "1"
@@ -38,7 +39,7 @@ neptune-auth = "0.1"
 cw-storage-plus = { git = "https://github.com/cosmwasm/cw-storage-plus.git" }
 
 # See: https://github.com/astroport-fi/astroport-core/issues/376
-astroport = { git = "https://github.com/astroport-fi/astroport-core.git", tag = "v3.3.2" }
+astroport = { git = "https://github.com/astroport-fi/astroport-core.git", tag = "v3.3.2", optional = true }
 
 # Optional Deps for Injective.
 injective-cosmwasm = { version = "0.2", optional = true }

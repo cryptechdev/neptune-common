@@ -295,7 +295,7 @@ impl TryInto<Decimal256> for SignedDecimal {
 
     fn try_into(self) -> Result<Decimal256, Self::Error> {
         if !self.is_positive && !self.value.is_zero() {
-            return Err(NeptuneError::Generic(
+            return Err(NeptuneError::Conversion(
                 "Cannot convert negative SignedDecimal to Decimal256".into(),
             ));
         }

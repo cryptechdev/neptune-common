@@ -1,3 +1,4 @@
+pub mod error;
 pub mod liquidity_pool;
 #[cfg(feature = "injective")]
 pub mod order_book;
@@ -6,13 +7,10 @@ use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{CosmosMsg, Decimal256, Deps, Env, Uint256};
 
 use crate::{
-    asset::AssetInfo,
-    error::{NeptuneError, NeptuneResult},
-    msg_wrapper::MsgWrapper,
-    query_wrapper::QueryWrapper,
+    asset::AssetInfo, error::NeptuneResult, msg_wrapper::MsgWrapper, query_wrapper::QueryWrapper,
 };
 
-use self::liquidity_pool::LiquidityPool;
+use self::{error::SwapError, liquidity_pool::LiquidityPool};
 
 pub const EXCHANGES: cw_storage_plus::Map<(&AssetInfo, &AssetInfo), Exchange> =
     cw_storage_plus::Map::new("exchanges");
@@ -30,9 +28,9 @@ fn get_exchange_type(
     mut assets: [&AssetInfo; 2],
 ) -> NeptuneResult<Exchange> {
     assets.sort_unstable();
-    exchanges
+    Ok(exchanges
         .may_load(deps.storage, (assets[0], assets[1]))?
-        .ok_or_else(|| NeptuneError::PoolNotFound([assets[0].clone(), assets[1].clone()]))
+        .ok_or_else(|| SwapError::PoolNotFound([assets[0].clone(), assets[1].clone()]))?)
 }
 
 pub trait Swap {

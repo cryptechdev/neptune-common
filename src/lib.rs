@@ -1,5 +1,4 @@
 pub mod asset;
-pub mod astroport;
 pub mod debug;
 pub mod error;
 pub mod math;
@@ -11,10 +10,14 @@ pub mod query_wrapper;
 pub mod send_asset;
 pub mod signed_decimal;
 pub mod storage;
-pub mod swap;
 pub mod traits;
 pub mod utilities;
-pub mod warn;
+
+#[cfg(feature = "swap")]
+pub mod astroport;
+
+#[cfg(feature = "swap")]
+pub mod swap;
 
 #[cfg(feature = "injective")]
 pub mod injective;

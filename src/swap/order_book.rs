@@ -1,6 +1,6 @@
 use crate::{
     asset::AssetInfo,
-    error::{NeptuneError, NeptuneResult},
+    error::NeptuneResult,
     injective::{into_decimal_256, into_fp_decimal, into_uint_256},
     msg_wrapper::MsgWrapper,
     query_wrapper::QueryWrapper,
@@ -15,7 +15,7 @@ use injective_cosmwasm::{
 };
 use injective_math::FPDecimal;
 
-use super::Swap;
+use super::{error::SwapError, Swap};
 
 #[cw_serde]
 pub struct OrderBook {
@@ -70,7 +70,7 @@ impl Swap for OrderBook {
             return Ok(Uint256::zero());
         }
         let AssetInfo::NativeToken { denom: offer_denom } = offer_asset else {
-            return Err(NeptuneError::InvalidAsset);
+            return Err(SwapError::InvalidAsset.into());
         };
         let spot_market = query_spot_market(deps, self.market_id.clone())?;
         let order_book = query_spot_market_order_book(
@@ -88,7 +88,7 @@ impl Swap for OrderBook {
         } else if offer_denom == &spot_market.base_denom {
             get_sell_ask_amount(&spot_market, fee_rate, &order_book, offer_amount.into())?
         } else {
-            return Err(NeptuneError::Generic("Invalid offer asset".to_string()));
+            return Err(SwapError::InvalidOfferAsset.into());
         };
 
         Ok(into_uint_256(ask_amount.int()))
@@ -102,9 +102,7 @@ impl Swap for OrderBook {
         offer_amount: Uint256,
     ) -> NeptuneResult<Decimal256> {
         let AssetInfo::NativeToken { denom: offer_denom } = offer_asset else {
-            return Err(NeptuneError::Generic(
-                "Only native tokens are supported".to_string(),
-            ));
+            return Err(SwapError::InvalidAsset.into());
         };
         let spot_market = query_spot_market(deps, self.market_id.clone())?;
         let order_book = query_spot_market_order_book(
@@ -128,13 +126,11 @@ impl Swap for OrderBook {
                 .max(spot_market.min_quantity_tick_size);
             get_sell_ask_amount(&spot_market, fee_rate, &order_book, offer_amount)?
         } else {
-            return Err(NeptuneError::Generic("Invalid offer asset".to_string()));
+            return Err(SwapError::InvalidAsset.into());
         };
 
         if ask_amount.is_zero() {
-            return Err(NeptuneError::Generic(
-                "Market is empty, could not calculate swap ratio".to_string(),
-            ));
+            return Err(SwapError::InsufficientLiquidity.into());
         }
 
         let swap_ratio = offer_amount / ask_amount;
@@ -155,9 +151,7 @@ impl Swap for OrderBook {
             return Ok(Uint256::zero());
         }
         let AssetInfo::NativeToken { denom: ask_denom } = ask_asset else {
-            return Err(NeptuneError::Generic(
-                "Only native tokens are supported".to_string(),
-            ));
+            return Err(SwapError::InvalidAsset.into());
         };
         let spot_market = query_spot_market(deps, self.market_id.clone())?;
         let order_book = query_spot_market_order_book(
@@ -175,7 +169,7 @@ impl Swap for OrderBook {
         } else if ask_denom == &spot_market.quote_denom {
             get_sell_quantity(&spot_market, fee_rate, &order_book, ask_amount.into())?
         } else {
-            return Err(NeptuneError::Generic("Invalid offer asset".to_string()));
+            return Err(SwapError::InvalidAsset.into());
         };
 
         Ok(into_uint_256(offer_amount.int()))
@@ -189,9 +183,7 @@ impl Swap for OrderBook {
         max_ratio: Decimal256,
     ) -> NeptuneResult<Uint256> {
         let AssetInfo::NativeToken { denom: offer_denom } = offer_asset else {
-            return Err(NeptuneError::Generic(
-                "Only native tokens are supported".to_string(),
-            ));
+            return Err(SwapError::InvalidAsset.into());
         };
         let spot_market = query_spot_market(deps, self.market_id.clone())?;
         let order_book = query_spot_market_order_book(
@@ -211,7 +203,7 @@ impl Swap for OrderBook {
             let price = into_fp_decimal(max_ratio.inv().unwrap());
             get_sell_ask_amount_at_price(&spot_market, fee_rate, &order_book, price)?
         } else {
-            return Err(NeptuneError::Generic("Invalid offer asset".to_string()));
+            return Err(SwapError::InvalidAsset.into());
         };
 
         Ok(into_uint_256(ask_amount.int()))
@@ -244,9 +236,7 @@ pub fn market_order_offer(
     }
 
     let AssetInfo::NativeToken { denom: offer_denom } = offer_asset else {
-        return Err(NeptuneError::Generic(
-            "Only native tokens are supported".to_string(),
-        ));
+        return Err(SwapError::InvalidAsset.into());
     };
 
     let spot_market = query_spot_market(deps, market_id.clone())?;
@@ -260,7 +250,7 @@ pub fn market_order_offer(
     } else if &spot_market.base_denom == offer_denom {
         sell(env, &spot_market, offer_amount)
     } else {
-        return Err(NeptuneError::Generic("Invalid offer asset".to_string()));
+        return Err(SwapError::InvalidAsset.into());
     }
 }
 
@@ -278,9 +268,7 @@ pub fn market_order_ask(
     }
 
     let AssetInfo::NativeToken { denom: ask_denom } = ask_asset else {
-        return Err(NeptuneError::Generic(
-            "Only native tokens are supported".to_string(),
-        ));
+        return Err(SwapError::InvalidAsset.into());
     };
 
     let spot_market = query_spot_market(deps, market_id.clone())?;
@@ -302,7 +290,7 @@ pub fn market_order_ask(
         let quantity = get_sell_quantity(&spot_market, fee_rate, &order_book, ask_amount)?;
         sell(env, &spot_market, quantity)
     } else {
-        return Err(NeptuneError::Generic("Invalid offer asset".to_string()));
+        return Err(SwapError::InvalidAsset.into());
     }
 }
 
@@ -403,7 +391,7 @@ fn get_sell_quantity(
         }
     }
     if !remaining_ask_amount.is_zero() {
-        return Err(NeptuneError::InsufficientLiquidity);
+        return Err(SwapError::InsufficientLiquidity.into());
     }
     let quantity = tick_round_up(quantity, spot_market.min_quantity_tick_size);
     Ok(quantity)
@@ -433,7 +421,7 @@ fn get_buy_offer_amount(
         }
     }
     if !remaining_quantity.is_zero() {
-        return Err(NeptuneError::InsufficientLiquidity);
+        return Err(SwapError::InsufficientLiquidity.into());
     }
     Ok(offer_amount)
 }
@@ -581,9 +569,7 @@ pub fn query_spot_market(
 
     let res: SpotMarketResponse = deps.querier.query(&query_request)?;
 
-    let spot_market = res
-        .market
-        .ok_or(NeptuneError::Generic("Spot market not found".to_string()))?;
+    let spot_market = res.market.ok_or(SwapError::SpotMarketNotFound)?;
 
     Ok(spot_market)
 }

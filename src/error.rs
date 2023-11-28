@@ -1,18 +1,11 @@
-use cosmwasm_std::{
-    CheckedFromRatioError, ConversionOverflowError, Decimal256RangeExceeded, StdError,
-};
+use cosmwasm_std::{CheckedFromRatioError, ConversionOverflowError, StdError};
 use neptune_auth::error::NeptAuthError;
 use thiserror::Error;
-
-use crate::asset::AssetInfo;
 
 pub type NeptuneResult<T> = core::result::Result<T, NeptuneError>;
 
 #[derive(Error, Debug, PartialEq)]
 pub enum NeptuneError {
-    #[error("{0}")]
-    Generic(String),
-
     #[error(transparent)]
     Std(#[from] StdError),
 
@@ -23,19 +16,11 @@ pub enum NeptuneError {
     ConversionOverflow(#[from] ConversionOverflowError),
 
     #[error(transparent)]
-    Decimal256RangeExceeded(#[from] Decimal256RangeExceeded),
-
-    #[error(transparent)]
     CheckedFromRatio(#[from] CheckedFromRatioError),
 
-    #[error("liquidity pool not found {0:?}")]
-    PoolNotFound([AssetInfo; 2]),
-
-    #[error("Insufficient liquidity to execute swap")]
-    InsufficientLiquidity,
-
-    #[error("Invalid asset")]
-    InvalidAsset,
+    #[cfg(feature = "swap")]
+    #[error(transparent)]
+    SwapError(#[from] crate::swap::error::SwapError),
 
     #[error("Key not found: {0}")]
     KeyNotFound(String),
@@ -46,6 +31,9 @@ pub enum NeptuneError {
     #[error("Missing Cw20HookMg")]
     MissingHookMsg,
 
-    #[error("Invalid pool")]
-    InvalidPool,
+    #[error("{0}")]
+    Conversion(String),
+
+    #[error("{0}")]
+    Generic(String),
 }
