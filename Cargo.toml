@@ -36,8 +36,7 @@ neptune-auth = "0.1"
 
 # See: https://github.com/CosmWasm/cw-storage-plus/pull/34
 #      https://github.com/CosmWasm/cw-storage-plus/milestone/2
-cw-storage-plus = { git = "https://github.com/cosmwasm/cw-storage-plus.git" }
-
+cw-storage-plus = { git = "https://github.com/CosmWasm/cw-storage-plus.git", rev = "22542edf3b3fc5252bb0e51cb60bf8962dff2725" }
 # See: https://github.com/astroport-fi/astroport-core/issues/376
 astroport = { git = "https://github.com/astroport-fi/astroport-core.git", tag = "v3.3.2", optional = true }
 
