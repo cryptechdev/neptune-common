@@ -8,7 +8,6 @@ pub mod pool;
 pub mod querier;
 pub mod query_wrapper;
 pub mod send_asset;
-pub mod signed_decimal;
 pub mod storage;
 pub mod traits;
 pub mod utilities;
