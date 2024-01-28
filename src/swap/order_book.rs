@@ -84,7 +84,7 @@ impl Swap for OrderBook {
         let fee_rate = query_total_fees(deps, &spot_market);
 
         let ask_amount = if offer_denom == &spot_market.quote_denom {
-            get_buy_quantity(&spot_market, fee_rate, &order_book, offer_amount.into())?
+            get_buy_quantity(&spot_market, fee_rate, &order_book, offer_amount.into())?.quantity
         } else if offer_denom == &spot_market.base_denom {
             get_sell_ask_amount(&spot_market, fee_rate, &order_book, offer_amount.into())?
         } else {
@@ -118,8 +118,10 @@ impl Swap for OrderBook {
 
         let ask_amount = if offer_denom == &spot_market.quote_denom {
             let buy_quantity = get_buy_quantity(&spot_market, fee_rate, &order_book, offer_amount)?
+                .quantity
                 .max(spot_market.min_quantity_tick_size);
-            offer_amount = get_buy_offer_amount(&spot_market, fee_rate, &order_book, buy_quantity)?;
+            offer_amount = get_buy_offer_amount(&spot_market, fee_rate, &order_book, buy_quantity)?
+                .offer_amount;
             buy_quantity
         } else if offer_denom == &spot_market.base_denom {
             offer_amount = tick_round_down(offer_amount, spot_market.min_quantity_tick_size)
@@ -166,6 +168,7 @@ impl Swap for OrderBook {
 
         let offer_amount = if ask_denom == &spot_market.base_denom {
             get_buy_offer_amount(&spot_market, fee_rate, &order_book, ask_amount.into())?
+                .offer_amount
         } else if ask_denom == &spot_market.quote_denom {
             get_sell_quantity(&spot_market, fee_rate, &order_book, ask_amount.into())?
         } else {
@@ -245,8 +248,13 @@ pub fn market_order_offer(
     let fee_rate = query_total_fees(deps, &spot_market);
 
     if &spot_market.quote_denom == offer_denom {
-        let quantity = get_buy_quantity(&spot_market, fee_rate, &order_book, offer_amount)?;
-        buy(env, &spot_market, fee_rate, offer_amount, quantity)
+        let buy_quantity = get_buy_quantity(&spot_market, fee_rate, &order_book, offer_amount)?;
+        buy(
+            env,
+            &spot_market,
+            buy_quantity.worst_order_price,
+            buy_quantity.quantity,
+        )
     } else if &spot_market.base_denom == offer_denom {
         sell(env, &spot_market, offer_amount)
     } else {
@@ -277,21 +285,21 @@ pub fn market_order_ask(
     let fee_rate = query_total_fees(deps, &spot_market);
 
     if &spot_market.base_denom == ask_denom {
-        let expected_offer_amount =
-            get_buy_offer_amount(&spot_market, fee_rate, &order_book, ask_amount)?;
-        buy(
-            env,
-            &spot_market,
-            fee_rate,
-            expected_offer_amount,
-            ask_amount,
-        )
+        let worst_order_price =
+            get_buy_offer_amount(&spot_market, fee_rate, &order_book, ask_amount)?
+                .worst_order_price;
+        buy(env, &spot_market, worst_order_price, ask_amount)
     } else if &spot_market.quote_denom == ask_denom {
         let quantity = get_sell_quantity(&spot_market, fee_rate, &order_book, ask_amount)?;
         sell(env, &spot_market, quantity)
     } else {
         return Err(SwapError::InvalidAsset.into());
     }
+}
+
+struct GetBuyQuantity {
+    quantity: FPDecimal,
+    worst_order_price: Option<FPDecimal>,
 }
 
 /// returns the quantity of the ask asset (rounded down)
@@ -301,12 +309,14 @@ fn get_buy_quantity(
     fee_rate: FPDecimal,
     order_book: &QueryOrderbookResponse,
     offer_amount: FPDecimal, // quote
-) -> NeptuneResult<FPDecimal> {
+) -> NeptuneResult<GetBuyQuantity> {
     let mut remaining_offer_amount = offer_amount; // quote
     let mut quantity = FPDecimal::ZERO; // base
+    let mut worst_order_price = None;
     for sell_order in &order_book.sells_price_level {
         let sell_order_quantity = sell_order.q;
         let sell_order_price = sell_order.p;
+        worst_order_price = Some(sell_order_price);
         let sell_order_base_amount = apply_fee(sell_order_quantity * sell_order_price, fee_rate);
         if remaining_offer_amount > sell_order_base_amount {
             quantity += sell_order_quantity;
@@ -319,7 +329,10 @@ fn get_buy_quantity(
         }
     }
     quantity = tick_round_down(quantity, spot_market.min_quantity_tick_size);
-    Ok(quantity)
+    Ok(GetBuyQuantity {
+        quantity,
+        worst_order_price,
+    })
 }
 
 /// returns the quantity of the ask asset (rounded down)
@@ -397,6 +410,11 @@ fn get_sell_quantity(
     Ok(quantity)
 }
 
+struct GetBuyOfferAmount {
+    offer_amount: FPDecimal,
+    worst_order_price: Option<FPDecimal>,
+}
+
 /// returns the offer amount amount_required to purchase
 /// a given quantity of the ask asset
 fn get_buy_offer_amount(
@@ -404,13 +422,15 @@ fn get_buy_offer_amount(
     fee_rate: FPDecimal,
     order_book: &QueryOrderbookResponse,
     quantity: FPDecimal, // quote
-) -> NeptuneResult<FPDecimal> {
+) -> NeptuneResult<GetBuyOfferAmount> {
     let quantity = tick_round_up(quantity, spot_market.min_quantity_tick_size);
     let mut offer_amount = FPDecimal::ZERO;
+    let mut worst_order_price = None;
     let mut remaining_quantity = quantity;
     for sell_order in &order_book.sells_price_level {
         let sell_order_quantity = sell_order.q;
         let sell_order_price = sell_order.p;
+        worst_order_price = Some(sell_order_price);
         if sell_order_quantity > remaining_quantity {
             offer_amount += apply_fee(remaining_quantity * sell_order_price, fee_rate);
             remaining_quantity = FPDecimal::ZERO;
@@ -423,7 +443,10 @@ fn get_buy_offer_amount(
     if !remaining_quantity.is_zero() {
         return Err(SwapError::InsufficientLiquidity.into());
     }
-    Ok(offer_amount)
+    Ok(GetBuyOfferAmount {
+        offer_amount,
+        worst_order_price,
+    })
 }
 
 /// returns the ask amount received from selling
@@ -454,26 +477,21 @@ fn get_sell_ask_amount(
 }
 
 /// Buys the given quantity rounded up, erroring on insufficient funds
+/// `worst_order_price` is the worst price that can be accepted
+/// It must be specified accurately or the module will attempt to withdraw
+/// more funds than are available.j
 fn buy(
     env: &Env,
     spot_market: &SpotMarket,
-    fee_rate: FPDecimal,
-    expected_offer_amount: FPDecimal,
+    worst_order_price: Option<FPDecimal>,
     quantity: FPDecimal,
 ) -> NeptuneResult<Option<CosmosMsg<MsgWrapper>>> {
     let quantity = tick_round_up(quantity, spot_market.min_quantity_tick_size);
     if quantity.is_zero() {
         return Ok(None);
     }
-    if expected_offer_amount.is_zero() {
-        return Ok(None);
-    }
-
-    let expected_offer_amount_less_fees =
-        (expected_offer_amount / (FPDecimal::ONE + fee_rate)).int();
-    let price = expected_offer_amount_less_fees / quantity;
-    let price = tick_round_up(price, spot_market.min_price_tick_size);
-
+    let worst_order_price = worst_order_price.ok_or(SwapError::InsufficientLiquidity)?;
+    let price = tick_round_down(worst_order_price, spot_market.min_price_tick_size);
     let subaccount_id = get_default_subaccount_id_for_checked_address(&env.contract.address);
 
     let order_info = OrderInfo {
