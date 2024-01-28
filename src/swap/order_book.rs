@@ -290,7 +290,7 @@ pub fn market_order_ask(
                 .worst_order_price;
         buy(env, &spot_market, worst_order_price, ask_amount)
     } else if &spot_market.quote_denom == ask_denom {
-        let quantity = get_sell_quantity(&spot_market, fee_rate, &order_book, ask_amount)?;
+        let quantity = get_sell_quantity(&spot_market, fee_rate, &order_book, ask_amount)?.int();
         sell(env, &spot_market, quantity)
     } else {
         return Err(SwapError::InvalidAsset.into());
@@ -391,14 +391,17 @@ fn get_sell_quantity(
     for buy_order in &order_book.buys_price_level {
         let buy_order_quantity = buy_order.q;
         let buy_order_price = buy_order.p;
-        let buy_order_base_amount = apply_fee(buy_order_quantity * buy_order_price, fee_rate);
-        if remaining_ask_amount > buy_order_base_amount {
+        let buy_order_quote_amount =
+            ((buy_order_quantity * buy_order_price) * (FPDecimal::ONE - fee_rate)).int();
+        if remaining_ask_amount > buy_order_quote_amount {
             quantity += buy_order_quantity;
-            remaining_ask_amount -= buy_order_base_amount;
+            remaining_ask_amount -= buy_order_quote_amount;
         } else {
             // `buy_order_price` cannot be zero, no need to check.
-            quantity +=
-                (remaining_ask_amount / ((FPDecimal::ONE + fee_rate) * buy_order_price)).int();
+            quantity += tick_round_up(
+                apply_fee(remaining_ask_amount / buy_order_price, fee_rate),
+                spot_market.min_quantity_tick_size,
+            );
             remaining_ask_amount = FPDecimal::ZERO;
             break;
         }
@@ -406,6 +409,7 @@ fn get_sell_quantity(
     if !remaining_ask_amount.is_zero() {
         return Err(SwapError::InsufficientLiquidity.into());
     }
+    quantity *= FPDecimal::must_from_str("1.00001");
     let quantity = tick_round_up(quantity, spot_market.min_quantity_tick_size);
     Ok(quantity)
 }
@@ -473,6 +477,9 @@ fn get_sell_ask_amount(
             remaining_quantity -= buy_order_quantity;
         }
     }
+    // TODO: why does this work?
+    ask_amount = tick_round_down(ask_amount, FPDecimal::from(10_000_000_000_000u128));
+
     Ok(ask_amount)
 }
 
