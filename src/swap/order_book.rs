@@ -73,20 +73,30 @@ impl Swap for OrderBook {
             return Err(SwapError::InvalidAsset.into());
         };
         let spot_market = query_spot_market(deps, self.market_id.clone())?;
-        let order_book = query_spot_market_order_book(
-            deps,
-            self.market_id.clone(),
-            0,
-            OrderSide::Unspecified,
-            None,
-            None,
-        )?;
+
         let fee_rate = query_total_fees(deps, &spot_market);
+        let offer_amount = offer_amount.into();
 
         let ask_amount = if offer_denom == &spot_market.quote_denom {
-            get_buy_quantity(&spot_market, fee_rate, &order_book, offer_amount.into())?.quantity
+            let order_book = query_spot_market_order_book(
+                deps,
+                self.market_id.clone(),
+                0,
+                OrderSide::Sell,
+                None,
+                Some(offer_amount),
+            )?;
+            get_buy_quantity(&spot_market, fee_rate, &order_book, offer_amount)?.quantity
         } else if offer_denom == &spot_market.base_denom {
-            get_sell_ask_amount(&spot_market, fee_rate, &order_book, offer_amount.into())?
+            let order_book = query_spot_market_order_book(
+                deps,
+                self.market_id.clone(),
+                0,
+                OrderSide::Buy,
+                Some(offer_amount),
+                None,
+            )?;
+            get_sell_ask_amount(&spot_market, fee_rate, &order_book, offer_amount)?
         } else {
             return Err(SwapError::InvalidOfferAsset.into());
         };
@@ -105,18 +115,18 @@ impl Swap for OrderBook {
             return Err(SwapError::InvalidAsset.into());
         };
         let spot_market = query_spot_market(deps, self.market_id.clone())?;
-        let order_book = query_spot_market_order_book(
-            deps,
-            self.market_id.clone(),
-            0,
-            OrderSide::Unspecified,
-            None,
-            None,
-        )?;
         let fee_rate = query_total_fees(deps, &spot_market);
         let mut offer_amount = offer_amount.into();
 
         let ask_amount = if offer_denom == &spot_market.quote_denom {
+            let order_book = query_spot_market_order_book(
+                deps,
+                self.market_id.clone(),
+                0,
+                OrderSide::Sell,
+                None,
+                Some(offer_amount),
+            )?;
             let buy_quantity = get_buy_quantity(&spot_market, fee_rate, &order_book, offer_amount)?
                 .quantity
                 .max(spot_market.min_quantity_tick_size);
@@ -124,6 +134,14 @@ impl Swap for OrderBook {
                 .offer_amount;
             buy_quantity
         } else if offer_denom == &spot_market.base_denom {
+            let order_book = query_spot_market_order_book(
+                deps,
+                self.market_id.clone(),
+                0,
+                OrderSide::Buy,
+                Some(offer_amount),
+                None,
+            )?;
             offer_amount = tick_round_down(offer_amount, spot_market.min_quantity_tick_size)
                 .max(spot_market.min_quantity_tick_size);
             get_sell_ask_amount(&spot_market, fee_rate, &order_book, offer_amount)?
@@ -156,21 +174,31 @@ impl Swap for OrderBook {
             return Err(SwapError::InvalidAsset.into());
         };
         let spot_market = query_spot_market(deps, self.market_id.clone())?;
-        let order_book = query_spot_market_order_book(
-            deps,
-            self.market_id.clone(),
-            0,
-            OrderSide::Unspecified,
-            None,
-            None,
-        )?;
+
         let fee_rate = query_total_fees(deps, &spot_market);
 
+        let ask_amount = ask_amount.into();
+
         let offer_amount = if ask_denom == &spot_market.base_denom {
-            get_buy_offer_amount(&spot_market, fee_rate, &order_book, ask_amount.into())?
-                .offer_amount
+            let order_book = query_spot_market_order_book(
+                deps,
+                self.market_id.clone(),
+                0,
+                OrderSide::Sell,
+                Some(ask_amount),
+                None,
+            )?;
+            get_buy_offer_amount(&spot_market, fee_rate, &order_book, ask_amount)?.offer_amount
         } else if ask_denom == &spot_market.quote_denom {
-            get_sell_quantity(&spot_market, fee_rate, &order_book, ask_amount.into())?
+            let order_book = query_spot_market_order_book(
+                deps,
+                self.market_id.clone(),
+                0,
+                OrderSide::Buy,
+                None,
+                Some(ask_amount),
+            )?;
+            get_sell_quantity(&spot_market, fee_rate, &order_book, ask_amount)?
         } else {
             return Err(SwapError::InvalidAsset.into());
         };
@@ -189,21 +217,32 @@ impl Swap for OrderBook {
             return Err(SwapError::InvalidAsset.into());
         };
         let spot_market = query_spot_market(deps, self.market_id.clone())?;
-        let order_book = query_spot_market_order_book(
-            deps,
-            self.market_id.clone(),
-            0,
-            OrderSide::Unspecified,
-            None,
-            None,
-        )?;
+
         let fee_rate = query_total_fees(deps, &spot_market);
 
         let ask_amount = if offer_denom == &spot_market.quote_denom {
             let price = into_fp_decimal(max_ratio);
+            // TODO: This quey is problematic as we cannot effectively limit
+            // TODO: our query.
+            let order_book = query_spot_market_order_book(
+                deps,
+                self.market_id.clone(),
+                0,
+                OrderSide::Sell,
+                None,
+                None,
+            )?;
             get_buy_quantity_at_price(&spot_market, &order_book, price)?
         } else if offer_denom == &spot_market.base_denom {
             let price = into_fp_decimal(max_ratio.inv().unwrap());
+            let order_book = query_spot_market_order_book(
+                deps,
+                self.market_id.clone(),
+                0,
+                OrderSide::Buy,
+                None,
+                None,
+            )?;
             get_sell_ask_amount_at_price(&spot_market, fee_rate, &order_book, price)?
         } else {
             return Err(SwapError::InvalidAsset.into());
@@ -243,11 +282,18 @@ pub fn market_order_offer(
     };
 
     let spot_market = query_spot_market(deps, market_id.clone())?;
-    let order_book =
-        query_spot_market_order_book(deps, market_id, 0, OrderSide::Unspecified, None, None)?;
+
     let fee_rate = query_total_fees(deps, &spot_market);
 
     if &spot_market.quote_denom == offer_denom {
+        let order_book = query_spot_market_order_book(
+            deps,
+            market_id,
+            0,
+            OrderSide::Sell,
+            None,
+            Some(offer_amount),
+        )?;
         let buy_quantity = get_buy_quantity(&spot_market, fee_rate, &order_book, offer_amount)?;
         buy(
             env,
@@ -280,16 +326,31 @@ pub fn market_order_ask(
     };
 
     let spot_market = query_spot_market(deps, market_id.clone())?;
-    let order_book =
-        query_spot_market_order_book(deps, market_id, 0, OrderSide::Unspecified, None, None)?;
+
     let fee_rate = query_total_fees(deps, &spot_market);
 
     if &spot_market.base_denom == ask_denom {
+        let order_book = query_spot_market_order_book(
+            deps,
+            market_id,
+            0,
+            OrderSide::Sell,
+            Some(ask_amount),
+            None,
+        )?;
         let worst_order_price =
             get_buy_offer_amount(&spot_market, fee_rate, &order_book, ask_amount)?
                 .worst_order_price;
         buy(env, &spot_market, worst_order_price, ask_amount)
     } else if &spot_market.quote_denom == ask_denom {
+        let order_book = query_spot_market_order_book(
+            deps,
+            market_id,
+            0,
+            OrderSide::Buy,
+            None,
+            Some(ask_amount),
+        )?;
         let quantity = get_sell_quantity(&spot_market, fee_rate, &order_book, ask_amount)?.int();
         sell(env, &spot_market, quantity)
     } else {
@@ -604,8 +665,8 @@ fn query_spot_market_order_book(
     market_id: MarketId,
     limit: u64,
     order_side: OrderSide,
-    limit_cumulative_quantity: Option<Decimal256>,
-    limit_cumulative_notional: Option<Decimal256>,
+    limit_cumulative_quantity: Option<FPDecimal>,
+    limit_cumulative_notional: Option<FPDecimal>,
 ) -> NeptuneResult<QueryOrderbookResponse> {
     let wrapper = QueryWrapper {
         route: InjectiveRoute::Exchange,
@@ -613,8 +674,8 @@ fn query_spot_market_order_book(
             market_id,
             limit,
             order_side,
-            limit_cumulative_quantity: limit_cumulative_quantity.map(into_fp_decimal),
-            limit_cumulative_notional: limit_cumulative_notional.map(into_fp_decimal),
+            limit_cumulative_quantity,
+            limit_cumulative_notional,
         },
     };
 
