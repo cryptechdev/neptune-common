@@ -1,3 +1,4 @@
+pub mod accumulated_pool;
 pub mod asset;
 pub mod debug;
 pub mod error;
