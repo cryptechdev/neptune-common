@@ -2,7 +2,7 @@ use std::fmt::Debug;
 
 use cosmwasm_std::{Addr, CustomQuery, Deps, DepsMut, Order, Storage};
 use cw_storage_plus::{Bounder, KeyDeserialize, Map, PrimaryKey};
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 use crate::{
     asset::AssetInfo,
@@ -116,11 +116,11 @@ where
 }
 
 /// The inner part of the cache which keeps track of wether the value has been modified.
-pub struct CacheInner<V>
-where
-    V: Clone + Serialize + DeserializeOwned,
-{
+#[derive(Serialize, Deserialize)]
+pub struct CacheInner<V> {
+    #[serde(flatten)]
     value: V,
+    #[serde(skip)]
     is_modified: bool,
 }
 
@@ -215,6 +215,17 @@ where
                 Ok(&self.map.last().unwrap().1.value)
             }
         }
+    }
+}
+
+impl<'s, 'k, K, V> AsRef<NeptuneMap<K, CacheInner<V>>> for Cache<'s, 'k, K, V>
+where
+    for<'a> &'a K: Debug + PartialEq + Eq + PrimaryKey<'a>,
+    K: Clone + Debug + PartialEq + Eq,
+    V: Clone + Serialize + DeserializeOwned,
+{
+    fn as_ref(&self) -> &NeptuneMap<K, CacheInner<V>> {
+        &self.map
     }
 }
 

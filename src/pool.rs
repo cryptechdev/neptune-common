@@ -256,7 +256,6 @@ impl Zeroed for PoolAccount {
 
 #[cfg(test)]
 mod tests {
-    use cosmwasm_std::Uint256;
     use rand::random;
 
     use super::*;
