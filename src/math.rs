@@ -36,7 +36,6 @@ pub fn checked_div(numerator: Uint256, denominator: Decimal256) -> StdResult<Uin
 #[cfg(test)]
 mod tests {
     use super::*;
-    use cosmwasm_std::{Decimal256, Uint256};
     use std::str::FromStr;
 
     #[test]

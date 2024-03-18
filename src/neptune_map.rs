@@ -1,6 +1,5 @@
 use std::{
     fmt::Debug,
-    iter::FromIterator,
     ops::{Add, AddAssign, Mul},
 };
 
